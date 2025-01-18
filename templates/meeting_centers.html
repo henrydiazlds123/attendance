@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+{% block title %}Attendance | Meeting Centers{% endblock %}
+{% block content %}
+    <h2>Centros de Reunión</h2>
+    <a href="{{ url_for('routes.create_meeting_center') }}">Add New Meeting Center</a>
+    <ul>
+        {% for meeting_center in meeting_centers %}
+            <li>{{ meeting_center.name }} - {{ meeting_center.city }}
+                <a href="{{ url_for('routes.update_meeting_center', id=meeting_center.id) }}">Edit</a>
+                <form action="{{ url_for('routes.delete_meeting_center', id=meeting_center.id) }}" method="post" style="display:inline;">
+                    <button type="submit">Delete</button>
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}

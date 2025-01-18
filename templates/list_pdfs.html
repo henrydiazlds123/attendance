@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+{% block title %}Attendance | PDFs{% endblock %}
+{% block content %}
+    <h2>Manegar Códigos QR</h2>
+    <p>En esta pagina, usted podrá generar y descargar para su impresión, las hojas con las imagenes de
+      Códigos QR que el miembro podrá escanear para registrar su asistencia a las calses</p>
+
+      <div class="col-md-8">
+        <h3>Archivos disponibles:</h3>
+        <ul>
+            {% for filename in pdf_files %}
+            <li><a href="/download_pdf/{{ filename }}">{{ filename }}</a></li>
+            {% endfor %}
+        </ul>
+    
+        <!-- Botón para generar PDFs -->
+        {% if session['role'] =='Owner' or session['role'] =='Owner' %}
+        <div class="row">
+            <div class="col-sm-12 col-lg-6 mb-2">
+                <form class="d-grid gap-2" action="/generate_week_pdfs" method="POST">
+                    <button class="btn btn-warning btn-block"  data-toggle="tooltip" title="Crea PDF para cada clase en la semana actual" type="submit">Generar PDFs por semana</button>
+                </form>
+            </div>
+            <div class="col-sm-12 col-lg-6">
+                <form class="d-grid gap-2" action="/generate_all_pdfs" method="POST">
+                    <button class="btn btn-primary btn-block" data-toggle="tooltip" title="Crea PDF para todas las clases" type="submit">Generar todos los PDFs</button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+        
+{% endblock %}

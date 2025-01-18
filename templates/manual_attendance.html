@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+{% block title %}Attendance | Manual {% endblock %}
+{% block content %}
+    <h2>Enlaces de Registro de Asistencia</h2>
+    <p>Selecciona una clase para registrar la asistencia <br>
+        <input type="checkbox" id="chkNameClear" onchange="clearName()"> Marque esta casilla para borrar el nombre del estudiante anterior</p>
+
+    <div class="col-lg-6">
+        {% for class_name, class_url in class_links.items() %}
+              <li style="list-style-type: none;" class="mb-2">
+                <a href="{{ class_url }}" class="btn btn-success btn-block ">{{ class_name }}</a>
+        {% endfor %}
+    </div>
+
+          
+{% endblock %}

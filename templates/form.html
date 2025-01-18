@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+    <h2>{{ title }}</h2>
+    <form method="post">
+        {{ form.hidden_tag() }}
+        {% for field in form %}
+            <div>
+                {{ field.label }}<br>
+                {{ field(class="form-control") }}
+                {% if field.errors %}
+                    <ul class="errors">
+                        {% for error in field.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        {% endfor %}
+        <button class="btn btn-{{clas}}" type="submit">{{ submit_button_text }}</button>
+    </form>
+{% endblock %}

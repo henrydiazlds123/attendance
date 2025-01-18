@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+{% block title %}Attendance | Inicio{% endblock %}
+{% block content %}
+    <div class="container">
+        <div class="row justify-content-center">
+          <div class="col-md-8">
+            <div class="card-group mb-0">
+              <div class="card p-4">
+                <div class="card-body  text-center">
+                  <h1>Login</h1>
+                  <p class="text-muted">Entre a su cuenta</p>
+                  <form method="POST">
+      
+                    <div class="input-group mb-3">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text" id="username"><i class="fa fa-user"></i></span>
+                      </div>
+                      <input type="text" class="form-control" placeholder="Username" aria-label="Username"
+                        aria-describedby="username" name="username" required>
+                    </div>
+                    <div class="input-group mb-3">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text" id="password"><i class="fa fa-lock"></i></span>
+                      </div>
+                      <input type="password" class="form-control" placeholder="Contraseña" aria-label="Contraseña"
+                        name="password" required aria-describedby="password">
+                    </div>
+      
+                    <div class="btn btn-block">               
+                        <button type="submit" class="btn btn-primary px-4">Iniciar Sesión</button>   
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+{% endblock %}
