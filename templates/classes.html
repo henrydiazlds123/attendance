@@ -1,0 +1,100 @@
+{% extends "layout.html" %}
+{% block title %}Attendance | Classes{% endblock %}
+
+
+{% block head %}
+<script>
+  // Function to load the state from localStorage and set the dropdown value
+  function loadInactiveClassesPreference() {
+      const showInactive = localStorage.getItem('showInactiveClasses') || 'false';
+      document.getElementById('inactive_classes_toggle').value = showInactive;
+      filterClasses(showInactive);
+  }
+
+  // Function to toggle and save the preference for showing inactive classes
+  function toggleInactiveClasses() {
+      const showInactive = document.getElementById('inactive_classes_toggle').value;
+      localStorage.setItem('showInactiveClasses', showInactive);
+      filterClasses(showInactive);
+  }
+
+  // Function to filter classes based on preference
+  function filterClasses(showInactive) {
+      const rows = document.querySelectorAll('.class-row');  // Assuming each class is wrapped in an element with class 'class-row'
+      rows.forEach(row => {
+          const isActive = row.getAttribute('data-is-active') === 'true';
+          row.style.display = (showInactive === 'true' || isActive) ? '' : 'none';
+      });
+  }
+
+  // Load the state when the page is loaded
+  document.addEventListener('DOMContentLoaded', loadInactiveClassesPreference);
+</script>
+
+{% endblock %}
+{% block content %}
+    <h2>Classes Management</h2>
+ 
+    <form class="form-inline d-flex justify-content-between" id="verificationForm" method="POST" action="/attendances">
+      <a class="btn btn-primary" href="{{ url_for('routes.create_class') }}">Create New Class</a>
+      <div class="form-inline mb-3">
+        <label class="my-1 mr-2" for="inactive_classes_toggle">Show Inactive Classes:</label>
+        <select class="custom-select my-1 mr-sm-2" id="inactive_classes_toggle" onchange="toggleInactiveClasses()">
+            <option value="false">No</option>
+            <option value="true">Yes</option>
+        </select>
+
+    </div>
+    </form>
+    <table class="table table-striped table-sm pb-5">
+      <thead class="thead-dark">
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">Class Name</th>
+          <th scope="col">Short Name</th>
+          <th scope="col">Code</th>
+          <th scope="col">Class Type</th>
+          <th scope="col">Schedule</th>
+          <th scope="col">Active</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for class in classes %}
+          <tr class="class-row" data-is-active="{{ 'true' if class.is_active else 'false' }}">
+            <td scope="row">{{ loop.index }}</td>
+            <td>{{ class.class_name }}</td>
+            <td>{{ class.short_name }}</td>
+            <td>{{ class.class_code}}</td>
+            <td>{{ class.class_type}}</td>
+            <td>{{ class.schedule}}</td>
+            <td>{{ class.is_active}}</td>
+            <td>
+              <a class="btn btn-primary btn-sm" data-toggle="tooltip" title="Edit class" href="{{ url_for('routes.update_class', id=class.id) }}">
+                <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
+              </a>
+              {% if not (class.class_type == 'Main')  %}
+              <form action="#" method="post" style="display:inline;">
+                <button type="submit" class="btn btn-danger btn-sm" data-toggle="tooltip" title="Delete class">
+                  <i class="fa fa-trash-o fa-fw"></i>
+                </button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor%}
+
+      </tbody>
+    </table>   
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flashes">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                <p>{{ message }}</p>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}    
+{% endblock %}

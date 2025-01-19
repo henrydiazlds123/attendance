@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% block title %}Attendance | Manual{% endblock %}
+{% block title %}Attendance | Manual Entry{% endblock %}
 
 {% block content %}
     <p class="mt-2">Use esta página para agregar su asistencia a la clase que figura a continuación.</p>
@@ -9,23 +9,24 @@
         <div class="input-group mb-3">
             <input type="text" class="form-control" id="studentName" name="studentName" placeholder="Nombre y Apellido"
                 aria-label="Ingresa un Nombre y un Apellido" aria-describedby="button-addon2" required
-                oninput="validateStudentName(this)">
+                ">
                 <button class="btn btn-success" type="submit" id="button-addon2">Enviar</button>
         </div>
                 
-        <input type="hidden" id="className" name="className">
-        <input type="hidden" id="date" name="date">
-        <!-- <input type="hidden" id="sundayCode" name="sunday_code"> -->
-        <input type="hidden" id="sunday_code" name="sunday_code">
-        <input type="hidden" id="unitNumber" name="unitNumber">
+        <input type="hidden" id="className"   name="className">
+        <input type="hidden" id="date"        name="date">
+        <input type="hidden" id="classCode"   name="classCode">
+        <input type="hidden" id="sundayCode"  name="sundayCode">
+        <input type="hidden" id="unitNumber"  name="unitNumber">
 
     </form>
     <script>
+        // Asignar la función al evento de entrada del campo
         document.getElementById('attendanceForm').addEventListener('submit', function (event) {
             const input = document.getElementById('studentName');
             input.value = input.value.trim();  // Elimina espacios iniciales y finales
             const regex = /^[^\s]+ [^\s]+$/;   // Asegura un solo espacio entre nombre y apellido
-
+    
             if (!regex.test(input.value)) {
                 event.preventDefault();  // Previene el envío del formulario
                 Swal.fire({
@@ -34,24 +35,41 @@
                     text: 'Por favor, ingrese solo un nombre y un apellido, separados por un espacio.',
                     confirmButtonText: 'OK'
                 });
+            } else {
+                // Asegúrate de que los campos ocultos tengan los valores correctos antes de enviar
+                console.log("Datos del formulario antes de enviar:", {
+                    studentName: input.value,
+                    className: document.getElementById('className').value,
+                    date: document.getElementById('date').value,
+                    classCode: document.getElementById('classCode').value,
+                    sundayCode: document.getElementById('sundayCode').value,
+                    unitNumber: document.getElementById('unitNumber').value
+                });
             }
         });
-
+    
         // Configuración para mostrar y establecer la clase
-        const urlParams = new URLSearchParams(window.location.search);
-        const className = urlParams.get('class');
+        const urlParams  = new URLSearchParams(window.location.search);
+        const className  = urlParams.get('class_name');
+        const classCode  = urlParams.get('class');
         const sundayCode = urlParams.get('code');
         const unitNumber = urlParams.get('unit');
-
+    
+        console.log("Parámetros de la URL:", { className, classCode, sundayCode, unitNumber });  // Salida de depuración
+    
+        // Asigna valores a los campos ocultos
         if (className) {
             document.getElementById('classNameDisplay').textContent = `Clase: ${decodeURIComponent(className)}`;
-            document.getElementById('className').value = decodeURIComponent(className);
-            document.getElementById('sunday_code').value = sundayCode;
-            document.getElementById('unitNumber').value = unitNumber;
+            document.getElementById('className').value              = decodeURIComponent(className);
+            document.getElementById('sundayCode').value             = sundayCode;
+            document.getElementById('unitNumber').value             = unitNumber;
+            document.getElementById('classCode').value              = classCode;
         } else {
             document.getElementById('classNameDisplay').textContent = 'Clase no especificada';
         }
-
+    
+        // Establece la fecha actual
         document.getElementById('date').value = new Date().toISOString().split('T')[0];
     </script>
+    
 {% endblock %}

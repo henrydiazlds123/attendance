@@ -3,10 +3,11 @@ import qrcode
 from sqlalchemy import extract, func
 from config import BASE_URL, OUTPUT_DIR
 from models import Classes, db, User, Attendance, MeetingCenter, Config
-from forms import AttendanceEditForm, AttendanceForm, MeetingCenterForm, UserForm, EditUserForm, ResetPasswordForm
+from forms import AttendanceEditForm, AttendanceForm, MeetingCenterForm, UserForm, EditUserForm, ResetPasswordForm, ClassForm
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
+from reportlab.lib.colors import HexColor
 from urllib.parse import unquote
 from utils import *
 
@@ -28,9 +29,9 @@ def login():
         username = request.form['username']
         password = request.form['password']
         user = User.query.filter_by(username=username).first()
-        meeting_center = MeetingCenter.query.get(user.meeting_center_id)
 
-        if user and user.check_password(password):
+        if user and user.check_password(password):  # Verifica si el usuario y la contraseña son correctos
+            meeting_center                   = MeetingCenter.query.get(user.meeting_center_id)
             session['user_id']               = user.id
             session['user_name']             = user.name
             session['role']                  = user.role  # Guarda el rol del usuario
@@ -41,52 +42,41 @@ def login():
             flash('Login successful!', 'success')
             return redirect(url_for('routes.attendances'))
         else:
-            flash('Credenciales inválidas.')
+            flash('Invalid credentials. Please check your username and password..', 'danger')
     return render_template('login.html')
 
+# =============================================================================================
 @bp.route('/logout')
 def logout():
     session.clear()
-    flash('Sesión cerrada.')
-    return redirect(url_for('routes.index'))
+    flash('Logout successful!', 'success')
+    return redirect(url_for('routes.login'))
 
 
 # =============================================================================================
-#Error Handlers
-@bp.errorhandler(400) 
-def not_found(e): 
-  return render_template("400.html")
-
-@bp.errorhandler(401) 
-def not_found(e): 
-  return render_template("401.html")
-
-@bp.errorhandler(403) 
-def not_found(e): 
-  return render_template("403.html")
-
-@bp.errorhandler(404) 
-def not_found(e): 
-  return render_template("404.html")
-
+@bp.route('/reset_name')
+def reset_name():
+    """Renderiza una página para mostrar el nombre almacenado y borrarlo con confirmación."""
+    return render_template('reset_name.html')
 
 # =============================================================================================
+
 # CRUD para Users
 @bp.route('/users')
+@role_required('Admin', 'Owner')
 def users():
-
     role                = session.get('role')
     meeting_center_id   = session.get('meeting_center_id')
     admin_count         = User.query.filter_by(role='Admin').count()
 
     if role == 'Owner':
-        # Owners can view all attendances across all units
+        # Los Owners pueden ver todos los usuarios
         users = User.query.all()
     elif role == 'Admin':
-        # Admins can only view their own meeting center's users
-        users = User.query.filter_by(meeting_center_id=meeting_center_id).all()
+        # Los Admins solo pueden ver los usuarios de su Meeting Center, excluyendo a los Owners
+        users = User.query.filter_by(meeting_center_id=meeting_center_id).filter(User.role != 'Owner').all()
     else:
-        # Regular users can only view their own user
+        # Los usuarios regulares solo pueden ver su propio usuario
         users = User.query.filter_by(student_name=session.get('username')).all()
 
     return render_template('users.html', users=users, admin_count=admin_count)
@@ -135,23 +125,46 @@ def update_user(id):
         user.is_active            = form.is_active.data
 
         db.session.commit()
-        flash('User updated successfully.')
+        flash('User updated successfully.', 'success')
         return redirect(url_for('routes.users'))
     return render_template('form.html', form=form, title="Editar Usuario", submit_button_text="Actualizar", clas="warning")
 
-# =============================================================================================
 @bp.route('/user/delete/<int:id>', methods=['POST'])
-@role_required('Admin')
+@role_required('Admin')  # Solo los admins pueden acceder a esta ruta
 def delete_user(id):
-    user = User.query.get_or_404(id)
-    admin_count = User.query.filter_by(session['role'] == 'Admin').count()
-    if session['role'] == 'Admin' and admin_count <= 1:
-        flash('No puedes eliminar al último administrador.', 'error')
-        return redirect(url_for('list_users'))
+    user_to_delete = User.query.get_or_404(id)
+    current_user_id = session.get('user_id')
+    current_user_role = session.get('role')
 
-    db.session.delete(user)
+    # Contar cuántos admins existen en total
+    admin_count = User.query.filter_by(role='Admin').count()
+
+    # Verificar si el usuario actual es Owner
+    if current_user_role == 'Owner':
+        if user_to_delete.role == 'Admin' and admin_count <= 1:
+            flash('No puedes eliminar al último administrador.', 'error')
+            return redirect(url_for('routes.users'))
+        
+        db.session.delete(user_to_delete)
+        db.session.commit()
+        flash('Usuario eliminado exitosamente.', 'success')
+        return redirect(url_for('routes.users'))
+
+    # Los Admin no pueden eliminar a otros Admin
+    if user_to_delete.role == 'Admin':
+        flash('No puedes eliminar a otro administrador.', 'error')
+        return redirect(url_for('routes.users'))
+
+    # Los Admin pueden eliminar a un usuario común (User)
+    if current_user_id == user_to_delete.id:  # Permitir que un admin se elimine a sí mismo
+        db.session.delete(user_to_delete)
+        db.session.commit()
+        flash('Te has eliminado a ti mismo exitosamente.', 'success')
+        return redirect(url_for('auth.login'))  # Redirigir a la página de login
+
+    db.session.delete(user_to_delete)
     db.session.commit()
-    flash('User deleted successfully.')
+    flash('Usuario eliminado exitosamente.', 'success')
     return redirect(url_for('routes.users'))
 
 # =============================================================================================
@@ -191,22 +204,25 @@ def promote_to_admin(id):
 # CRUD para Attendances
 @bp.route('/attendance', methods=['GET', 'POST'])
 def attendance():
-    class_name = request.args.get('class')
+    class_code  = request.args.get('class')
     sunday_code = request.args.get('code')
+    unit_number = request.args.get('unit')
+    
+    print(class_code, unit_number, sunday_code)
 
-    # if not class_name or not sunday_code or class_name not in CLASES:
-    if not class_name or not sunday_code:
+    # if not class_code or not sunday_code or class_code not in CLASES:
+    if not class_code or not sunday_code or not unit_number:
         return render_template('400.html'), 400
 
     code_verification_setting = Config.query.filter_by(key='code_verification').first()
     code_verification_enabled = code_verification_setting.value if code_verification_setting else 'true'
 
     if code_verification_enabled == 'false':
-        return render_template('attendance.html', class_name=class_name, sunday_code=sunday_code, sunday=get_next_sunday())
+        return render_template('attendance.html', class_code=class_code, sunday_code=sunday_code, sunday=get_next_sunday(),unit_number=unit_number)
     
     expected_code = get_next_sunday_code(get_next_sunday())
     if int(sunday_code) == expected_code:
-        return render_template('attendance.html', class_name=class_name, sunday_code=sunday_code, sunday=get_next_sunday())
+        return render_template('attendance.html', class_code=class_code, sunday_code=sunday_code, sunday=get_next_sunday(),unit_number=unit_number)
     else:
         return render_template('403.html'), 403
     
@@ -214,6 +230,7 @@ def attendance():
 
 # =============================================================================================
 @bp.route('/attendances', methods=['GET', 'POST'])
+@role_required('User', 'Admin', 'Owner')
 def attendances():
     # Get user role and meeting_center_id from session
     role = session.get('role')
@@ -367,8 +384,6 @@ def update_attendance(id):
         attendance.student_name      =form.student_name.data
         attendance.class_id          =form.class_id.data 
         attendance.sunday_date       =form.sunday_date.data
-        # attendance.submit_date       =form.submit_date.data
-        # attendance.meeting_center_id =form.meeting_center_id.data
 
         db.session.commit()
         flash('Attendance record updated successfully.')
@@ -397,9 +412,9 @@ def registrar():
         student_name        = request.form.get('studentName').title()
         nombre, apellido    = student_name.split(" ", 1)
         formatted_name      = f"{apellido}, {nombre}"
-        class_code          = request.form.get('className')  # Usar código de clase en lugar del nombre
+        class_code          = request.form.get('classCode')  # Usar código de clase en lugar del nombre
         sunday_date         = get_next_sunday()
-        sunday_code         = request.form.get('sunday_code')
+        sunday_code         = request.form.get('sundayCode')
         unit_number         = request.form.get('unitNumber')
 
         # Verificar si la clase es válida
@@ -446,11 +461,11 @@ def registrar():
         db.session.commit()
 
         return jsonify({
-            "success": True,
-            "message": "Asistencia registrada exitosamente.",
+            "success"     : True,
+            "message"     : "Asistencia registrada exitosamente.",
             "student_name": student_name,
-            "class_name": class_entry.class_name,
-            "sunday_date": sunday_date.strftime("%b %d, %Y")
+            "class_name"  : class_entry.class_name,
+            "sunday_date" : sunday_date.strftime("%b %d, %Y")
         }), 200
 
     except Exception as e:
@@ -462,8 +477,10 @@ def registrar():
 
 
 
+
 # =============================================================================================
 @bp.route('/manual_attendance')
+@role_required('User', 'Admin', 'Owner')
 def manual_attendance():
     """Genera enlaces solo para las clases correspondientes al próximo domingo."""
 
@@ -475,9 +492,12 @@ def manual_attendance():
     # Generar enlaces solo para las clases correspondientes
 
     class_links = {
-    class_entry.class_code: f"{BASE_URL}/attendance?class_name={class_entry.class_name}&class={class_entry.class_code}&code={next_sunday_code}&unit={unit}"
-    for class_entry in Classes.query.all() if str(sunday_week) in class_entry.schedule.split(',')
-}
+        class_entry.class_code: {
+            'url': f"{BASE_URL}/attendance?class_name={class_entry.class_name}&class={class_entry.class_code}&code={next_sunday_code}&unit={unit}",
+            'name': class_entry.class_name
+        }
+        for class_entry in Classes.query.all() if str(sunday_week) in class_entry.schedule.split(',')
+    }
 
     return render_template('manual_attendance.html', class_links=class_links)
 
@@ -485,6 +505,7 @@ def manual_attendance():
 # =============================================================================================
 # Rutas para la Administracion de PDF
 @bp.route('/list_pdfs', methods=['GET'])
+@role_required('User', 'Admin', 'Owner')
 def list_pdfs():
     directory = os.path.join(os.getcwd(), OUTPUT_DIR)
     pdf_files = os.listdir(directory)
@@ -504,30 +525,103 @@ def generate_week_pdfs():
     return redirect(url_for('routes.generate_pdfs', type='semana_especifica'))  # redirige a la misma función para PDFs de la semana específica
 
 # =============================================================================================
+# @bp.route('/generate_pdfs', methods=['GET', 'POST'])
+# @role_required('Admin', 'Owner')
+# def generate_pdfs():
+#     """Genera PDFs con códigos QR para las clases correspondientes a un domingo específico."""
+#     os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+#     sunday_week = get_sunday_week(get_next_sunday())  # 1 para el primer domingo, 2 para el segundo, etc.
+
+#     # Verificar si el usuario quiere todos los PDFs o solo los de la semana específica
+#     if request.args.get('type') == 'todos':
+#         clases_a_imprimir = [c.class_name for c in Classes.query.all()]
+#     else:
+#         clases_a_imprimir = [c.class_name for c in Classes.query.all() if str(sunday_week) in c.schedule.split(',')]
+
+#     next_sunday_code = get_next_sunday_code(get_next_sunday())
+#     unit             = session['meeting_center_number']  # Obtener el número del centro de reuniones
+#     unit_name        = session['meeting_center_name']
+    
+#     clean_qr_folder(OUTPUT_DIR)
+
+#     for class_name in clases_a_imprimir:
+#         # Obtener el class_code desde la base de datos
+#         class_entry = Classes.query.filter_by(class_name=class_name).first()
+#         if class_entry:
+#             class_code = class_entry.class_code
+#         else:
+#             continue  # Si no se encuentra la clase, saltamos a la siguiente
+
+#         # Generar URL con parámetros adicionales, incluyendo class_code
+#         qr_url = f"{BASE_URL}/attendance?class_name={class_name.replace(' ', '+')}&code={next_sunday_code}&unit={unit}&class={class_code}"
+#         qr = qrcode.QRCode(version=1, box_size=10, border=4)
+#         qr.add_data(qr_url)
+#         qr.make(fit=True)
+#         img = qr.make_image(fill_color="black", back_color="white")
+        
+#         qr_filename = os.path.join(OUTPUT_DIR, f"{class_name}_{get_next_sunday()}.png")
+#         img.save(qr_filename)
+        
+#         pdf_filename = os.path.join(OUTPUT_DIR, f"{class_name}_{get_next_sunday()}.pdf")
+#         c = canvas.Canvas(pdf_filename, pagesize=letter)
+#         page_width, page_height = letter
+        
+#         c.setFont("Helvetica-Bold", 24)
+#         c.drawCentredString(page_width / 2, 670, f"Lista de Asistencia")
+#         c.setFont("Helvetica-Bold", 35)
+#         c.drawCentredString(page_width / 2, 625, class_name)
+        
+#         qr_image = ImageReader(qr_filename)
+#         qr_size = 450
+#         qr_x = (page_width - qr_size) / 2
+#         qr_y = (page_height - qr_size) / 2
+#         c.drawImage(qr_image, qr_x, qr_y, width=qr_size, height=qr_size)
+        
+#         c.setFont("Helvetica", 18)
+#         c.drawCentredString(page_width / 2, qr_y - 15, f"{get_next_sunday().strftime('%B %d, %Y')}")
+#         c.drawCentredString(page_width / 2, qr_y - 40,  f"{unit_name}")
+#         c.save()
+
+#     clean_qr_images(OUTPUT_DIR)
+#     return redirect(url_for('routes.list_pdfs'))
+
+
+
+
+from reportlab.lib.colors import HexColor
+
 @bp.route('/generate_pdfs', methods=['GET', 'POST'])
 @role_required('Admin', 'Owner')
 def generate_pdfs():
-    """Genera PDFs con códigos QR para las clases correspondientes a un domingo específico."""
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    sunday_week = get_sunday_week(get_next_sunday())  # 1 para el primer domingo, 2 para el segundo, etc.
-
-    # Verificar si el usuario quiere todos los PDFs o solo los de la semana específica
-    if request.args.get('type') == 'todos':
-        clases_a_imprimir = [c.class_name for c in Classes.query.all()]
-    else:
-        clases_a_imprimir = [c.class_name for c in Classes.query.all() if str(sunday_week) in c.schedule.split(',')]
+    sunday_week = get_sunday_week(get_next_sunday())
+    clases_a_imprimir = (
+        [c.class_name for c in Classes.query.all()]
+        if request.args.get('type') == 'todos' 
+        else [c.class_name for c in Classes.query.all() if str(sunday_week) in c.schedule.split(',')]
+    )
 
     next_sunday_code = get_next_sunday_code(get_next_sunday())
+    unit             = session['meeting_center_number']
+    unit_name        = session['meeting_center_name']
+    
     clean_qr_folder(OUTPUT_DIR)
-   
+
     for class_name in clases_a_imprimir:
-   
-        qr_url = f"{BASE_URL}/attendance?class={class_name.replace(' ', '+')}&code={next_sunday_code}"
+        class_entry = Classes.query.filter_by(class_name=class_name).first()
+        if class_entry:
+            class_code = class_entry.class_code
+            class_color = class_entry.color_hex or "black"  # Usa el color almacenado o negro por defecto
+        else:
+            continue
+
+        qr_url = f"{BASE_URL}/attendance?class_name={class_name.replace(' ', '+')}&code={next_sunday_code}&unit={unit}&class={class_code}"
         qr = qrcode.QRCode(version=1, box_size=10, border=4)
         qr.add_data(qr_url)
         qr.make(fit=True)
-        img = qr.make_image(fill_color="black", back_color="white")
+        img = qr.make_image(fill_color=class_color, back_color="white")
         
         qr_filename = os.path.join(OUTPUT_DIR, f"{class_name}_{get_next_sunday()}.png")
         img.save(qr_filename)
@@ -537,6 +631,7 @@ def generate_pdfs():
         page_width, page_height = letter
         
         c.setFont("Helvetica-Bold", 24)
+        c.setFillColor("black")
         c.drawCentredString(page_width / 2, 670, f"Lista de Asistencia")
         c.setFont("Helvetica-Bold", 35)
         c.drawCentredString(page_width / 2, 625, class_name)
@@ -548,7 +643,9 @@ def generate_pdfs():
         c.drawImage(qr_image, qr_x, qr_y, width=qr_size, height=qr_size)
         
         c.setFont("Helvetica", 18)
-        c.drawCentredString(page_width / 2, qr_y - 15, f"Fecha: {get_next_sunday()}")
+        c.setFillColor("black")
+        c.drawCentredString(page_width / 2, qr_y - 15, f"{get_next_sunday().strftime('%B %d, %Y')}")
+        c.drawCentredString(page_width / 2, qr_y - 40, unit_name)
         c.save()
 
     clean_qr_images(OUTPUT_DIR)
@@ -557,6 +654,7 @@ def generate_pdfs():
 
 # =============================================================================================
 @bp.route('/download_pdf/<path:filename>', methods=['GET'])
+@role_required('User', 'Admin', 'Owner')
 def download_pdf(filename):
     try:
         directory = os.path.join(os.getcwd(), OUTPUT_DIR)
@@ -590,13 +688,15 @@ def create_meeting_center():
         meeting_center = MeetingCenter(
             unit_number=form.unit_number.data,
             name       =form.name.data,
-            city       =form.city.data
+            city       =form.city.data,
+            start_time =form.start_time.data,
+            end_time   =form.end_time.data
         )
         db.session.add(meeting_center)
         db.session.commit()
         flash('Meeting center created successfully!', 'success')
         return redirect(url_for('routes.meeting_centers'))
-    return render_template('form.html', form=form, title="Crear Centro de Reunión", submit_button_text="Crear", clas="warning")
+    return render_template('form.html', form=form, title="Create new Meeting center", submit_button_text="Create", clas="warning")
 
 
 # =============================================================================================
@@ -610,15 +710,97 @@ def update_meeting_center(id):
         db.session.commit()
         flash('Meeting Center updated successfully.')
         return redirect(url_for('routes.meeting_centers'))
-    return render_template('form.html', form=form, title="Editar Centro de Reunión", submit_button_text="Actualizar", clas="warning")
+    return render_template('form.html', form=form, title="Edit Meeting Center", submit_button_text="Update", clas="warning")
 
 
 # =============================================================================================
 @bp.route('/meeting_center/delete/<int:id>', methods=['POST'])
-@role_required('Owner')
+@role_required('Admin', 'Owner')
 def delete_meeting_center(id):
     meeting_center = MeetingCenter.query.get_or_404(id)
+    if meeting_center.attendances:
+        flash('No se puede eliminar el centro de reuniones porque tiene asistencias registradas.', 'danger')
+        return redirect(url_for('routes.meeting_centers'))
+    
     db.session.delete(meeting_center)
     db.session.commit()
-    flash('Meeting Center deleted successfully.')
+    flash('Centro de reuniones eliminado exitosamente.', 'success')
     return redirect(url_for('routes.meeting_centers'))
+
+
+# =============================================================================================
+@bp.route('/classes', methods=['GET'])
+@role_required('Admin', 'Owner')
+def classes():
+    classes = Classes.query.all()
+    # show_inactive = request.args.get('show_inactive') == 'true'
+    # if show_inactive:
+    #     classes = Classes.query.all()
+    # else:
+    #     classes = Classes.query.filter_by(is_active=True).all()
+    return render_template('classes.html', classes=classes)
+# =============================================================================================
+@bp.route('/classes/new', methods=['GET', 'POST'])
+@role_required('Admin', 'Owner')
+def create_class():
+    form = ClassForm()
+    if form.validate_on_submit():
+        new_class = Classes(
+            class_name=form.class_name.data,
+            short_name=form.short_name.data,
+            class_code=form.class_code.data,
+            class_type=form.class_type.data,
+            schedule  =form.schedule.data,
+            is_active = form.is_active.data,
+            color_hex =form.color_hex.data
+        )
+        try:
+            db.session.add(new_class)
+            db.session.commit()
+            flash('Class created successfully!', 'success')
+            return redirect(url_for('routes.classes'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error creating class: {e}', 'danger')
+    return render_template('form.html', form=form, title="Create New Class", submit_button_text="Create", clas="warning")
+# =============================================================================================
+@bp.route('/classes/edit/<int:id>', methods=['GET', 'POST'])
+@role_required('Admin', 'Owner')
+def update_class(id):
+    class_instance = Classes.query.get_or_404(id)
+    form = ClassForm(obj=class_instance)
+    if form.validate_on_submit():
+        class_instance.class_name = form.class_name.data
+        class_instance.short_name = form.short_name.data
+        class_instance.class_code = form.class_code.data
+        class_instance.class_type = form.class_type.data
+        class_instance.schedule   = form.schedule.data
+        class_instance.is_active  = form.is_active.data
+        class_instance.color_hex  = form.color_hex.data
+        try:
+            db.session.commit()
+            flash('Class updated successfully!', 'success')
+            return redirect(url_for('routes.classes'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating class: {e}', 'danger')
+    return render_template('form.html', form=form, title="Edit Class", submit_button_text="Update", clas="warning")
+# =============================================================================================
+@bp.route('/classes/delete/<int:id>', methods=['POST'])
+@role_required('Admin', 'Owner')
+def delete_class(id):
+    class_instance = Classes.query.get_or_404(id)
+    if class_instance.attendances:
+        flash('No se puede eliminar la clase porque tiene asistencias registradas.', 'danger')
+        return redirect(url_for('routes.classes'))
+    if class_instance.class_type == 'main':
+        flash('Cannot delete a main class.', 'warning')
+        return redirect(url_for('routes.classes'))
+    try:
+        db.session.delete(class_instance)
+        db.session.commit()
+        flash('Class deleted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting class: {e}', 'danger')
+    return redirect(url_for('routes.classes'))

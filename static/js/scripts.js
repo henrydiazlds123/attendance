@@ -32,50 +32,52 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function sendAttendanceForm(formData) {
     try {
-      const response = await fetch("/registrar", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await response.json();
+        const response = await fetch("/registrar", {
+            method: "POST",
+            body: formData,
+        });
+        const data = await response.json();
+        console.log("Respuesta del servidor:", data);  // Depuración
 
-      if (response.ok && data.success) {
-        Swal.fire({
-          title: "Éxito",
-          text: `¡${data.student_name}, tu asistencia a la clase de ${data.class_name} ha sido registrada!`,
-          icon: "success",
-          confirmButtonText: "OK",
-        }).then((result) => {
-          if (result.isConfirmed) {
-            window.close();
-            if (savedName) {
-              window.location.href = "about:blank";
-            }
-          }
-        });
-      } else {
-        Swal.fire({
-          title: "Error",
-          text: `${data.nombre}! Ya tienes una asistencia registrada para el domingo ${data.sunday_date}!`,
-          icon: "error",
-          confirmButtonText: "OK",
-        }).then((result) => {
-          if (result.isConfirmed) {
-            window.close();
-            if (savedName) {
-              window.location.href = "about:blank";
-            }
-          }
-        });
-      }
+        if (response.ok && data.success) {
+            Swal.fire({
+                title: "Éxito",
+                text: `¡${data.student_name}, tu asistencia a la clase de ${data.class_name} ha sido registrada!`,
+                icon: "success",
+                confirmButtonText: "OK",
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.close();
+                    if (savedName) {
+                        window.location.href = "https://www.churchofjesuschrist.org/?lang=spa";
+                    }
+                }
+            });
+        } else {
+            Swal.fire({
+                title: "Error",
+                text: `${data.nombre}! Ya tienes una asistencia registrada para el domingo ${data.sunday_date || 'desconocido'}!`,
+                icon: "error",
+                confirmButtonText: "OK",
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.close();
+                    if (savedName) {
+                        window.location.href = "about:blank";
+                    }
+                }
+            });
+        }
     } catch (error) {
-      console.error("Error:", error);
-      Swal.fire(
-        "Error",
-        "Hubo un problema al conectar con el servidor.",
-        "error"
-      );
+        console.error("Error:", error);
+        Swal.fire(
+            "Error",
+            "Hubo un problema al conectar con el servidor.",
+            "error"
+        );
     }
-  }
+}
+  
 });
 
 const deleteAllButton = document.getElementById("delete_all");
@@ -118,7 +120,7 @@ function confirmDelete(userId) {
 function clearName() {
   if (document.getElementById("chkNameClear") && document.getElementById("chkNameClear").checked) {
     localStorage.clear();
-    console.log("Nombre de alumno borrado!");
+    console.log("Student name cleared!");
   }
 }
 

@@ -16,7 +16,7 @@
 {% block content %}
 <div class="blog-post">
   <h2 class="blog-post-title">
-    Sunday Class Attendance Record
+    Class Attendance Records
   </h2>
   <div class="twoColumns">
     <p class="mb-3">
@@ -26,16 +26,19 @@ Use the information in this list to Record each person's Attendance in the Tools
     </p>
 </div>
 {% if session['role'] == 'Owner' %}
-  <a href="{{ url_for('routes.create_attendance') }}">Add Attendance Manually</a>
+  
 {% endif %}
   {% if session['role'] == 'Admin' or session['role'] == 'Owner' %}
-        <form class="form-inline" id="verificationForm" method="POST" action="/attendances">
-            <label class="my-1 mr-2" for="code_verification">Activar Verificación de Domingo: </label>
-            <select class="custom-select my-1 mr-sm-2" name="code_verification" id="code_verification"  data-toggle="tooltip" title="Al activar la Verificacion de Domingo, solo se podrá usar la imagen de QR Code impresa para esa semana."onchange="submitVerificationForm()">
-                <option value="true" {% if verification_enabled =='true' %}selected{% endif %}>Sí</option>
-                <option value="false" {% if verification_enabled=='false' %}selected{% endif %}>No</option>
-            </select>           
-        </form>
+  <form class="form-inline d-flex justify-content-between" id="verificationForm" method="POST" action="/attendances">
+      <a class="btn btn-primary" href="{{ url_for('routes.create_attendance') }}">Add Manual Attendance</a>
+      <div class="form-inline">
+        <label class="my-1 mr-2" for="code_verification">Request new QR code? </label>
+        <select class="custom-select my-1 mr-sm-2" name="code_verification" id="code_verification"  data-toggle="tooltip" title="Al activar la Verificacion de Domingo, solo se podrá usar la imagen de QR Code impresa para esa semana."onchange="submitVerificationForm()">
+            <option value="true" {% if verification_enabled =='true' %}selected{% endif %}>Yes</option>
+            <option value="false" {% if verification_enabled=='false' %}selected{% endif %}>No</option>
+        </select>   
+      </div>
+    </form>
     {% endif %}
     <div class="mb-5">
       <form id="filterForm" method="GET" action="/attendances" class="card mb-3 p-3 bg-light">

@@ -1,6 +1,6 @@
 from flask import session
 from flask_wtf import FlaskForm
-from wtforms import BooleanField, StringField, PasswordField, DateField, SelectField
+from wtforms import BooleanField, StringField, PasswordField, DateField, SelectField, TimeField
 from wtforms.validators import DataRequired, Email, Length, Optional, EqualTo, ValidationError
 from datetime import datetime, timedelta
 
@@ -20,19 +20,23 @@ class UserForm(FlaskForm):
 
     def __init__(self, *args, **kwargs):
         super(UserForm, self).__init__(*args, **kwargs)
+        
+        # Si hay un rol en la sesión, personalizamos las opciones del rol
         if 'role' in session:
-            if session['role'] == 'Admin':
-                # Limita los roles disponibles para los Admin
-                self.role.choices = [('User', 'User'), ('Admin', 'Admin')]
-            else:
-                # Permite todos los roles para el Owner
+            if session['role'] == 'Owner':
+                # Si el usuario es Owner, puede ver todos los roles
                 self.role.choices = [('Owner', 'Owner'), ('Admin', 'Admin'), ('User', 'User')]
+            else:
+                # Si el usuario no es Owner, no se muestra 'Owner' en la lista
+                self.role.choices = [('Admin', 'Admin'), ('User', 'User')]
 
+            # Si no es Owner, no puede cambiar el Meeting Center
             if session['role'] != 'Owner':
                 self.meeting_center_id.data = session.get('meeting_center_id')
                 self.meeting_center_id.render_kw = {'disabled': 'disabled'}
 
     def validate(self, extra_validators=None):
+        # Verifica que el usuario no pueda cambiar el Meeting Center si no es Owner
         if 'role' in session and session['role'] != 'Owner' and self.meeting_center_id.data != session.get('meeting_center_id'):
             self.meeting_center_id.errors.append('No puedes cambiar el Meeting Center.')
             return False
@@ -69,14 +73,17 @@ class EditUserForm(FlaskForm):
 #==================================================================================================
 class ResetPasswordForm(FlaskForm):
     current_password = PasswordField('Current Password', validators=[DataRequired()])
-    new_password = PasswordField('New Password', validators=[DataRequired(), Length(min=6)])
+    new_password     = PasswordField('New Password', validators=[DataRequired(), Length(min=6)])
     confirm_password = PasswordField('Confirm New Password', validators=[DataRequired(), EqualTo('new_password', message='Passwords must match')])
 
 #==================================================================================================
 class MeetingCenterForm(FlaskForm):
-    unit_number   = StringField('Unit #', validators=[DataRequired(), Length(max=20)])
-    name          = StringField('Name', validators=[DataRequired(), Length(max=100)])
-    city          = StringField('City', validators=[Optional(), Length(max=100)])
+    name        = StringField('Name', validators=[DataRequired(), Length(max=100)])
+    unitß_number = StringField('Unit #', validators=[DataRequired(), Length(max=20)])
+    city        = StringField('City', validators=[Optional(), Length(max=100)])
+    start_time  = TimeField('Start Time', validators=[DataRequired(message="La hora de inicio es obligatoria.")])
+    end_time    = TimeField('End Time', validators=[DataRequired(message="La hora de fin es obligatoria.")])
+
 
 #==================================================================================================
 class AttendanceForm(FlaskForm):
@@ -106,3 +113,13 @@ class AttendanceEditForm(FlaskForm):
     class_id            = SelectField('Class', choices=[], coerce=int)
     sunday_date         = DateField('Sunday Date', format='%Y-%m-%d', validators=[DataRequired()])
     # meeting_center_id   = SelectField('Unit', coerce=int, validators=[DataRequired()])
+    
+    
+class ClassForm(FlaskForm):
+    class_name = StringField('Class Name', validators=[DataRequired(), Length(max=50)])
+    short_name = StringField('Short Name', validators=[DataRequired(), Length(max=20)])
+    class_code = StringField('Class Code', validators=[DataRequired(), Length(max=10)])
+    class_type = SelectField('Class Type', choices=[('Main', 'Main'), ('Extra', 'Extra')], default='Extra')
+    schedule   = StringField('Schedule', validators=[Length(max=10)])
+    is_active  = BooleanField('Is Active?', default=True)
+    color_hex  = StringField('Hex Color', validators=[Length(max=7)])

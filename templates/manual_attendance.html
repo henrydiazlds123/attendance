@@ -6,9 +6,9 @@
         <input type="checkbox" id="chkNameClear" onchange="clearName()"> Marque esta casilla para borrar el nombre del estudiante anterior</p>
 
     <div class="col-lg-6">
-        {% for class_name, class_url in class_links.items() %}
+        {% for class_data in class_links.values() %}
               <li style="list-style-type: none;" class="mb-2">
-                <a href="{{ class_url }}" class="btn btn-success btn-block ">{{ class_name }}</a>
+                <a href="{{ class_data['url'] }}" class="btn btn-success btn-block ">{{ class_data['name'] }}</a>
         {% endfor %}
     </div>
 

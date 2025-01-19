@@ -1,39 +1,52 @@
 {% extends "layout.html" %}
-{% block title %}Attendance | Inicio{% endblock %}
+{% block title %}Attendance | Login{% endblock %}
 {% block content %}
-    <div class="container">
-        <div class="row justify-content-center">
-          <div class="col-md-8">
-            <div class="card-group mb-0">
-              <div class="card p-4">
-                <div class="card-body  text-center">
-                  <h1>Login</h1>
-                  <p class="text-muted">Entre a su cuenta</p>
-                  <form method="POST">
-      
-                    <div class="input-group mb-3">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text" id="username"><i class="fa fa-user"></i></span>
-                      </div>
-                      <input type="text" class="form-control" placeholder="Username" aria-label="Username"
-                        aria-describedby="username" name="username" required>
-                    </div>
-                    <div class="input-group mb-3">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text" id="password"><i class="fa fa-lock"></i></span>
-                      </div>
-                      <input type="password" class="form-control" placeholder="Contraseña" aria-label="Contraseña"
-                        name="password" required aria-describedby="password">
-                    </div>
-      
-                    <div class="btn btn-block">               
-                        <button type="submit" class="btn btn-primary px-4">Iniciar Sesión</button>   
-                    </div>
-                  </form>
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card-group mb-0">
+        <div class="card p-4">
+          <div class="card-body  text-center">
+            <h1>Login</h1>
+            <p class="text-muted">Entre a su cuenta</p>
+            <form method="POST">
+
+              <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                  <span class="input-group-text" id="username"><i class="fa fa-user"></i></span>
                 </div>
+                <input type="text" class="form-control" placeholder="Username" aria-label="Username"
+                  aria-describedby="username" name="username" required>
               </div>
-            </div>
+              <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                  <span class="input-group-text" id="password"><i class="fa fa-lock"></i></span>
+                </div>
+                <input type="password" class="form-control" placeholder="Contraseña" aria-label="Contraseña"
+                  name="password" required aria-describedby="password">
+              </div>
+
+              <div class="btn btn-block">
+                <button type="submit" class="btn btn-primary px-4">Iniciar Sesión</button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flashes mt-3">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                <p>{{ message }}</p>
+                
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+    </div>
+  </div>
+</div>
 {% endblock %}

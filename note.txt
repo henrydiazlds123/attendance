@@ -1,0 +1,23 @@
+para correr la aplicacion principal
+py app.py
+
+
+
+
+Como usar Flask Migrate
+
+Crear un Script de Migración
+Cada vez que cambies los modelos, crea un nuevo script de migración:
+
+flask db migrate -m "Descripción del cambio"
+
+
+Aplicar los Cambios a la Base de Datos
+Para aplicar los cambios:
+
+flask db upgrade
+
+
+Si es necesario deshacer una migración, usa:
+
+flask db downgrade

@@ -12,23 +12,41 @@
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav">
                 {% if session['user_id'] %}
-                <li class="nav-item {{ 'active' if request.endpoint == 'routes.index' else '' }}"><a class="nav-link" href="{{ url_for('routes.index') }}"> Home <span class="sr-only">(current)</span></a></li>
-                <li class="nav-item {{ 'active' if request.endpoint == 'routes.attendances' else '' }}"><a class="nav-link" href="{{ url_for('routes.attendances') }}">Attendances</a></li>
-                <li class="nav-item {{ 'active' if request.endpoint == 'routes.list_pdfs' else '' }}"><a class="nav-link" href="{{ url_for('routes.list_pdfs') }}">PDFs</a></li>
-                {% if session['role'] =='Owner' or session['role'] =='Admin' %}
-                <li class="nav-item {{ 'active' if request.endpoint == 'routes.manual_attendance' else '' }}"><a class="nav-link" href="{{ url_for('routes.manual_attendance') }}">Add Attendance</a></li>
-                <li class="nav-item {{ 'active' if request.endpoint == 'routes.users' else '' }}"><a class="nav-link" href="{{ url_for('routes.users') }}">Users</a></li>
-                {% endif %}
-                {% if session['role'] =='Owner' %}
-                <li class="nav-item {{ 'active' if request.endpoint == 'routes.meeting_centers' else '' }}"><a class="nav-link" href="{{ url_for('routes.meeting_centers') }}">Units</a></li>
-                {% endif %}
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.logout') }}">Logout</a></li>
-                <div class="circle">
-                    <p style="font-size: 10px; display:block; padding-top: 15px;">{{ session['user_name'] }}</p>
-                </div>
+                    <li class="nav-item {{ 'active' if request.endpoint == 'routes.index' else '' }}"><a class="nav-link" href="{{ url_for('routes.index') }}"> Home <span class="sr-only">(current)</span></a></li>
+                    <li class="nav-item {{ 'active' if request.endpoint == 'routes.attendances' else '' }}"><a class="nav-link" href="{{ url_for('routes.attendances') }}">Attendances</a></li>
+                    <li class="nav-item {{ 'active' if request.endpoint == 'routes.list_pdfs' else '' }}"><a class="nav-link" href="{{ url_for('routes.list_pdfs') }}">PDFs</a></li>
+                   
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.logout') }}">Logout</a></li>
+                    {% if session['role'] =='Owner' or session['role'] =='Admin' %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                          Admin
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                 <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.users' else '' }}" href="{{ url_for('routes.users') }}">Users</a>
+                                <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.classes' else '' }}" href="{{ url_for('routes.classes') }}">Classes</a>
+                                <div class="dropdown-divider"></div>
+                                    <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.manual_attendance' else '' }}" href="{{ url_for('routes.manual_attendance') }}">Add Attendance</a>
+                                    {% if session['role'] =='Owner' %}
+                                    <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.meeting_centers' else '' }}" href="{{ url_for('routes.meeting_centers') }}">Meetinghouses</a>
+                                    {% endif %}
+                                </div>
+                            </li>
+                    {% endif %}
+
+
+
+                    <div class="circle">
+                        <p style="font-size: 10px; display:block; padding-top: 15px;">{{ session['user_name'] }}</p>
+                    </div>
+
+
                 {% else %}
-                <li class="nav-item {{ 'active' if request.endpoint == 'routes.login' else '' }}"><a class="nav-link" href="{{ url_for('routes.login') }}">Login</a></li>
+                    <li class="nav-item {{ 'active' if request.endpoint == 'routes.login' else '' }}"><a class="nav-link" href="{{ url_for('routes.login') }}">Login</a></li>
                 {% endif %}
+
+
+                
 
             </ul>
         </div>

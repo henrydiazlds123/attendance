@@ -3,6 +3,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from flask_login import UserMixin
 from config import MOUNTAIN_TZ
+from sqlalchemy import Time
+from sqlalchemy.orm import validates#+
+from sqlalchemy.exc import IntegrityError#
 
 db = SQLAlchemy()
 
@@ -35,11 +38,11 @@ class Attendance(db.Model):
     id                  = db.Column(db.Integer, primary_key=True)
     student_name        = db.Column(db.String(50), nullable=False)
     class_id            = db.Column(db.Integer, db.ForeignKey('classes.id'), nullable=False)
+    class_type          = db.Column(db.String(10), nullable=False, default='Main')  # Nuevo campo para tipo de clase
     sunday_date         = db.Column(db.Date, nullable=False)
     sunday_code         = db.Column(db.String(10), nullable=True)
     submit_date         = db.Column(db.DateTime, default=lambda: datetime.now(MOUNTAIN_TZ), nullable=False)
-    meeting_center_id   = db.Column(db.Integer, db.ForeignKey('meeting_center.id'), nullable=False)
-   
+    meeting_center_id   = db.Column(db.Integer, db.ForeignKey('meeting_center.id'), nullable=False)   
 
     __table_args__ = (db.UniqueConstraint('student_name', 'sunday_date', 'meeting_center_id', name='unique_attendance'),)
     
@@ -72,10 +75,19 @@ class MeetingCenter(db.Model):
     unit_number = db.Column(db.Integer, unique=True, nullable=False)
     name        = db.Column(db.String(50), nullable=False)
     city        = db.Column(db.String(50), nullable=True)
-    attendances = db.relationship('Attendance', backref=db.backref('meeting_center', lazy=True))
-    users       = db.relationship('User', backref=db.backref('meeting_center', lazy=True))
+    attendances = db.relationship('Attendance', backref=db.backref('meeting_center', lazy=True), cascade="all, delete-orphan")
+    users       = db.relationship('User', backref=db.backref('meeting_center', lazy=True), cascade="all, delete-orphan")
 
+    @validates('attendances')
+    def validate_no_attendance(self, key, value):
+        if self.attendances:
+            raise IntegrityError("Cannot delete a meeting center with registered attendance", params={}, statement=None)
+        return value
 
+    def delete(self):
+        if self.attendances:
+            raise ValueError("Cannot delete a meeting center with registered attendance.")
+        db.session.delete(self)
 
 #=======================================================================
 class Classes(db.Model):
@@ -85,7 +97,19 @@ class Classes(db.Model):
     class_name = db.Column(db.String(50), nullable=False, unique=True)
     short_name = db.Column(db.String(20), nullable=False, unique=True)
     class_code = db.Column(db.String(10), nullable=False, unique=True)
+    class_type = db.Column(db.String(10), nullable=False, default='Main')
     schedule   = db.Column(db.String(10), nullable=True)
+    attendances = db.relationship('Attendance', backref=db.backref('classes', lazy=True), cascade="all, delete-orphan")
+    is_active  = db.Column(db.Boolean, nullable=False, default=True)  # Nuevo campo
+    color_hex  = db.Column(db.String(7), nullable=True, default="#000000")  # Formato de color hexadecimal
     
-    def __repr__(self):
-        return f"<Class {self.class_name} ({self.short_name})>"
+    @validates('attendances')
+    def validate_no_attendance(self, key, value):
+        if self.attendances:
+            raise IntegrityError("Cannot delete a class with registered attendance", params={}, statement=None)
+        return value
+
+    def delete(self):
+        if self.attendances:
+            raise ValueError("Cannot delete a class with registered attendance.")
+        db.session.delete(self)

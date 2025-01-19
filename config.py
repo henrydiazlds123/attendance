@@ -16,13 +16,3 @@ OUTPUT_DIR    = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'qr_cod
 MOUNTAIN_TZ   = pytz.timezone("America/Denver") # Define Mountain Time Zone
 MOUNTAIN_TIME = datetime.now(MOUNTAIN_TZ) # Get the current time in Mountain Time
 CURRENT_DATE  = MOUNTAIN_TIME.date() # Use mountain_time.date() to get the date part
-
-
-# Classes (roles) for tracking attendance
-# CLASES =[('M.J', 'Mujeres Jóvenes'), 
-#          ('Q.E', 'Quórum de Elderes'), 
-#          ('S.S', 'Sociedad de Socorro'), 
-#          ('S.A', 'Sacerdocio Aarónico'), 
-#          ('E.D.A', 'Esc. Dom. Adultos'),  
-#          ('E.D.J', 'Esc. Dom. Jóvenes'),
-#          ('Q.D', 'Quinto Domingo')]
