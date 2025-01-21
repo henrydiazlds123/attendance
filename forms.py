@@ -15,6 +15,7 @@ class UserForm(FlaskForm):
     name                = StringField('Name', validators=[DataRequired(), Length(max=20)])
     lastname            = StringField('Lastname', validators=[DataRequired(), Length(max=20)])
     role                = SelectField('Role', choices=[], default='User')
+    organization_id     = SelectField('Organization', coerce=int, validators=[DataRequired()])
     meeting_center_id   = SelectField('Unit', coerce=int, validators=[DataRequired()])
     is_active           = BooleanField('Is Active?', default=True)
 
@@ -49,8 +50,9 @@ class EditUserForm(FlaskForm):
     name                = StringField('Name', validators=[DataRequired(), Length(max=20)])
     lastname            = StringField('Lastname', validators=[DataRequired(), Length(max=20)])
     role                = SelectField('Role', choices=[], default='User')
-    meeting_center_id   = SelectField('Unit', coerce=int, validators=[DataRequired()])
+    organization_id     = SelectField('Organization', coerce=int, validators=[DataRequired()])
     is_active           = BooleanField('Is Active?', default=True)
+    meeting_center_id   = SelectField('Unit', coerce=int, validators=[DataRequired()])
 
     def __init__(self, *args, **kwargs):
         super(EditUserForm, self).__init__(*args, **kwargs)
@@ -79,7 +81,7 @@ class ResetPasswordForm(FlaskForm):
 #==================================================================================================
 class MeetingCenterForm(FlaskForm):
     name        = StringField('Name', validators=[DataRequired(), Length(max=100)])
-    unitß_number = StringField('Unit #', validators=[DataRequired(), Length(max=20)])
+    unit_number = StringField('Unit #', validators=[DataRequired(), Length(max=20)])
     city        = StringField('City', validators=[Optional(), Length(max=100)])
     start_time  = TimeField('Start Time', validators=[DataRequired(message="La hora de inicio es obligatoria.")])
     end_time    = TimeField('End Time', validators=[DataRequired(message="La hora de fin es obligatoria.")])
@@ -114,12 +116,30 @@ class AttendanceEditForm(FlaskForm):
     sunday_date         = DateField('Sunday Date', format='%Y-%m-%d', validators=[DataRequired()])
     # meeting_center_id   = SelectField('Unit', coerce=int, validators=[DataRequired()])
     
-    
+#==================================================================================================    
 class ClassForm(FlaskForm):
-    class_name = StringField('Class Name', validators=[DataRequired(), Length(max=50)])
-    short_name = StringField('Short Name', validators=[DataRequired(), Length(max=20)])
-    class_code = StringField('Class Code', validators=[DataRequired(), Length(max=10)])
-    class_type = SelectField('Class Type', choices=[('Main', 'Main'), ('Extra', 'Extra')], default='Extra')
-    schedule   = StringField('Schedule', validators=[Length(max=10)])
-    is_active  = BooleanField('Is Active?', default=True)
-    color_hex  = StringField('Hex Color', validators=[Length(max=7)])
+    class_name        = StringField('Class Name', validators=[DataRequired(), Length(max=50)])
+    short_name        = StringField('Short Name', validators=[DataRequired(), Length(max=20)])
+    class_code        = StringField('Class Code', validators=[DataRequired(), Length(max=10)])
+    class_type        = SelectField('Class Type', choices=[('Main', 'Main'), ('Extra', 'Extra')], default='Extra')
+    schedule          = StringField('Schedule', validators=[Length(max=10)])
+    is_active         = BooleanField('Is Active?', default=True)
+    class_color       = StringField('Hex Color', validators=[Length(max=7)])
+    meeting_center_id = SelectField('Unit', coerce=int, validators=[DataRequired()])
+    
+    def __init__(self, *args, **kwargs):
+        super(ClassForm, self).__init__(*args, **kwargs)
+        if 'role' in session:
+            if session['role'] != 'Owner':
+                self.meeting_center_id.data = session.get('meeting_center_id')
+                self.meeting_center_id.render_kw = {'disabled': 'disabled'}
+
+    def validate(self, extra_validators=None):
+        if 'role' in session and session['role'] != 'Owner' and self.meeting_center_id.data != session.get('meeting_center_id'):
+            self.meeting_center_id.errors.append('No puedes cambiar el Meeting Center.')
+            return False
+
+#==================================================================================================
+class OrganizationForm(FlaskForm):
+    name = StringField('Organization Name', validators=[DataRequired(), Length(max=50)])
+    

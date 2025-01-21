@@ -69,7 +69,7 @@ def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not session.get('is_admin'):
-            flash('No tiene permisos para acceder a esta página.')
+            flash('No tiene permisos para acceder a esta página.','danger')
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
@@ -479,7 +479,7 @@ def delete_user(user_id):
     admin_count = User.query.filter_by(is_admin=True).count()
     
     if user.is_admin and admin_count <= 1:
-        flash('No puedes eliminar al último administrador.', 'error')
+        flash('No puedes eliminar al último administrador.', 'danger')
         return redirect(url_for('list_users'))
     
     db.session.delete(user)

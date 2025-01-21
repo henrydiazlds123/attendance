@@ -1,42 +1,39 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reset Name</title>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-</head>
-<body>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedName = localStorage.getItem("studentName");
+{% extends "layout.html" %}
+{% block title %}Attendance | Manual {% endblock %}
+{% block head %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const savedName = localStorage.getItem("studentName");
 
-            if (savedName) {
-                Swal.fire({
-                    title: 'Reset Student Name',
-                    text: `The saved name is: "${savedName}". Do you want to clear it?`,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Yes, clear it!',
-                    cancelButtonText: 'Cancel'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        localStorage.removeItem("studentName");
-                        Swal.fire('Cleared!', 'The name has been removed.', 'success').then(() => {
-                            window.location.href = 'https://www.churchofjesuschrist.org/?lang=spa';  // Redirigir a la página principal
-                        });
-                    } else {
-                        Swal.fire('Cancelled', 'Your name was not removed.', 'info').then(() => {
-                            window.location.href = 'https://www.churchofjesuschrist.org/?lang=spa';
-                        });
-                    }
-                });
-            } else {
-                Swal.fire('No Name Found', 'No name is currently saved.', 'info').then(() => {
-                    window.location.href = 'https://www.churchofjesuschrist.org/?lang=spa';
-                });
-            }
-        });
-    </script>
-</body>
-</html>
+        if (savedName) {
+            Swal.fire({
+                title: 'Reset Student Name',
+                text: `The saved name is: "${savedName}". Do you want to clear it?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, clear it!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    localStorage.removeItem("studentName");
+                    Swal.fire('Cleared!', 'The name has been removed.', 'success').then(() => {
+                        window.location.href = 'https://www.churchofjesuschrist.org/?lang=spa';  // Redirigir a la página principal
+                    });
+                } else {
+                    Swal.fire('Cancelled', 'Your name was not removed.', 'info').then(() => {
+                        window.location.href = 'https://www.churchofjesuschrist.org/?lang=spa';
+                    });
+                }
+            });
+        } else {
+            Swal.fire('No Name Found', 'No name is currently saved.', 'info').then(() => {
+                window.location.href = 'https://www.churchofjesuschrist.org/?lang=spa';
+            });
+        }
+    });
+</script>
+          
+{% endblock %}
+
+
+

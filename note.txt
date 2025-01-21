@@ -2,7 +2,8 @@ para correr la aplicacion principal
 py app.py
 
 
-
+Para crear una carpeta de migraciones
+flask db init
 
 Como usar Flask Migrate
 
@@ -10,6 +11,7 @@ Crear un Script de Migración
 Cada vez que cambies los modelos, crea un nuevo script de migración:
 
 flask db migrate -m "Descripción del cambio"
+flask db migrate -m ""
 
 
 Aplicar los Cambios a la Base de Datos

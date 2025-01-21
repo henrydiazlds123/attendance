@@ -1,19 +1,17 @@
 from flask import Blueprint, abort, jsonify, render_template, redirect, request, session, url_for, flash, send_from_directory
 import qrcode
-from sqlalchemy import extract, func
-from config import BASE_URL, OUTPUT_DIR
-from models import Classes, db, User, Attendance, MeetingCenter, Config
-from forms import AttendanceEditForm, AttendanceForm, MeetingCenterForm, UserForm, EditUserForm, ResetPasswordForm, ClassForm
+from sqlalchemy import func
+from config import BASE_URL
+from models import db, Classes, User, Attendance, MeetingCenter, Config, Organization
+from forms import AttendanceEditForm, AttendanceForm, MeetingCenterForm, UserForm, EditUserForm, ResetPasswordForm, ClassForm, OrganizationForm
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
-from reportlab.lib.colors import HexColor
 from urllib.parse import unquote
 from utils import *
 
 
 bp = Blueprint('routes', __name__)
-
 
 
 @bp.route('/')
@@ -61,7 +59,6 @@ def reset_name():
 
 # =============================================================================================
 
-# CRUD para Users
 @bp.route('/users')
 @role_required('Admin', 'Owner')
 def users():
@@ -71,7 +68,18 @@ def users():
 
     if role == 'Owner':
         # Los Owners pueden ver todos los usuarios
-        users = User.query.all()
+        query = db.session.query(
+            User.id,
+            User.username,
+            User.email,
+            User.role,
+            MeetingCenter.short_name.label('meeting_short_name'),
+            Organization.name.label('organization_name')
+            ).join(MeetingCenter, User.meeting_center_id == MeetingCenter.id).join(Organization, User.organization_id == Organization.id)
+            
+
+                                
+        users = query.all()
     elif role == 'Admin':
         # Los Admins solo pueden ver los usuarios de su Meeting Center, excluyendo a los Owners
         users = User.query.filter_by(meeting_center_id=meeting_center_id).filter(User.role != 'Owner').all()
@@ -85,10 +93,10 @@ def users():
 @bp.route('/user/new', methods=['GET', 'POST'])
 @role_required('Admin', 'Owner')
 def create_user():
-    if not is_admin_or_owner():
-        return redirect(url_for('routes.users'))  # Redirect if not authorized
-    form = UserForm()
+
+    form                           = UserForm()
     form.meeting_center_id.choices = [(mc.id, mc.name) for mc in MeetingCenter.query.all()]
+    form.organization_id.choices   = [(og.id, og.name) for og in Organization.query.all()]
 
     if form.validate_on_submit():
         user = User(
@@ -98,6 +106,7 @@ def create_user():
             lastname         =form.lastname.data,
             role             =form.role.data,
             meeting_center_id=form.meeting_center_id.data,
+            organization_id  =form.organization_id.data,
             is_active        =form.is_active.data
         )
         user.set_password(form.password.data)
@@ -110,19 +119,19 @@ def create_user():
 @bp.route('/user/edit/<int:id>', methods=['GET', 'POST'])
 @role_required('Admin', 'Owner')
 def update_user(id):
-    user                              = User.query.get_or_404(id)
-    form                              = EditUserForm(obj=user)
-    form.meeting_center_id.choices    = [(mc.id, mc.name) for mc in MeetingCenter.query.all()]
+    user                           = User.query.get_or_404(id)
+    form                           = EditUserForm(obj=user)
+    form.meeting_center_id.choices = [(mc.id, mc.name) for mc in MeetingCenter.query.all()]
+    form.organization_id.choices   = [(og.id, og.name) for og in Organization.query.all()]
 
     if form.validate_on_submit():
-        # form.populate_obj(user)
-        user.username             = form.username.data
-        user.email                = form.email.data
-        user.name                 = form.name.data
-        user.lastname             = form.lastname.data
-        user.role                 = form.role.data
-        user.meeting_center_id    = form.meeting_center_id.data
-        user.is_active            = form.is_active.data
+        user.username          = form.username.data
+        user.email             = form.email.data
+        user.name              = form.name.data
+        user.lastname          = form.lastname.data
+        user.role              = form.role.data
+        user.meeting_center_id = form.meeting_center_id.data
+        user.is_active         = form.is_active.data
 
         db.session.commit()
         flash('User updated successfully.', 'success')
@@ -130,7 +139,7 @@ def update_user(id):
     return render_template('form.html', form=form, title="Editar Usuario", submit_button_text="Actualizar", clas="warning")
 
 @bp.route('/user/delete/<int:id>', methods=['POST'])
-@role_required('Admin')  # Solo los admins pueden acceder a esta ruta
+@role_required('Admin', 'Owner')  # Solo los admins pueden acceder a esta ruta
 def delete_user(id):
     user_to_delete = User.query.get_or_404(id)
     current_user_id = session.get('user_id')
@@ -142,7 +151,7 @@ def delete_user(id):
     # Verificar si el usuario actual es Owner
     if current_user_role == 'Owner':
         if user_to_delete.role == 'Admin' and admin_count <= 1:
-            flash('No puedes eliminar al último administrador.', 'error')
+            flash('No puedes eliminar al último administrador.', 'danger')
             return redirect(url_for('routes.users'))
         
         db.session.delete(user_to_delete)
@@ -152,7 +161,7 @@ def delete_user(id):
 
     # Los Admin no pueden eliminar a otros Admin
     if user_to_delete.role == 'Admin':
-        flash('No puedes eliminar a otro administrador.', 'error')
+        flash('No puedes eliminar a otro administrador.', 'danger')
         return redirect(url_for('routes.users'))
 
     # Los Admin pueden eliminar a un usuario común (User)
@@ -175,7 +184,7 @@ def reset_password(id):
 
     if form.validate_on_submit():
         if not user.check_password(form.current_password.data):
-            flash('Current password is incorrect.', 'error')
+            flash('Current password is incorrect.', 'danger')
             return render_template('form.html', form=form, title="Reset Password", submit_button_text="Update", clas="danger")
 
         user.set_password(form.new_password.data)
@@ -260,8 +269,7 @@ def attendances():
     Attendance.sunday_date,
     Attendance.submit_date,
     Attendance.sunday_code,
-    MeetingCenter.name.label('meeting_center_name')
-).join(Classes, Attendance.class_id == Classes.id) \
+    MeetingCenter.short_name.label('meeting_short_name')).join(Classes, Attendance.class_id == Classes.id) \
  .join(MeetingCenter, Attendance.meeting_center_id == MeetingCenter.id)
 
     # Filter based on role and meeting_center_id
@@ -331,7 +339,7 @@ def attendances():
 @bp.route('/attendance/new', methods=['GET', 'POST'])
 @role_required('Admin', 'Owner')
 def create_attendance():
-    form = AttendanceForm()
+    form                           = AttendanceForm()
     form.class_id.choices          = [(c.id, c.class_name) for c in Classes.query.all()]
     form.meeting_center_id.choices = [(mc.id, mc.name) for mc in MeetingCenter.query.all()]
 
@@ -386,8 +394,8 @@ def update_attendance(id):
         attendance.sunday_date       =form.sunday_date.data
 
         db.session.commit()
-        flash('Attendance record updated successfully.')
-        return redirect(url_for('routes.attendances'))
+        flash('Attendance record updated successfully.', 'success')
+        return redirect(url_for('routes.attendances',**request.args.to_dict()))
     return render_template('form.html', form=form, title="Editar Asistencia", submit_button_text="Actualizar", clas="warning")
 
 
@@ -395,16 +403,35 @@ def update_attendance(id):
 @bp.route('/attendance/delete/<int:id>', methods=['GET', 'POST'])
 @role_required('Admin', 'Owner')
 def delete_attendance(id):
-    if not is_admin_or_owner():
-        return redirect(url_for('routes.attendances'))  # Redirect if not authorized
     
     attendance = Attendance.query.get_or_404(id)
     db.session.delete(attendance)
     db.session.commit()
     flash('Attendance record deleted successfully.')
-    return redirect(url_for('routes.attendances'))
+    return redirect(url_for('routes.attendances', **request.args.to_dict()))
 
+# =============================================================================================
+@bp.route('/attendance/manual')
+@role_required('User', 'Admin', 'Owner')
+def manual_attendance():
+    """Genera enlaces solo para las clases correspondientes al próximo domingo."""
 
+    next_sunday_code = get_next_sunday_code(get_next_sunday())
+    sunday_week      = (get_next_sunday().day - 1) // 7 + 1  # Determina la semana del mes
+    unit             = session['meeting_center_number']
+    
+        
+    # Generar enlaces solo para las clases correspondientes
+
+    class_links = {
+        class_entry.class_code: {
+            'url': f"{BASE_URL}/attendance?class_name={class_entry.class_name}&class={class_entry.class_code}&code={next_sunday_code}&unit={unit}",
+            'name': class_entry.class_name
+        }
+        for class_entry in Classes.query.all() if str(sunday_week) in class_entry.schedule.split(',')
+    }
+
+    return render_template('manual_attendance.html', class_links=class_links)
 # =============================================================================================
 @bp.route('/registrar', methods=['POST'])
 def registrar():
@@ -475,40 +502,19 @@ def registrar():
         }), 500
 
 
-
-
-
-# =============================================================================================
-@bp.route('/manual_attendance')
-@role_required('User', 'Admin', 'Owner')
-def manual_attendance():
-    """Genera enlaces solo para las clases correspondientes al próximo domingo."""
-
-    next_sunday_code = get_next_sunday_code(get_next_sunday())
-    sunday_week      = (get_next_sunday().day - 1) // 7 + 1  # Determina la semana del mes
-    unit             = session['meeting_center_number']
-    
-        
-    # Generar enlaces solo para las clases correspondientes
-
-    class_links = {
-        class_entry.class_code: {
-            'url': f"{BASE_URL}/attendance?class_name={class_entry.class_name}&class={class_entry.class_code}&code={next_sunday_code}&unit={unit}",
-            'name': class_entry.class_name
-        }
-        for class_entry in Classes.query.all() if str(sunday_week) in class_entry.schedule.split(',')
-    }
-
-    return render_template('manual_attendance.html', class_links=class_links)
-
-
 # =============================================================================================
 # Rutas para la Administracion de PDF
 @bp.route('/list_pdfs', methods=['GET'])
 @role_required('User', 'Admin', 'Owner')
 def list_pdfs():
+    OUTPUT_DIR = get_output_dir()
+    
+    if not os.path.exists(OUTPUT_DIR):
+      os.makedirs(OUTPUT_DIR)  # Crea el directorio si no existe
+      
     directory = os.path.join(os.getcwd(), OUTPUT_DIR)
     pdf_files = os.listdir(directory)
+    
     return render_template('list_pdfs.html', pdf_files=pdf_files)
 
 # =============================================================================================
@@ -525,82 +531,19 @@ def generate_week_pdfs():
     return redirect(url_for('routes.generate_pdfs', type='semana_especifica'))  # redirige a la misma función para PDFs de la semana específica
 
 # =============================================================================================
-# @bp.route('/generate_pdfs', methods=['GET', 'POST'])
-# @role_required('Admin', 'Owner')
-# def generate_pdfs():
-#     """Genera PDFs con códigos QR para las clases correspondientes a un domingo específico."""
-#     os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-#     sunday_week = get_sunday_week(get_next_sunday())  # 1 para el primer domingo, 2 para el segundo, etc.
-
-#     # Verificar si el usuario quiere todos los PDFs o solo los de la semana específica
-#     if request.args.get('type') == 'todos':
-#         clases_a_imprimir = [c.class_name for c in Classes.query.all()]
-#     else:
-#         clases_a_imprimir = [c.class_name for c in Classes.query.all() if str(sunday_week) in c.schedule.split(',')]
-
-#     next_sunday_code = get_next_sunday_code(get_next_sunday())
-#     unit             = session['meeting_center_number']  # Obtener el número del centro de reuniones
-#     unit_name        = session['meeting_center_name']
-    
-#     clean_qr_folder(OUTPUT_DIR)
-
-#     for class_name in clases_a_imprimir:
-#         # Obtener el class_code desde la base de datos
-#         class_entry = Classes.query.filter_by(class_name=class_name).first()
-#         if class_entry:
-#             class_code = class_entry.class_code
-#         else:
-#             continue  # Si no se encuentra la clase, saltamos a la siguiente
-
-#         # Generar URL con parámetros adicionales, incluyendo class_code
-#         qr_url = f"{BASE_URL}/attendance?class_name={class_name.replace(' ', '+')}&code={next_sunday_code}&unit={unit}&class={class_code}"
-#         qr = qrcode.QRCode(version=1, box_size=10, border=4)
-#         qr.add_data(qr_url)
-#         qr.make(fit=True)
-#         img = qr.make_image(fill_color="black", back_color="white")
-        
-#         qr_filename = os.path.join(OUTPUT_DIR, f"{class_name}_{get_next_sunday()}.png")
-#         img.save(qr_filename)
-        
-#         pdf_filename = os.path.join(OUTPUT_DIR, f"{class_name}_{get_next_sunday()}.pdf")
-#         c = canvas.Canvas(pdf_filename, pagesize=letter)
-#         page_width, page_height = letter
-        
-#         c.setFont("Helvetica-Bold", 24)
-#         c.drawCentredString(page_width / 2, 670, f"Lista de Asistencia")
-#         c.setFont("Helvetica-Bold", 35)
-#         c.drawCentredString(page_width / 2, 625, class_name)
-        
-#         qr_image = ImageReader(qr_filename)
-#         qr_size = 450
-#         qr_x = (page_width - qr_size) / 2
-#         qr_y = (page_height - qr_size) / 2
-#         c.drawImage(qr_image, qr_x, qr_y, width=qr_size, height=qr_size)
-        
-#         c.setFont("Helvetica", 18)
-#         c.drawCentredString(page_width / 2, qr_y - 15, f"{get_next_sunday().strftime('%B %d, %Y')}")
-#         c.drawCentredString(page_width / 2, qr_y - 40,  f"{unit_name}")
-#         c.save()
-
-#     clean_qr_images(OUTPUT_DIR)
-#     return redirect(url_for('routes.list_pdfs'))
-
-
-
-
-from reportlab.lib.colors import HexColor
-
 @bp.route('/generate_pdfs', methods=['GET', 'POST'])
 @role_required('Admin', 'Owner')
 def generate_pdfs():
+    OUTPUT_DIR = get_output_dir()
+    
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     sunday_week = get_sunday_week(get_next_sunday())
     clases_a_imprimir = (
-        [c.class_name for c in Classes.query.all()]
+        # [c.class_name for c in Classes.query.all()]
+        [c.class_name for c in Classes.query.filter_by(is_active=True)]
         if request.args.get('type') == 'todos' 
-        else [c.class_name for c in Classes.query.all() if str(sunday_week) in c.schedule.split(',')]
+        else [c.class_name for c in Classes.query.filter_by(is_active=True) if str(sunday_week) in c.schedule.split(',')]
     )
 
     next_sunday_code = get_next_sunday_code(get_next_sunday())
@@ -613,7 +556,7 @@ def generate_pdfs():
         class_entry = Classes.query.filter_by(class_name=class_name).first()
         if class_entry:
             class_code = class_entry.class_code
-            class_color = class_entry.color_hex or "black"  # Usa el color almacenado o negro por defecto
+            class_color = class_entry.class_color or "black"  # Usa el color almacenado o negro por defecto
         else:
             continue
 
@@ -656,6 +599,7 @@ def generate_pdfs():
 @bp.route('/download_pdf/<path:filename>', methods=['GET'])
 @role_required('User', 'Admin', 'Owner')
 def download_pdf(filename):
+    OUTPUT_DIR = get_output_dir()
     try:
         directory = os.path.join(os.getcwd(), OUTPUT_DIR)
         filename = unquote(filename)
@@ -685,14 +629,14 @@ def meeting_centers():
 def create_meeting_center():
     form = MeetingCenterForm()
     if form.validate_on_submit():
-        meeting_center = MeetingCenter(
+        new_center     = MeetingCenter(
             unit_number=form.unit_number.data,
             name       =form.name.data,
             city       =form.city.data,
             start_time =form.start_time.data,
             end_time   =form.end_time.data
         )
-        db.session.add(meeting_center)
+        db.session.add(new_center)
         db.session.commit()
         flash('Meeting center created successfully!', 'success')
         return redirect(url_for('routes.meeting_centers'))
@@ -704,11 +648,11 @@ def create_meeting_center():
 @role_required('Owner')
 def update_meeting_center(id):
     meeting_center = MeetingCenter.query.get_or_404(id)
-    form = MeetingCenterForm(obj=meeting_center)
+    form           = MeetingCenterForm(obj=meeting_center)
     if form.validate_on_submit():
         form.populate_obj(meeting_center)
         db.session.commit()
-        flash('Meeting Center updated successfully.')
+        flash('Meeting Center updated successfully.', 'success')
         return redirect(url_for('routes.meeting_centers'))
     return render_template('form.html', form=form, title="Edit Meeting Center", submit_button_text="Update", clas="warning")
 
@@ -719,12 +663,12 @@ def update_meeting_center(id):
 def delete_meeting_center(id):
     meeting_center = MeetingCenter.query.get_or_404(id)
     if meeting_center.attendances:
-        flash('No se puede eliminar el centro de reuniones porque tiene asistencias registradas.', 'danger')
+        flash('The meeting center cannot be deleted because it has registered attendance.', 'danger')
         return redirect(url_for('routes.meeting_centers'))
     
     db.session.delete(meeting_center)
     db.session.commit()
-    flash('Centro de reuniones eliminado exitosamente.', 'success')
+    flash('Meeting Center successfully removed.', 'success')
     return redirect(url_for('routes.meeting_centers'))
 
 
@@ -732,27 +676,48 @@ def delete_meeting_center(id):
 @bp.route('/classes', methods=['GET'])
 @role_required('Admin', 'Owner')
 def classes():
-    classes = Classes.query.all()
-    # show_inactive = request.args.get('show_inactive') == 'true'
-    # if show_inactive:
-    #     classes = Classes.query.all()
-    # else:
-    #     classes = Classes.query.filter_by(is_active=True).all()
+    # Get user role and meeting_center_id from session
+    role = session.get('role')
+    meeting_center_id = session.get('meeting_center_id')
+    
+    query = db.session.query(
+        Classes.id,
+        Classes.class_name,
+        Classes.short_name,
+        Classes.class_code,
+        Classes.class_type,
+        Classes.schedule,
+        Classes.is_active,
+        Classes.class_color,
+        MeetingCenter.short_name.label('meeting_short_name')
+        ).join(MeetingCenter, Classes.meeting_center_id == MeetingCenter.id)
+
+    if role == 'Admin':
+        query = query.filter(Classes.meeting_center_id == meeting_center_id)
+    elif role == 'Owner':
+        pass
+    
+    
+    classes = query.all()
+
     return render_template('classes.html', classes=classes)
 # =============================================================================================
 @bp.route('/classes/new', methods=['GET', 'POST'])
 @role_required('Admin', 'Owner')
 def create_class():
-    form = ClassForm()
+    form                           = ClassForm()
+    form.meeting_center_id.choices = [(mc.id, mc.name) for mc in MeetingCenter.query.all()]
+    
     if form.validate_on_submit():
         new_class = Classes(
-            class_name=form.class_name.data,
-            short_name=form.short_name.data,
-            class_code=form.class_code.data,
-            class_type=form.class_type.data,
-            schedule  =form.schedule.data,
-            is_active = form.is_active.data,
-            color_hex =form.color_hex.data
+            class_name        =form.class_name.data,
+            short_name        =form.short_name.data,
+            class_code        =form.class_code.data,
+            class_type        =form.class_type.data,
+            schedule          =form.schedule.data,
+            is_active         = form.is_active.data,
+            class_color       =form.class_color.data,
+            meeting_center_id = form.meeting_center_id.data
         )
         try:
             db.session.add(new_class)
@@ -767,16 +732,19 @@ def create_class():
 @bp.route('/classes/edit/<int:id>', methods=['GET', 'POST'])
 @role_required('Admin', 'Owner')
 def update_class(id):
-    class_instance = Classes.query.get_or_404(id)
-    form = ClassForm(obj=class_instance)
+    
+    class_instance                  = Classes.query.get_or_404(id)
+    form                            = ClassForm(obj=class_instance)
+    form.meeting_center_id.choices  = [(mc.id, mc.name) for mc in MeetingCenter.query.all()]
     if form.validate_on_submit():
-        class_instance.class_name = form.class_name.data
-        class_instance.short_name = form.short_name.data
-        class_instance.class_code = form.class_code.data
-        class_instance.class_type = form.class_type.data
-        class_instance.schedule   = form.schedule.data
-        class_instance.is_active  = form.is_active.data
-        class_instance.color_hex  = form.color_hex.data
+        class_instance.class_name         = form.class_name.data
+        class_instance.short_name         = form.short_name.data
+        class_instance.class_code         = form.class_code.data
+        class_instance.class_type         = form.class_type.data
+        class_instance.schedule           = form.schedule.data
+        class_instance.is_active          = form.is_active.data
+        class_instance.class_color        = form.class_color.data
+        class_instance.meeting_center_id  = form.meeting_center_id.data
         try:
             db.session.commit()
             flash('Class updated successfully!', 'success')
@@ -804,3 +772,57 @@ def delete_class(id):
         db.session.rollback()
         flash(f'Error deleting class: {e}', 'danger')
     return redirect(url_for('routes.classes'))
+
+# =============================================================================================
+@bp.route('/organizations', methods=['GET'])
+def organizations():
+    organizations = Organization.query.all()
+    return render_template('organizations.html', organizations=organizations)
+
+# =============================================================================================
+@bp.route('/organizations/new', methods=['GET', 'POST'])
+def create_organization():
+    form = OrganizationForm()
+    if form.validate_on_submit():
+        new_org = Organization(name=form.name.data)
+        try:
+            db.session.add(new_org)
+            db.session.commit()
+            flash('Organization created successfully!', 'success')
+            return redirect(url_for('routes.organizations'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Error: Organization name must be unique.', 'danger')
+            return redirect(url_for('routes.organizations'))
+    return render_template('form.html', form=form, title="Create new Organization", submit_button_text="Create", clas="warning")
+
+
+# Update
+@bp.route('/organizations/edit/<int:id>', methods=['GET', 'POST'])
+@role_required('Admin', 'Owner')
+def edit_organization(id):
+    organization = Organization.query.get_or_404(id)
+    form         = OrganizationForm(obj=organization)
+    if form.validate_on_submit():
+        organization.name = form.name.data
+        try:
+            db.session.commit()
+            flash('Organization updated successfully!', 'success')
+            return redirect(url_for('organization.list_organizations'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Error: Organization name must be unique.', 'danger')
+    return render_template('form.html', form=form, title="Edit Organization", submit_button_text="Update", clas="warning", organization=organization)
+
+# Delete
+@bp.route('/organizations/delete/<int:id>', methods=['POST'])
+def delete_organization(id):
+    organization = Organization.query.get_or_404(id)
+    try:
+        db.session.delete(organization)
+        db.session.commit()
+        flash('Organization deleted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error: Could not delete organization.', 'danger')
+    return redirect(url_for('organization.list_organizations'))

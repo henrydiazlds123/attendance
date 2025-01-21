@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% block title %}Attendance | Manual{% endblock %}
+{% block title %}Attendance | List{% endblock %}
 {% block head %}
 <script>
     // Función para enviar el formulario al cambiar el valor de un select
@@ -15,9 +15,7 @@
 {% endblock %}
 {% block content %}
 <div class="blog-post">
-  <h2 class="blog-post-title">
-    Class Attendance Records
-  </h2>
+  <h2 class="blog-post-title"><i class="fa fa-check-square-o" aria-hidden="true"></i>  Class Attendance Records</h2>
   <div class="twoColumns">
     <p class="mb-3">
         
@@ -29,8 +27,8 @@ Use the information in this list to Record each person's Attendance in the Tools
   
 {% endif %}
   {% if session['role'] == 'Admin' or session['role'] == 'Owner' %}
-  <form class="form-inline d-flex justify-content-between" id="verificationForm" method="POST" action="/attendances">
-      <a class="btn btn-primary" href="{{ url_for('routes.create_attendance') }}">Add Manual Attendance</a>
+  <form class="form-inline d-flex justify-content-between mb-2" id="verificationForm" method="POST" action="/attendances">
+      <a class="btn btn-primary" href="{{ url_for('routes.create_attendance') }}"><i class="fa fa-plus" aria-hidden="true"></i>  Add New Attendance</a>
       <div class="form-inline">
         <label class="my-1 mr-2" for="code_verification">Request new QR code? </label>
         <select class="custom-select my-1 mr-sm-2" name="code_verification" id="code_verification"  data-toggle="tooltip" title="Al activar la Verificacion de Domingo, solo se podrá usar la imagen de QR Code impresa para esa semana."onchange="submitVerificationForm()">
@@ -74,16 +72,22 @@ Use the information in this list to Record each person's Attendance in the Tools
               <td>{{attendance.short_name}}</td>
               <td>{{attendance.sunday_date.strftime("%b %d")}}</td>
               {% if session['role'] == 'Owner' %}
-              <td>{{attendance.meeting_center_name}}</td>
+              <td>{{attendance.meeting_short_name}}</td>
               <td>{{attendance.sunday_code}}</td>              
               {% endif %}
               {% if session['role'] == 'Admin' or session['role'] == 'Owner' %}
                 <td>{{attendance.submit_date.strftime("%b %d, %I:%M %p")}}</td>
                 <td>
-                    <a href="{{ url_for('routes.update_attendance', id=attendance.id) }}"><i class="fa fa-pencil-square-o" aria-hidden="true"></i>
+                    <a type="button" class="btn btn-primary btn-sm" href="{{ url_for('routes.update_attendance', id=attendance.id, **request.args.to_dict()) }}"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></a>
+
              {% endif %}
                 {% if session['role'] == 'Owner' %}
-                  <a  data-toggle="tooltip" title="Elimina esta asistencia de {{ attendance.student_name }}" href="{{ url_for('routes.delete_attendance', id=attendance.id) }}"><i class="fa fa-trash-o fa-fw"></i></a>
+                <form id="deleteForm-attendance-{{ attendance.id }}" action="{{ url_for('routes.delete_attendance', id=attendance.id, **request.args.to_dict()) }}" method="post" style="display:inline;">
+                  <button type="button" class="btn btn-danger btn-sm" data-toggle="tooltip" title="Eliminar asistencia" onclick="confirmDelete('attendance', {{ attendance.id }})">
+                    <i class="fa fa-trash-o fa-fw"></i>
+                  </button>
+                </form>
+                  <!-- <a  data-toggle="tooltip" title="Elimina esta asistencia de {{ attendance.student_name }}" href="{{ url_for('routes.delete_attendance', id=attendance.id, **request.args.to_dict()) }}"><i class="fa fa-trash-o fa-fw"></i></a> -->
                 {% endif %}
               
               </td>

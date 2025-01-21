@@ -8,7 +8,8 @@
     <form id="attendanceForm" method="POST" action="{{ url_for('routes.registrar') }}">
         <div class="input-group mb-3">
             <input type="text" class="form-control" id="studentName" name="studentName" placeholder="Nombre y Apellido"
-                aria-label="Ingresa un Nombre y un Apellido" aria-describedby="button-addon2" >
+                aria-label="Ingresa un Nombre y un Apellido" aria-describedby="button-addon2" required
+                ">
                 <button class="btn btn-success" type="submit" id="button-addon2">Enviar</button>
         </div>
                 
@@ -19,7 +20,34 @@
         <input type="hidden" id="unitNumber"  name="unitNumber">
 
     </form>
-    <script>       
+    <script>
+        // Asignar la función al evento de entrada del campo
+        document.getElementById('attendanceForm').addEventListener('submit', function (event) {
+            const input = document.getElementById('studentName');
+            input.value = input.value.trim();  // Elimina espacios iniciales y finales
+            const regex = /^[^\s]+ [^\s]+$/;   // Asegura un solo espacio entre nombre y apellido
+    
+            if (!regex.test(input.value)) {
+                event.preventDefault();  // Previene el envío del formulario
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Formato Incorrecto',
+                    text: 'Por favor, ingrese solo un nombre y un apellido, separados por un espacio.',
+                    confirmButtonText: 'OK'
+                });
+            } else {
+                // Asegúrate de que los campos ocultos tengan los valores correctos antes de enviar
+                console.log("Datos del formulario antes de enviar:", {
+                    studentName: input.value,
+                    className: document.getElementById('className').value,
+                    date: document.getElementById('date').value,
+                    classCode: document.getElementById('classCode').value,
+                    sundayCode: document.getElementById('sundayCode').value,
+                    unitNumber: document.getElementById('unitNumber').value
+                });
+            }
+        });
+    
         // Configuración para mostrar y establecer la clase
         const urlParams  = new URLSearchParams(window.location.search);
         const className  = urlParams.get('class_name');
@@ -42,6 +70,6 @@
     
         // Establece la fecha actual
         document.getElementById('date').value = new Date().toISOString().split('T')[0];
- </script>
+    </script>
     
 {% endblock %}

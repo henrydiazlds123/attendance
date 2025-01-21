@@ -6,24 +6,6 @@ from datetime import datetime, timedelta
 from flask import flash, redirect, session, url_for
 
 
-
-def is_admin_or_owner():
-    role = session.get('role')
-    if role not in ['Owner', 'Admin']:
-        flash('You do not have permission to perform this action.', 'danger')
-        return False
-    return True
-
-
-def is_owner():
-    role = session.get('role')
-    if role not in ['Owner']:
-        flash('You do not have permission to perform this action.', 'danger')
-        return False
-    return True
-
-
-
 def role_required(*roles):
     """Decorador para restringir el acceso basado en roles."""
     def decorator(f):
@@ -31,7 +13,7 @@ def role_required(*roles):
         def decorated_function(*args, **kwargs):
             user_role = session.get('role')  # Suponiendo que el rol se almacena en la sesión
             if user_role not in roles:
-                flash('No tiene permisos para acceder a esta página.')
+                flash('You do not have permission to perform this action.', 'danger')
                 return redirect(url_for('routes.login'))  # Ajusta la ruta de redirección según sea necesario
             return f(*args, **kwargs)
         return decorated_function
@@ -84,3 +66,9 @@ def clean_qr_images(folder_path):
         if file.endswith(".png"):
             os.remove(os.path.join(folder_path, file))
 
+
+@staticmethod
+def get_output_dir():
+    """Obtiene el directorio de salida dinámico basado en el número de unidad."""
+    unit_number = session.get('meeting_center_number', 'default')  # Usa 'default' si no hay sesión activa
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'qr_codes', str(unit_number))

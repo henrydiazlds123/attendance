@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const attendanceForm = document.getElementById("attendanceForm");
+  const attendanceForm   = document.getElementById("attendanceForm");
   const studentNameInput = document.getElementById("studentName");
 
   // Verifica si el usuario está autenticado usando la variable de sesión proporcionada por el servidor
@@ -11,23 +11,24 @@ document.addEventListener("DOMContentLoaded", () => {
     sendAttendanceForm(new FormData(attendanceForm));
   }
 
-  if (attendanceForm) {
-    attendanceForm.addEventListener("submit", async function (event) {
-      event.preventDefault();
-      const studentName = studentNameInput.value.trim();
-      if (!studentName) {
-        Swal.fire(
-          "Advertencia",
-          "Por favor, ingresa tu nombre completo.",
-          "warning"
-        );
-        return;
-      }
-      if (!isLoggedIn) {
-        localStorage.setItem("studentName", studentName);
-      }
-      sendAttendanceForm(new FormData(this));
-    });
+ if (attendanceForm) {
+     attendanceForm.addEventListener("submit", async function (event) {
+   event.preventDefault();
+   const studentName = studentNameInput.value.trim();
+   const regex = /^[^\s]+ [^\s]+$/; 
+   if (!regex.test(studentName)) {
+     Swal.fire(
+       "Advertencia",
+       "Por favor, ingresa tu nombre en el formato de 'Nombre Apellido'. Ejemplo: 'Pedro Perez'.",
+       "warning"
+     );
+     return;
+   }
+   if (!isLoggedIn) {
+     localStorage.setItem("studentName", studentName);
+   }
+   sendAttendanceForm(new FormData(this));
+   });
   }
 
   async function sendAttendanceForm(formData) {
@@ -63,7 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (result.isConfirmed) {
                     window.close();
                     if (savedName) {
-                        window.location.href = "about:blank";
+                        window.location.href = "https://www.churchofjesuschrist.org/?lang=spa";
                     }
                 }
             });
@@ -100,7 +101,26 @@ if (deleteAllButton) {
   });
 }
 
-function confirmDelete(userId) {
+// function confirmDelete(userId) {
+//   Swal.fire({
+//     title: "¿Estás seguro?",
+//     text: "¡No podrás deshacer esta acción!",
+//     icon: "warning",
+//     showCancelButton: true,
+//     confirmButtonColor: "#d33",
+//     cancelButtonColor: "#3085d6",
+//     confirmButtonText: "Sí, eliminar",
+//     cancelButtonText: "Cancelar",
+//   }).then((result) => {
+//     if (result.isConfirmed) {
+//       document.getElementById(`deleteUser-${userId}`).submit();
+//     }
+//   });
+// }
+
+function confirmDelete(entityType, entityId) {
+  const formId = `deleteForm-${entityType}-${entityId}`;  // Formulario con id basado en el tipo de entidad y su ID
+
   Swal.fire({
     title: "¿Estás seguro?",
     text: "¡No podrás deshacer esta acción!",
@@ -112,7 +132,7 @@ function confirmDelete(userId) {
     cancelButtonText: "Cancelar",
   }).then((result) => {
     if (result.isConfirmed) {
-      document.getElementById(`deleteForm-${userId}`).submit();
+      document.getElementById(formId).submit();  // Envía el formulario correspondiente
     }
   });
 }

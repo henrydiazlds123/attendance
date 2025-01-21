@@ -33,10 +33,10 @@
 
 {% endblock %}
 {% block content %}
-    <h2>Classes Management</h2>
+    <h2><i class="fa fa-graduation-cap" aria-hidden="true"></i>  Classes Management</h2>
  
     <form class="form-inline d-flex justify-content-between" id="verificationForm" method="POST" action="/attendances">
-      <a class="btn btn-primary" href="{{ url_for('routes.create_class') }}">Create New Class</a>
+      <a class="btn btn-primary" href="{{ url_for('routes.create_class') }}"><i class="fa fa-plus" aria-hidden="true"></i>  Create New Class</a>
       <div class="form-inline mb-3">
         <label class="my-1 mr-2" for="inactive_classes_toggle">Show Inactive Classes:</label>
         <select class="custom-select my-1 mr-sm-2" id="inactive_classes_toggle" onchange="toggleInactiveClasses()">
@@ -55,27 +55,32 @@
           <th scope="col">Code</th>
           <th scope="col">Class Type</th>
           <th scope="col">Schedule</th>
-          <th scope="col">Active</th>
+          <th scope="col">Color</th>
+          <!-- <th scope="col">Active</th> -->
+          <th scope="col">Unit</th>
           <th scope="col">Actions</th>
         </tr>
       </thead>
+      
       <tbody>
         {% for class in classes %}
-          <tr class="class-row" data-is-active="{{ 'true' if class.is_active else 'false' }}">
+          <tr class="class-row" style="color: {{ class.class_color }}" data-is-active="{{ 'true' if class.is_active else 'false' }}">
             <td scope="row">{{ loop.index }}</td>
-            <td>{{ class.class_name }}</td>
-            <td>{{ class.short_name }}</td>
-            <td>{{ class.class_code}}</td>
-            <td>{{ class.class_type}}</td>
-            <td>{{ class.schedule}}</td>
-            <td>{{ class.is_active}}</td>
-            <td>
+            <td class="col-md-3">{{ class.class_name }}</td>
+            <td class="col-md-2">{{ class.short_name }}</td>
+            <td class="col-md-1">{{ class.class_code}}</td>
+            <td class="col-md-2">{{ class.class_type}}</td>
+            <td class="col-md-1">{{ class.schedule}}</td>
+            <td class="col-md-1">{{ class.class_color }}</td>
+            <!-- <td class="col-md-1">{{ class.is_active}}</td> -->
+            <td class="col-md-1">{{ class.meeting_short_name}}</td>
+            <td class="col-md-1">
               <a class="btn btn-primary btn-sm" data-toggle="tooltip" title="Edit class" href="{{ url_for('routes.update_class', id=class.id) }}">
                 <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
               </a>
               {% if not (class.class_type == 'Main')  %}
-              <form action="#" method="post" style="display:inline;">
-                <button type="submit" class="btn btn-danger btn-sm" data-toggle="tooltip" title="Delete class">
+              <form id="deleteForm-class-{{ class.id }}" action="{{ url_for('routes.delete_class', id=class.id) }}" method="post" style="display:inline;">
+                <button type="button" class="btn btn-danger btn-sm" data-toggle="tooltip" title="Eliminar Clase"  onclick="confirmDelete('classes', {{ class.id }})">
                   <i class="fa fa-trash-o fa-fw"></i>
                 </button>
               </form>

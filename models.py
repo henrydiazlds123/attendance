@@ -23,6 +23,7 @@ class User(db.Model, UserMixin):
     role              = db.Column(db.String(10), nullable=False, default='User')  # Puede ser 'Owner', 'Admin', 'User'
     is_active         = db.Column(db.Boolean, default=True)
     meeting_center_id = db.Column(db.Integer, db.ForeignKey('meeting_center.id'), nullable=False)  # Clave foránea
+    organization_id   = db.Column(db.Integer, db.ForeignKey('organization.id'), nullable=False)  # Clave foránea
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -74,9 +75,13 @@ class MeetingCenter(db.Model):
     id          = db.Column(db.Integer, primary_key=True)
     unit_number = db.Column(db.Integer, unique=True, nullable=False)
     name        = db.Column(db.String(50), nullable=False)
+    short_name  = db.Column(db.String(20), nullable=False)
     city        = db.Column(db.String(50), nullable=True)
+    start_time  = db.Column(db.Time, nullable=True)
+    end_time    = db.Column(db.Time, nullable=True)
     attendances = db.relationship('Attendance', backref=db.backref('meeting_center', lazy=True), cascade="all, delete-orphan")
-    users       = db.relationship('User', backref=db.backref('meeting_center', lazy=True), cascade="all, delete-orphan")
+    users       = db.relationship('User',       backref=db.backref('meeting_center', lazy=True), cascade="all, delete-orphan")
+    classes     = db.relationship('Classes',    backref=db.backref('meeting_center', lazy=True), cascade="all, delete-orphan")
 
     @validates('attendances')
     def validate_no_attendance(self, key, value):
@@ -93,15 +98,16 @@ class MeetingCenter(db.Model):
 class Classes(db.Model):
     __tablename__ = 'classes'
     
-    id         = db.Column(db.Integer, primary_key=True)
-    class_name = db.Column(db.String(50), nullable=False, unique=True)
-    short_name = db.Column(db.String(20), nullable=False, unique=True)
-    class_code = db.Column(db.String(10), nullable=False, unique=True)
-    class_type = db.Column(db.String(10), nullable=False, default='Main')
-    schedule   = db.Column(db.String(10), nullable=True)
-    attendances = db.relationship('Attendance', backref=db.backref('classes', lazy=True), cascade="all, delete-orphan")
-    is_active  = db.Column(db.Boolean, nullable=False, default=True)  # Nuevo campo
-    color_hex  = db.Column(db.String(7), nullable=True, default="#000000")  # Formato de color hexadecimal
+    id                = db.Column(db.Integer, primary_key=True)
+    class_name        = db.Column(db.String(50), nullable=False, unique=True)
+    short_name        = db.Column(db.String(20), nullable=False, unique=True)
+    class_code        = db.Column(db.String(10), nullable=False, unique=True)
+    class_type        = db.Column(db.String(10), nullable=False, default='Main')
+    schedule          = db.Column(db.String(10), nullable=True)
+    is_active         = db.Column(db.Boolean, nullable=False, default=True)  # Nuevo campo
+    class_color       = db.Column(db.String(7), nullable=True, default="#000000")  # Formato de color hexadecimal
+    meeting_center_id = db.Column(db.Integer, db.ForeignKey('meeting_center.id'), nullable=False)  # Clave foránea
+    attendances       = db.relationship('Attendance', backref=db.backref('classes', lazy=True), cascade="all, delete-orphan")
     
     @validates('attendances')
     def validate_no_attendance(self, key, value):
@@ -112,4 +118,24 @@ class Classes(db.Model):
     def delete(self):
         if self.attendances:
             raise ValueError("Cannot delete a class with registered attendance.")
+        db.session.delete(self)
+        
+        
+#=======================================================================        
+class Organization(db.Model):
+    __tablename__ = 'organization'
+
+    id    = db.Column(db.Integer, primary_key=True)
+    name  = db.Column(db.String(50), unique=True, nullable=False)
+    users = db.relationship('User', backref=db.backref('organization', lazy=True), cascade="all, delete-orphan")
+    
+    @validates('users')
+    def validate_no_attendance(self, key, value):
+        if self.users:
+            raise IntegrityError("Cannot delete a organization with users registered", params={}, statement=None)
+        return value
+
+    def delete(self):
+        if self.users:
+            raise ValueError("Cannot delete a meeting center with registered attendance.")
         db.session.delete(self)
