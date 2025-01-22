@@ -57,6 +57,7 @@ main {
   width: 40px;
   height: 30px;
   background-color: white;
+  color: black;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -68,3 +69,13 @@ main {
 div > label[for="csrf_token"] {
   display: none;
 }
+
+
+
+.theme-toggle {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    cursor: pointer;
+}
+ 

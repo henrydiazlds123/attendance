@@ -1,6 +1,6 @@
 {% block head %}
 <style>
-    div.form-group {
+    div.input-group {
         margin-bottom: .2rem !important;
     }
 
@@ -8,83 +8,73 @@
 
 {% endblock %}
 
-<p id="secret">Total Attendance Records: <b>{{ total_registros }} </b></p>
-<div class="form-row">
-    <div class="form-group col-lg-2 col-md-4 col-sm-6 input-group">
-        <div class="input-group-prepend">
-            <span class="input-group-text"><i class="fa fa-user"></i></span>
-        </div>
-        <select name="student_name" id="student_name" onchange="submitForm()" class="form-control">
+<p>Total Attendance Records: <b>{{ total_registros }} </b></p>
+<div class="row mb-2">
+
+    <div class="input-group col-md">
+        <span class="input-group-text"><i class="fa fa-user"></i></span>
+        <select name="student_name" id="student_name" onchange="submitForm()" class="form-select">
             <option value="" disabled {% if not request.args.get('student_name') %}selected{% endif %}>Member</option>
             {% for student in students %}
-            <option value="{{ student[0] }}" {% if student[0] == request.args.get('student_name') %}selected{% endif %}>
+            <option value="{{ student[0] }}" {% if student[0]==request.args.get('student_name') %}selected{% endif %}>
                 {{ student[0] }}
             </option>
             {% endfor %}
         </select>
     </div>
-
-    <div class="form-group col-lg-2 col-md-4 col-sm-6 input-group">
-        <div class="input-group-prepend">
-            <span class="input-group-text"><i class="fa fa-graduation-cap"></i></span>
-        </div>
-        <select name="class_name" id="class_name" onchange="submitForm()" class="form-control">
+    
+    <div class="input-group col-md">
+        <span class="input-group-text"><i class="fa fa-graduation-cap"></i></span>
+        <select name="class_name" id="class_name" onchange="submitForm()" class="form-select">
             <option value="" disabled {% if not request.args.get('class_name') %}selected{% endif %}>Class</option>
             {% for class in classes %}
-            <!-- <option value="{{ class[0] }}" {% if class[0] == request.args.get('class_name') %}selected{% endif %}>
-                {{ class[0] }} -->
-            <option value="{{ class[1] }}" {% if class[1] == request.args.get('class_name') %}selected{% endif %}>
+            <option value="{{ class[1] }}" {% if class[1]==request.args.get('class_name') %}selected{% endif %}>
                 {{ class[1] }}
             </option>
             {% endfor %}
         </select>
     </div>
-
-    <div class="form-group col-lg-2 col-md-4 col-sm-4 input-group">
-        <div class="input-group-prepend">
-            <span class="input-group-text"><i class="fa fa-calendar-o"></i></span>
-        </div>
-        <select name="sunday_date" id="sunday_date" onchange="submitForm()" class="form-control">
+    <div class="input-group col-md">
+        <span class="input-group-text"><i class="fa fa-calendar-o"></i></span>
+        <select name="sunday_date" id="sunday_date" onchange="submitForm()" class="form-select">
             <option value="" disabled {% if not request.args.get('sunday_date') %}selected{% endif %}>Date</option>
             {% for sunday in sundays %}
-            <option value="{{ sunday[0].strftime('%Y-%m-%d') }}" {% if sunday[0]|string == request.args.get('sunday_date') %}selected{% endif %}>
+            <option value="{{ sunday[0].strftime('%Y-%m-%d') }}" {% if sunday[0]|string==request.args.get('sunday_date')
+                %}selected{% endif %}>
                 {{ sunday[0].strftime("%b %d") }}
             </option>
             {% endfor %}
         </select>
     </div>
-
-    <div class="form-group col-lg-2 col-md-4 col-sm-4 input-group">
-        <div class="input-group-prepend">
-            <span class="input-group-text"><i class="fa fa-calendar"></i></span>
-        </div>
-        <select name="month" id="month" onchange="submitForm()" class="form-control">
-            <option value="" disabled {% if not request.args.get('month') %}selected{% endif %}> Month </option>
-            {% for month, name in [('1', 'Ene'), ('2', 'Feb'), ('3', 'Mar'), ('4', 'Abr'), ('5', 'May'), 
-                                    ('6', 'Jun'), ('7', 'Jul'), ('8', 'Ago'), ('9', 'Sep'), ('10', 'Oct'), 
-                                    ('11', 'Nov'), ('12', 'Dic')] %}
-            <option value="{{ month }}" {% if month == request.args.get('month') %}selected{% endif %}>
-                {{ name }}
-            </option>
-            {% endfor %}
-        </select>
-    </div>
-
-    <div class="form-group col-lg-2 col-md-4 col-sm-4 input-group">
-        <div class="input-group-prepend">
-            <span class="input-group-text"><i class="fa fa-calendar-check-o"></i></span>
-        </div>
-        <select name="year" id="year" onchange="submitForm()" class="form-control">
+    {% if years|length > 1 %}
+    <div class="input-group col-md">
+        <span class="input-group-text"><i class="fa fa-calendar-check-o"></i></span>
+        <select name="year" id="year" onchange="submitForm()" class="form-select">
             <option value="" disabled {% if not request.args.get('year') %}selected{% endif %}>Year</option>
             {% for year in years %}
-            <option value="{{ year[0] }}" {% if year[0]|string == request.args.get('year') %}selected{% endif %}>
+            <option value="{{ year[0] }}" {% if year[0]|string==request.args.get('year') %}selected{% endif %}>
                 {{ year[0] }}
             </option>
             {% endfor %}
         </select>
     </div>
-
-    <div class="form-group col-lg-2 col-md-4 col-sm-12 input-group">
+    {% endif %}
+    {% if months|length > 1 %}
+    <div class="input-group col-md">
+        <span class="input-group-text"><i class="fa fa-calendar"></i></span>
+        <select name="month" id="month" onchange="submitForm()" class="form-select">
+            <option value="" disabled {% if not request.args.get('month') %}selected{% endif %}> Month </option>
+            {% for month, name in [('1', 'Ene'), ('2', 'Feb'), ('3', 'Mar'), ('4', 'Abr'), ('5', 'May'),
+            ('6', 'Jun'), ('7', 'Jul'), ('8', 'Ago'), ('9', 'Sep'), ('10', 'Oct'),
+            ('11', 'Nov'), ('12', 'Dic')] %}
+            <option value="{{ month }}" {% if month==request.args.get('month') %}selected{% endif %}>
+                {{ name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    {% endif %}
+    <div class="input-group col-md">
         <button id="filter-clear2" type="button" class="btn btn-warning form-control" onclick="clearFilters()">
             Remove filters <i class="fa fa-filter"></i>
         </button>

@@ -8,10 +8,10 @@
 {% block content %}
     <h2><i class="fa fa-sitemap" aria-hidden="true"></i>  Organizations Management</h2>
     <a class="btn btn-primary mb-3" href="{{ url_for('routes.create_organization') }}"><i class="fa fa-plus" aria-hidden="true"></i>  Add New Organization</a>   
-    <div class="list-group">
+    <div class="list-group list-group-numbered">
       {% for org in organizations %}
         <a  class="list-group-item list-group-item-action" data-toggle="tooltip" title="Edit Organization" href="{{ url_for('routes.edit_organization', id=org.id) }}">
-          <i class="fa fa-users" aria-hidden="true"></i>
+          
           {{ org.name }}
         </a>
 

@@ -12,7 +12,7 @@ Cada vez que cambies los modelos, crea un nuevo script de migración:
 
 flask db migrate -m "Descripción del cambio"
 flask db migrate -m ""
-
+win11: python -m flask db migrate -m ""
 
 Aplicar los Cambios a la Base de Datos
 Para aplicar los cambios:

@@ -10,8 +10,13 @@
         </button>
 
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            
             <ul class="navbar-nav">
+                
+                <li class="theme-toggle"><a class="btn" id="themeSwitcher" href="">Toggle Dark Mode</a></li>
+
                 {% if session['user_id'] %}
+                
                     <li class="nav-item {{ 'active' if request.endpoint == 'routes.index' else '' }}"><a class="nav-link" href="{{ url_for('routes.index') }}"><i class="fa fa-home" aria-hidden="true"></i> Home <span class="sr-only">(current)</span></a></li>
                     <li class="nav-item {{ 'active' if request.endpoint == 'routes.attendances' else '' }}"><a class="nav-link" href="{{ url_for('routes.attendances') }}"><i class="fa fa-check-square-o" aria-hidden="true"></i> Attendances</a></li>
                     <li class="nav-item {{ 'active' if request.endpoint == 'routes.list_pdfs' else '' }}"><a class="nav-link" href="{{ url_for('routes.list_pdfs') }}"><i class="fa fa-file-pdf-o" aria-hidden="true"></i>  PDFs</a></li>
@@ -40,6 +45,7 @@
                         <div class="circle">
                             <p style="font-size: 10px; display:block; padding-top: 15px;">{{ session['user_name'] }}</p>
                         </div>
+                        
                         <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.logout') }}"><i class="fa fa-power-off" aria-hidden="true"></i> Logout</a></li>
                     {% else %}
                     <li class="nav-item {{ 'active' if request.endpoint == 'routes.login' else '' }}"><a class="nav-link" href="{{ url_for('routes.login') }}"><i class="fa fa-sign-out" aria-hidden="true"></i> Login</a></li>
@@ -48,3 +54,4 @@
         </div>
     </div>
 </nav>
+

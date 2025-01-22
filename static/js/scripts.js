@@ -1,4 +1,31 @@
 document.addEventListener("DOMContentLoaded", () => {
+
+
+  // Detect system preference and user setting
+  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const storedTheme = localStorage.getItem('theme');
+  const currentTheme = storedTheme || (systemPrefersDark ? 'dark' : 'light');
+  
+  document.documentElement.setAttribute('data-bs-theme', currentTheme);
+
+  // Toggle button functionality
+  const themeSwitcher = document.getElementById('themeSwitcher');
+  themeSwitcher.addEventListener('click', () => {
+      const newTheme = document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-bs-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+  });
+
+
+
+
+
+
+
+
+
+
+
   
   const attendanceForm   = document.getElementById("attendanceForm");
   const studentNameInput = document.getElementById("studentName");

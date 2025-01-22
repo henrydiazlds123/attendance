@@ -81,8 +81,9 @@ class ResetPasswordForm(FlaskForm):
 
 #==================================================================================================
 class MeetingCenterForm(FlaskForm):
-    name        = StringField('Name', validators=[DataRequired(), Length(max=100)])
-    unit_number = StringField('Unit #', validators=[DataRequired(), Length(max=20)])
+    name        = StringField('Unit Name', validators=[DataRequired(), Length(max=100)])
+    unit_number = StringField('Unit #', validators=[DataRequired(), Length(max=10)])
+    short_name  = StringField('Short name', validators=[DataRequired(), Length(max=20)])
     city        = StringField('City', validators=[Optional(), Length(max=100)])
     start_time  = TimeField('Start Time', validators=[DataRequired(message="La hora de inicio es obligatoria.")])
     end_time    = TimeField('End Time', validators=[DataRequired(message="La hora de fin es obligatoria.")])
