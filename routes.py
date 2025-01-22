@@ -9,6 +9,7 @@ from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 from urllib.parse import unquote
 from utils import *
+from sqlalchemy.exc import IntegrityError
 
 
 bp = Blueprint('routes', __name__)
@@ -622,8 +623,9 @@ def download_pdf(filename):
 @bp.route('/meeting_centers/', methods=['GET', 'POST'])
 @role_required('Owner')
 def meeting_centers():
-    meeting_centers = MeetingCenter.query.all()
-    return render_template('meeting_centers.html', meeting_centers=meeting_centers)
+    meeting_centers    = MeetingCenter.query.all()
+    main_classes_exist = {mc.id: Classes.query.filter_by(meeting_center_id=mc.id, class_type='Main').count() > 0 for mc in meeting_centers}
+    return render_template('meeting_centers.html', meeting_centers=meeting_centers, main_classes_exist=main_classes_exist)
     
 @bp.route('/meeting_center/new', methods=['GET', 'POST'])
 @role_required('Owner')
@@ -703,57 +705,61 @@ def classes():
 
     return render_template('classes.html', classes=classes)
 # =============================================================================================
+
 @bp.route('/classes/new', methods=['GET', 'POST'])
 @role_required('Admin', 'Owner')
 def create_class():
-    form                           = ClassForm()
+    form = ClassForm()
     form.meeting_center_id.choices = [(mc.id, mc.name) for mc in MeetingCenter.query.all()]
     
     if form.validate_on_submit():
         new_class = Classes(
-            class_name        =form.class_name.data,
-            short_name        =form.short_name.data,
-            class_code        =form.class_code.data,
-            class_type        =form.class_type.data,
-            schedule          =form.schedule.data,
-            is_active         = form.is_active.data,
-            class_color       =form.class_color.data,
-            meeting_center_id = form.meeting_center_id.data
+            class_name=form.class_name.data,
+            short_name=form.short_name.data,
+            class_code=form.class_code.data,
+            class_type=form.class_type.data,
+            schedule=form.schedule.data,
+            is_active=form.is_active.data,
+            class_color=form.class_color.data,
+            meeting_center_id=form.meeting_center_id.data
         )
         try:
             db.session.add(new_class)
             db.session.commit()
             flash('Class created successfully!', 'success')
             return redirect(url_for('routes.classes'))
-        except Exception as e:
+        except IntegrityError:
             db.session.rollback()
-            flash(f'Error creating class: {e}', 'danger')
+            flash('A class with this name, short name, or code already exists in the same meeting center.', 'danger')
     return render_template('form.html', form=form, title="Create New Class", submit_button_text="Create", clas="warning")
+
 # =============================================================================================
 @bp.route('/classes/edit/<int:id>', methods=['GET', 'POST'])
 @role_required('Admin', 'Owner')
 def update_class(id):
+    class_instance = Classes.query.get_or_404(id)
+    form = ClassForm(obj=class_instance)
+    form.meeting_center_id.choices = [(mc.id, mc.name) for mc in MeetingCenter.query.all()]
     
-    class_instance                  = Classes.query.get_or_404(id)
-    form                            = ClassForm(obj=class_instance)
-    form.meeting_center_id.choices  = [(mc.id, mc.name) for mc in MeetingCenter.query.all()]
     if form.validate_on_submit():
-        class_instance.class_name         = form.class_name.data
-        class_instance.short_name         = form.short_name.data
-        class_instance.class_code         = form.class_code.data
-        class_instance.class_type         = form.class_type.data
-        class_instance.schedule           = form.schedule.data
-        class_instance.is_active          = form.is_active.data
-        class_instance.class_color        = form.class_color.data
-        class_instance.meeting_center_id  = form.meeting_center_id.data
+        class_instance.class_name = form.class_name.data
+        class_instance.short_name = form.short_name.data
+        class_instance.class_code = form.class_code.data
+        class_instance.class_type = form.class_type.data
+        class_instance.schedule = form.schedule.data
+        class_instance.is_active = form.is_active.data
+        class_instance.class_color = form.class_color.data
+        class_instance.meeting_center_id = form.meeting_center_id.data
         try:
             db.session.commit()
             flash('Class updated successfully!', 'success')
             return redirect(url_for('routes.classes'))
-        except Exception as e:
+        except IntegrityError:
             db.session.rollback()
-            flash(f'Error updating class: {e}', 'danger')
+            flash('A class with this name, short name, or code already exists in the same meeting center.', 'danger')
     return render_template('form.html', form=form, title="Edit Class", submit_button_text="Update", clas="warning")
+
+
 # =============================================================================================
 @bp.route('/classes/delete/<int:id>', methods=['POST'])
 @role_required('Admin', 'Owner')
@@ -773,6 +779,35 @@ def delete_class(id):
         db.session.rollback()
         flash(f'Error deleting class: {e}', 'danger')
     return redirect(url_for('routes.classes'))
+
+# =============================================================================================
+@bp.route('/classes/populate/<int:id>', methods=['POST'])
+@role_required('Owner')
+def populate_classes(id):
+    new_meeting_center_id = id
+    try:
+        existing_classes = Classes.query.filter_by(meeting_center_id=new_meeting_center_id).first()
+        if existing_classes:
+            flash("Classes already exist for this meeting center", "Warning", "danger")
+            return
+
+        main_classes = Classes.query.filter_by(class_type='Main').all()
+        for main_class in main_classes:
+            duplicate_class      = Classes(
+                class_name       =main_class.class_name,
+                short_name       =main_class.short_name,
+                class_code       =main_class.class_code,
+                class_type       =main_class.class_type,
+                schedule         =main_class.schedule,
+                is_active        =main_class.is_active,
+                class_color      =main_class.class_color,
+                meeting_center_id=new_meeting_center_id
+            )
+            db.session.add(duplicate_class)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        raise ValueError(f"Error duplicating main classes for new meeting center: {str(e)}")
 
 # =============================================================================================
 @bp.route('/organizations', methods=['GET'])

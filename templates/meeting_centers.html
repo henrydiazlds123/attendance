@@ -26,12 +26,17 @@
           <td>{{ meeting_center.start_time }}</td>
           <td>{{ meeting_center.end_time }}</td>
           <td>
-            <a type="button" class="btn btn-primary btn-sm" href="{{ url_for('routes.update_meeting_center', id=meeting_center.id) }}"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></a>
+            {% if session['role'] == 'Owner' %}
+            <a type="button" class="btn btn-primary btn-sm" ata-toggle="tooltip" title="Edit Unit" href="{{ url_for('routes.update_meeting_center', id=meeting_center.id) }}"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></a>
             <form id="deleteForm-meeting_center-{{ meeting_center.id }}" action="{{ url_for('routes.delete_meeting_center', id=meeting_center.id) }}" method="post" style="display:inline;">
-              <button type="button" class="btn btn-danger btn-sm" data-toggle="tooltip" title="Delete Meeting Center" onclick="confirmDelete('meeting_center', {{ meeting_center.id }})">
+              <button type="button" class="btn btn-danger btn-sm" data-toggle="tooltip" title="Delete Unit" onclick="confirmDelete('meeting_center', {{ meeting_center.id }})">
                 <i class="fa fa-trash-o fa-fw"></i>
               </button>
             </form>
+            {% if not main_classes_exist[meeting_center.id] %}     
+              <a class="btn btn-warning btn-sm"  data-toggle="tooltip" title="Add Main Classes to {{ meeting_center.name }}" href="{{ url_for('routes.populate_classes', id=meeting_center.id) }}"><i class="fa fa-graduation-cap"></i></a>
+            {% endif %}
+            {% endif %}
           </td>
         {% endfor %}
       </tbody>

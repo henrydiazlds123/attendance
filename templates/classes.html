@@ -80,7 +80,7 @@
               </a>
               {% if not (class.class_type == 'Main')  %}
               <form id="deleteForm-class-{{ class.id }}" action="{{ url_for('routes.delete_class', id=class.id) }}" method="post" style="display:inline;">
-                <button type="button" class="btn btn-danger btn-sm" data-toggle="tooltip" title="Eliminar Clase"  onclick="confirmDelete('classes', {{ class.id }})">
+                <button type="button" class="btn btn-danger btn-sm" data-toggle="tooltip" title="Eliminar Clase"  onclick="confirmDelete('class', {{ class.id }})">
                   <i class="fa fa-trash-o fa-fw"></i>
                 </button>
               </form>

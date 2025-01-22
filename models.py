@@ -1,14 +1,15 @@
-from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy  import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
-from flask_login import UserMixin
-from config import MOUNTAIN_TZ
-from sqlalchemy import Time
-from sqlalchemy.orm import validates#+
-from sqlalchemy.exc import IntegrityError#
+from datetime          import datetime
+from flask_login       import UserMixin
+from config            import MOUNTAIN_TZ
+from sqlalchemy        import Time
+from sqlalchemy.orm    import validates
+from sqlalchemy.exc    import IntegrityError
+from sqlalchemy        import UniqueConstraint
+from wtforms.validators import Regexp
 
 db = SQLAlchemy()
-
 
 #=======================================================================
 class User(db.Model, UserMixin):
@@ -95,20 +96,54 @@ class MeetingCenter(db.Model):
         db.session.delete(self)
 
 #=======================================================================
+# class Classes(db.Model):
+#     __tablename__ = 'classes'
+    
+#     id                = db.Column(db.Integer, primary_key=True)
+#     class_name        = db.Column(db.String(50), nullable=False, unique=True)
+#     short_name        = db.Column(db.String(20), nullable=False, unique=True)
+#     class_code        = db.Column(db.String(10), nullable=False, unique=True)
+#     class_type        = db.Column(db.String(10), nullable=False, default='Main')
+#     schedule          = db.Column(db.String(10), nullable=True)
+#     is_active         = db.Column(db.Boolean, nullable=False, default=True)  # Nuevo campo
+#     class_color       = db.Column(db.String(7), nullable=True, default="#000000")  # Formato de color hexadecimal
+#     meeting_center_id = db.Column(db.Integer, db.ForeignKey('meeting_center.id'), nullable=False)  # Clave foránea
+#     attendances       = db.relationship('Attendance', backref=db.backref('classes', lazy=True), cascade="all, delete-orphan")
+    
+#     @validates('attendances')
+#     def validate_no_attendance(self, key, value):
+#         if self.attendances:
+#             raise IntegrityError("Cannot delete a class with registered attendance", params={}, statement=None)
+#         return value
+
+#     def delete(self):
+#         if self.attendances:
+#             raise ValueError("Cannot delete a class with registered attendance.")
+#         db.session.delete(self)
+        
+        
 class Classes(db.Model):
-    __tablename__ = 'classes'
-    
+    __tablename__     = 'classes'
+
     id                = db.Column(db.Integer, primary_key=True)
-    class_name        = db.Column(db.String(50), nullable=False, unique=True)
-    short_name        = db.Column(db.String(20), nullable=False, unique=True)
-    class_code        = db.Column(db.String(10), nullable=False, unique=True)
-    class_type        = db.Column(db.String(10), nullable=False, default='Main')
+    class_name        = db.Column(db.String(50), nullable=False)
+    short_name        = db.Column(db.String(20), nullable=False)
+    class_code        = db.Column(db.String(10), nullable=False)
+    class_type        = db.Column(db.String(10), nullable=False, default='Extra')
     schedule          = db.Column(db.String(10), nullable=True)
-    is_active         = db.Column(db.Boolean, nullable=False, default=True)  # Nuevo campo
-    class_color       = db.Column(db.String(7), nullable=True, default="#000000")  # Formato de color hexadecimal
-    meeting_center_id = db.Column(db.Integer, db.ForeignKey('meeting_center.id'), nullable=False)  # Clave foránea
+    is_active         = db.Column(db.Boolean, nullable=False, default=True)
+    class_color       = db.Column(db.String(7), nullable=True, default="#000000")
+    meeting_center_id = db.Column(db.Integer, db.ForeignKey('meeting_center.id'), nullable=False)
+
     attendances       = db.relationship('Attendance', backref=db.backref('classes', lazy=True), cascade="all, delete-orphan")
-    
+
+    # Unique constraint for class_code, class_name, and short_name within the same meeting_center
+    __table_args__    = (
+        UniqueConstraint('class_code', 'meeting_center_id', name='uq_class_code_meeting_center'),
+        UniqueConstraint('class_name', 'meeting_center_id', name='uq_class_name_meeting_center'),
+        UniqueConstraint('short_name', 'meeting_center_id', name='uq_short_name_meeting_center'),
+    )
+
     @validates('attendances')
     def validate_no_attendance(self, key, value):
         if self.attendances:
@@ -118,8 +153,7 @@ class Classes(db.Model):
     def delete(self):
         if self.attendances:
             raise ValueError("Cannot delete a class with registered attendance.")
-        db.session.delete(self)
-        
+        db.session.delete(self)        
         
 #=======================================================================        
 class Organization(db.Model):

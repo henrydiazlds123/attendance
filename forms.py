@@ -3,6 +3,7 @@ from flask_wtf import FlaskForm
 from wtforms import BooleanField, StringField, PasswordField, DateField, SelectField, TimeField
 from wtforms.validators import DataRequired, Email, Length, Optional, EqualTo, ValidationError
 from datetime import datetime, timedelta
+from wtforms.validators import Regexp
 
 
 
@@ -117,6 +118,7 @@ class AttendanceEditForm(FlaskForm):
     # meeting_center_id   = SelectField('Unit', coerce=int, validators=[DataRequired()])
     
 #==================================================================================================    
+
 class ClassForm(FlaskForm):
     class_name        = StringField('Class Name', validators=[DataRequired(), Length(max=50)])
     short_name        = StringField('Short Name', validators=[DataRequired(), Length(max=20)])
@@ -124,8 +126,8 @@ class ClassForm(FlaskForm):
     class_type        = SelectField('Class Type', choices=[('Main', 'Main'), ('Extra', 'Extra')], default='Extra')
     schedule          = StringField('Schedule', validators=[Length(max=10)])
     is_active         = BooleanField('Is Active?', default=True)
-    class_color       = StringField('Hex Color', validators=[Length(max=7)])
-    meeting_center_id = SelectField('Unit', coerce=int, validators=[DataRequired()])
+    class_color       = StringField('Hex Color', validators=[Length(max=7), Regexp(r'^#(?:[0-9a-fA-F]{3}){1,2}$', message="Invalid color format")])
+    meeting_center_id = SelectField('Meeting Center', coerce=int, validators=[DataRequired()])
     
     def __init__(self, *args, **kwargs):
         super(ClassForm, self).__init__(*args, **kwargs)
@@ -133,11 +135,6 @@ class ClassForm(FlaskForm):
             if session['role'] != 'Owner':
                 self.meeting_center_id.data = session.get('meeting_center_id')
                 self.meeting_center_id.render_kw = {'disabled': 'disabled'}
-
-    def validate(self, extra_validators=None):
-        if 'role' in session and session['role'] != 'Owner' and self.meeting_center_id.data != session.get('meeting_center_id'):
-            self.meeting_center_id.errors.append('No puedes cambiar el Meeting Center.')
-            return False
 
 #==================================================================================================
 class OrganizationForm(FlaskForm):
