@@ -407,7 +407,7 @@ def delete_attendance(id):
     attendance = Attendance.query.get_or_404(id)
     db.session.delete(attendance)
     db.session.commit()
-    flash('Attendance record deleted successfully.')
+    flash('Attendance record deleted successfully.', 'success')
     return redirect(url_for('routes.attendances', **request.args.to_dict()))
 
 # =============================================================================================
@@ -580,9 +580,9 @@ def generate_pdfs():
         c.drawCentredString(page_width / 2, 625, class_name)
         
         qr_image = ImageReader(qr_filename)
-        qr_size = 450
-        qr_x = (page_width - qr_size) / 2
-        qr_y = (page_height - qr_size) / 2
+        qr_size  = 450
+        qr_x     = (page_width - qr_size) / 2
+        qr_y     = (page_height - qr_size) / 2
         c.drawImage(qr_image, qr_x, qr_y, width=qr_size, height=qr_size)
         
         c.setFont("Helvetica", 18)
@@ -592,6 +592,7 @@ def generate_pdfs():
         c.save()
 
     clean_qr_images(OUTPUT_DIR)
+    flash('QR Codes generated successfully.', 'success')
     return redirect(url_for('routes.list_pdfs'))
 
 
@@ -808,7 +809,7 @@ def edit_organization(id):
         try:
             db.session.commit()
             flash('Organization updated successfully!', 'success')
-            return redirect(url_for('organization.list_organizations'))
+            return redirect(url_for('routes.organizations'))
         except Exception as e:
             db.session.rollback()
             flash('Error: Organization name must be unique.', 'danger')
@@ -825,4 +826,4 @@ def delete_organization(id):
     except Exception as e:
         db.session.rollback()
         flash('Error: Could not delete organization.', 'danger')
-    return redirect(url_for('organization.list_organizations'))
+    return redirect(url_for('routes.organizations'))

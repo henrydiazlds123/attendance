@@ -1,11 +1,22 @@
 document.addEventListener("DOMContentLoaded", () => {
+  
   const attendanceForm   = document.getElementById("attendanceForm");
   const studentNameInput = document.getElementById("studentName");
 
+// ------------------------------------------------------------
+  setTimeout(() => {
+    const flashMessages = document.getElementById('flash-messages');
+    if (flashMessages) {
+      flashMessages.style.display = 'none';
+    }
+  }, 5000); // Oculta los mensajes flash después de 5 segundos
+
+
+// ------------------------------------------------------------
   // Verifica si el usuario está autenticado usando la variable de sesión proporcionada por el servidor
   const isLoggedIn = document.body.classList.contains("logged-in"); // Asegúrate de agregar esta clase si el usuario ha iniciado sesión
+  const savedName  = localStorage.getItem("studentName");
 
-  const savedName = localStorage.getItem("studentName");
   if (!isLoggedIn && savedName) {
     studentNameInput.value = savedName;
     sendAttendanceForm(new FormData(attendanceForm));
@@ -31,6 +42,8 @@ document.addEventListener("DOMContentLoaded", () => {
    });
   }
 
+
+// ------------------------------------------------------------
   async function sendAttendanceForm(formData) {
     try {
         const response = await fetch("/registrar", {
@@ -81,6 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
   
 });
 
+// ------------------------------------------------------------
 const deleteAllButton = document.getElementById("delete_all");
 if (deleteAllButton) {
   deleteAllButton.addEventListener("click", function () {
@@ -101,23 +115,8 @@ if (deleteAllButton) {
   });
 }
 
-// function confirmDelete(userId) {
-//   Swal.fire({
-//     title: "¿Estás seguro?",
-//     text: "¡No podrás deshacer esta acción!",
-//     icon: "warning",
-//     showCancelButton: true,
-//     confirmButtonColor: "#d33",
-//     cancelButtonColor: "#3085d6",
-//     confirmButtonText: "Sí, eliminar",
-//     cancelButtonText: "Cancelar",
-//   }).then((result) => {
-//     if (result.isConfirmed) {
-//       document.getElementById(`deleteUser-${userId}`).submit();
-//     }
-//   });
-// }
 
+// ------------------------------------------------------------
 function confirmDelete(entityType, entityId) {
   const formId = `deleteForm-${entityType}-${entityId}`;  // Formulario con id basado en el tipo de entidad y su ID
 
@@ -137,6 +136,7 @@ function confirmDelete(entityType, entityId) {
   });
 }
 
+// ------------------------------------------------------------
 function clearName() {
   if (document.getElementById("chkNameClear") && document.getElementById("chkNameClear").checked) {
     localStorage.clear();
@@ -144,6 +144,7 @@ function clearName() {
   }
 }
 
+// ------------------------------------------------------------
 function confirmPromotion(userId, username) {
   Swal.fire({
     title: '¿Estás seguro?',

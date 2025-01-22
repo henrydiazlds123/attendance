@@ -5,6 +5,7 @@
     <p class="mt-2">Use esta página para agregar su asistencia a la clase que figura a continuación.</p>
     <p>Una vez que envíe su asistencia y reciba una confirmación, podrá cerrar la aplicación.</p>
     <h3 id="classNameDisplay" class="mb-3 text-center"></h3>
+    
     <form id="attendanceForm" method="POST" action="{{ url_for('routes.registrar') }}">
         <div class="input-group mb-3">
             <input type="text" class="form-control" id="studentName" name="studentName" placeholder="Nombre y Apellido"
