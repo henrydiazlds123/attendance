@@ -61,6 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 confirmButtonText: "OK",
             }).then((result) => {
                 if (result.isConfirmed) {
+                  studentNameInput.value = ""
                     window.close();
                     if (savedName) {
                         window.location.href = "https://www.churchofjesuschrist.org/?lang=spa";

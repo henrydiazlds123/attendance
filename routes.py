@@ -1,8 +1,8 @@
-from flask import Blueprint, abort, jsonify, render_template, redirect, request, session, url_for, flash, send_from_directory
+from flask import Blueprint, abort, jsonify, render_template, redirect, request, session, url_for, flash, send_from_directory, send_file
 import qrcode
 from sqlalchemy import func
-from config import BASE_URL
-from models import db, Classes, User, Attendance, MeetingCenter, Config, Organization
+from config import Config
+from models import db, Classes, User, Attendance, MeetingCenter, Setup, Organization
 from forms import AttendanceEditForm, AttendanceForm, MeetingCenterForm, UserForm, EditUserForm, ResetPasswordForm, ClassForm, OrganizationForm
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.utils import ImageReader
@@ -60,12 +60,42 @@ def reset_name():
 
 # =============================================================================================
 
+# @bp.route('/users')
+# @role_required('Admin', 'Owner')
+# def users():
+#     role                = session.get('role')
+#     meeting_center_id   = session.get('meeting_center_id')
+#     admin_count         = User.query.filter_by(role='Admin').count()
+
+#     if role == 'Owner':
+#         # Los Owners pueden ver todos los usuarios
+#         query = db.session.query(
+#             User.id,
+#             User.username,
+#             User.email,
+#             User.role,
+#             MeetingCenter.short_name.label('meeting_short_name'),
+#             Organization.name.label('organization_name')
+#             ).join(MeetingCenter, User.meeting_center_id == MeetingCenter.id).join(Organization, User.organization_id == Organization.id)
+            
+
+                                
+#         users = query.all()
+#     elif role == 'Admin':
+#         # Los Admins solo pueden ver los usuarios de su Meeting Center, excluyendo a los Owners
+#         users = User.query.filter_by(meeting_center_id=meeting_center_id).filter(User.role != 'Owner').all()
+#     else:
+#         # Los usuarios regulares solo pueden ver su propio usuario
+#         users = User.query.filter_by(student_name=session.get('username')).all()
+
+#     return render_template('users.html', users=users, admin_count=admin_count)
+
 @bp.route('/users')
 @role_required('Admin', 'Owner')
 def users():
-    role                = session.get('role')
-    meeting_center_id   = session.get('meeting_center_id')
-    admin_count         = User.query.filter_by(role='Admin').count()
+    role = session.get('role')
+    meeting_center_id = session.get('meeting_center_id')
+    admin_count = User.query.filter_by(role='Admin').count()
 
     if role == 'Owner':
         # Los Owners pueden ver todos los usuarios
@@ -76,19 +106,27 @@ def users():
             User.role,
             MeetingCenter.short_name.label('meeting_short_name'),
             Organization.name.label('organization_name')
-            ).join(MeetingCenter, User.meeting_center_id == MeetingCenter.id).join(Organization, User.organization_id == Organization.id)
-            
+        ).join(MeetingCenter, User.meeting_center_id == MeetingCenter.id).join(Organization, User.organization_id == Organization.id)
 
-                                
         users = query.all()
     elif role == 'Admin':
         # Los Admins solo pueden ver los usuarios de su Meeting Center, excluyendo a los Owners
-        users = User.query.filter_by(meeting_center_id=meeting_center_id).filter(User.role != 'Owner').all()
+        users = db.session.query(
+           User.id,
+            User.username,
+            User.email,
+            User.role,
+            Organization.name.label('organization_name')
+        ).join(MeetingCenter, User.meeting_center_id == MeetingCenter.id).join(Organization, User.organization_id == Organization.id).filter(User.role != 'Owner').all()
     else:
         # Los usuarios regulares solo pueden ver su propio usuario
         users = User.query.filter_by(student_name=session.get('username')).all()
 
     return render_template('users.html', users=users, admin_count=admin_count)
+
+
+
+
 
 # =============================================================================================
 @bp.route('/user/new', methods=['GET', 'POST'])
@@ -224,7 +262,7 @@ def attendance():
     if not class_code or not sunday_code or not unit_number:
         return render_template('400.html'), 400
 
-    code_verification_setting = Config.query.filter_by(key='code_verification').first()
+    code_verification_setting = Setup.query.filter_by(key='code_verification').first()
     code_verification_enabled = code_verification_setting.value if code_verification_setting else 'true'
 
     if code_verification_enabled == 'false':
@@ -260,7 +298,7 @@ def attendances():
     sunday_date   = request.args.get('sunday_date')
 
     # Get the configuration for code verification setting
-    code_verification_setting = Config.query.filter_by(key='code_verification').first()
+    code_verification_setting = Setup.query.filter_by(key='code_verification').first()
 
     # Build the base query for attendance
     query = db.session.query(
@@ -311,7 +349,7 @@ def attendances():
             if code_verification_setting:
                 code_verification_setting.value = new_value
             else:
-                code_verification_setting = Config(key='code_verification', value=new_value)
+                code_verification_setting = Setup(key='code_verification', value=new_value)
                 db.session.add(code_verification_setting)
             db.session.commit()
 
@@ -426,7 +464,7 @@ def manual_attendance():
 
     class_links = {
         class_entry.class_code: {
-            'url': f"{BASE_URL}/attendance?class_name={class_entry.class_name}&class={class_entry.class_code}&code={next_sunday_code}&unit={unit}",
+            'url': f"{Config.BASE_URL}/attendance/manual?class_name={class_entry.class_name}&class={class_entry.class_code}&code={next_sunday_code}&unit={unit}",
             'name': class_entry.class_name
         }
         for class_entry in Classes.query.all() if str(sunday_week) in class_entry.schedule.split(',')
@@ -561,7 +599,7 @@ def generate_pdfs():
         else:
             continue
 
-        qr_url = f"{BASE_URL}/attendance?class_name={class_name.replace(' ', '+')}&code={next_sunday_code}&unit={unit}&class={class_code}"
+        qr_url = f"{Config.BASE_URL}/attendance?class_name={class_name.replace(' ', '+')}&code={next_sunday_code}&unit={unit}&class={class_code}"
         qr = qrcode.QRCode(version=1, box_size=10, border=4)
         qr.add_data(qr_url)
         qr.make(fit=True)
@@ -617,6 +655,38 @@ def download_pdf(filename):
     except Exception as e:
         print(f"Error: {e}")  # Log the actual error for debugging
         abort(500, description=str(e))
+        
+# =============================================================================================
+@bp.route('/generate_qr_code/<int:user_id>', methods=['GET'])
+def generate_qr_code(user_id):
+    try:
+        # Get the user from the database
+        user = User.query.get(user_id)
+        if not user:
+            flash("User not found", "danger")
+            return redirect(url_for('routes.users'))
+
+        # Generate token
+        token = generate_token(user.id)
+
+        # Construct the login URL with the token and redirect URL
+        login_url = f"{Config.BASE_URL}/login?token={token}&next=/attendance/manual"
+
+        # Generate QR code
+        qr = qrcode.make(login_url)
+
+        # Save QR code to memory
+        img_io = BytesIO()
+        qr.save(img_io, 'PNG')
+        img_io.seek(0)
+
+        # Return the QR code as a file response
+        return send_file(img_io, mimetype='image/png', as_attachment=True, download_name='login_qr_code.png')
+
+    except Exception as e:
+        flash(f"An error occurred: {str(e)}", "danger")
+        return redirect(url_for('routes.users'))
+
 
 # =============================================================================================
 # CRUD para Meeting Centers

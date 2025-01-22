@@ -2,6 +2,9 @@ import os
 from functools import wraps
 from datetime  import datetime, timedelta
 from flask     import flash, redirect, session, url_for
+from config import Config
+from itsdangerous import URLSafeTimedSerializer
+from io import BytesIO
 
 
 def role_required(*roles):
@@ -70,4 +73,10 @@ def get_output_dir():
     """Obtiene el directorio de salida dinámico basado en el número de unidad."""
     unit_number = session.get('meeting_center_number', 'default')  # Usa 'default' si no hay sesión activa
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'qr_codes', str(unit_number))
+
+# Generate token for user
+def generate_token(user_id):
+    serializer = URLSafeTimedSerializer(Config.SECRET_KEY)
+    return serializer.dumps(user_id, salt='login-salt')
+
 

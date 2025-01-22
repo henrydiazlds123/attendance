@@ -2,7 +2,7 @@ from flask_sqlalchemy  import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime          import datetime
 from flask_login       import UserMixin
-from config            import MOUNTAIN_TZ
+from config            import Config
 from sqlalchemy        import Time
 from sqlalchemy.orm    import validates
 from sqlalchemy.exc    import IntegrityError
@@ -43,7 +43,7 @@ class Attendance(db.Model):
     class_type          = db.Column(db.String(10), nullable=False, default='Main')  # Nuevo campo para tipo de clase
     sunday_date         = db.Column(db.Date, nullable=False)
     sunday_code         = db.Column(db.String(10), nullable=True)
-    submit_date         = db.Column(db.DateTime, default=lambda: datetime.now(MOUNTAIN_TZ), nullable=False)
+    submit_date         = db.Column(db.DateTime, default=lambda: datetime.now(Config.MOUNTAIN_TZ), nullable=False)
     meeting_center_id   = db.Column(db.Integer, db.ForeignKey('meeting_center.id'), nullable=False)   
 
     __table_args__ = (db.UniqueConstraint('student_name', 'sunday_date', 'meeting_center_id', name='unique_attendance'),)
@@ -61,8 +61,8 @@ class Attendance(db.Model):
 
 
 #=======================================================================
-class Config(db.Model):
-    __tablename__ = 'config'
+class Setup(db.Model):
+    __tablename__ = 'setup'
 
     id    = db.Column(db.Integer, primary_key=True)
     key   = db.Column(db.String(50), unique=True, nullable=False)

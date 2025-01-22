@@ -1,18 +1,37 @@
 {% extends "layout.html" %}
 {% block title %}Attendance | Manual Entry{% endblock %}
-
+{% block header %} Attendance Registration{% endblock %}
 {% block content %}
-    <p class="mt-2">Use esta página para agregar su asistencia a la clase que figura a continuación.</p>
-    <p>Una vez que envíe su asistencia y reciba una confirmación, podrá cerrar la aplicación.</p>
-    <h3 id="classNameDisplay" class="mb-3 text-center"></h3>
+
+    {% if not session['user_id'] %}
+        <p class="mt-2">Use this page to add your attendance to the class listed below.</p>
+        <p>Once you submit your attendance and receive a confirmation, you will be able to close the application.</p>
+    {% endif %}
+
+    {% if session['user_id'] %}
+        <p class="mt-2">Use this page to add the attendance to the class listed below.</p>
+        <p>You will be able to record attendance for those people who do not have the means to do so themselves.</p>
+    {% endif %}
+
+    <h4 id="classNameDisplay" class="mb-3 text-center"></h4>
     
     <form id="attendanceForm" method="POST" action="{{ url_for('routes.registrar') }}">
-        <div class="input-group mb-3">
-            <input type="text" class="form-control" id="studentName" name="studentName" placeholder="Nombre y Apellido"
-                aria-label="Ingresa un Nombre y un Apellido" aria-describedby="button-addon2" >
-                <button class="btn btn-success" type="submit" id="button-addon2">Enviar</button>
-        </div>
-                
+        <div class="input-group">
+            <!-- <div class="input-group-prepend">
+              <span class="input-group-text" id="">First and last name</span>
+            </div> -->
+            <input type="text" class="form-control" id="studentName" name="studentName"  aria-label="Enter your Name and Last name" aria-describedby="button-addon2">
+            <div class="input-group-append">
+                <button class="btn btn-success" type="submit" id="button-addon2"><i class="fa fa-share-square-o" aria-hidden="true"></i> Send</button>
+                {% if session['user_id'] %}
+                <a class="btn btn-outline-info" type="button" id="button-back" href="{{ url_for('routes.manual_attendance')}}"><i class="fa fa-chevron-left" aria-hidden="true"></i> Back</a>
+                {% endif %}
+              </div>
+            
+          </div>
+
+
+              
         <input type="hidden" id="className"   name="className">
         <input type="hidden" id="date"        name="date">
         <input type="hidden" id="classCode"   name="classCode">
@@ -32,13 +51,14 @@
     
         // Asigna valores a los campos ocultos
         if (className) {
-            document.getElementById('classNameDisplay').textContent = `Clase: ${decodeURIComponent(className)}`;
+            document.getElementById('classNameDisplay').textContent = `Class: ${decodeURIComponent(className)}`;
             document.getElementById('className').value              = decodeURIComponent(className);
             document.getElementById('sundayCode').value             = sundayCode;
             document.getElementById('unitNumber').value             = unitNumber;
             document.getElementById('classCode').value              = classCode;
         } else {
             document.getElementById('classNameDisplay').textContent = 'Clase no especificada';
+            document.getElementById('button-addon2').disabled       = true;
         }
     
         // Establece la fecha actual
