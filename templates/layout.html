@@ -8,6 +8,16 @@
         {% include 'partials/head.html' %}
         
         {% block head %}{% endblock %}
+
+        <style>
+            .is-valid {
+                border-color: #198754;
+            }
+            .is-invalid {
+                border-color: #dc3545;
+            }
+        </style>
+        
         
     </head>
 <body class="{{ 'logged-in' if session['user_id'] else '' }}">
@@ -17,26 +27,15 @@
         </header>
         <main role="main" class="container mt-5 pt-5">
             <div class="row">
-                <div class="col-lg-12 blog-main">
-                    <div class="blog-post">
-                        
-                        <h2 class="blog-post-title text-center">
-                            {% block header %}{% endblock %}
-                        </h2>
-                        <div class="fb-like" data-href="https://www.facebook.com/IndiceGenealogico" data-width=""
-                            data-layout="standard" data-action="like" data-size="small" data-share="true"></div>
-                        <div class="twoColumns">
-                            <p class="mb-3">
-                                {% block subtitle%}{% endblock%}
-                            </p>
-                        </div>
+                    <div class="blog-post">                     
+                        <h2 class="blog-post-title text-center"> {% block header %}{% endblock %} </h2>
+                            <p class="mb-3">{% block subtitle%}{% endblock%}</p>
                         <div>
                             {% block content %} {% endblock %}
                         </div>
                     </div>
 
-                </div>
-                <div class="container">
+                <div class="col-lg-6">
            
                     {% with messages = get_flashed_messages(with_categories=true) %}
                         {% if messages %}
@@ -56,6 +55,31 @@
     {% include 'partials/footer.html' %}
 
     {% block scripts %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const form = document.querySelector("form");
+            form.addEventListener("submit", function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add("was-validated");
+            });
+        
+            const inputs = form.querySelectorAll(".form-control");
+            inputs.forEach(input => {
+                input.addEventListener("input", function () {
+                    if (input.checkValidity()) {
+                        input.classList.remove("is-invalid");
+                        input.classList.add("is-valid");
+                    } else {
+                        input.classList.remove("is-valid");
+                        input.classList.add("is-invalid");
+                    }
+                });
+            });
+        });
+    </script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
     {% endblock %}

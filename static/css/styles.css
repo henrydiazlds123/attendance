@@ -2,7 +2,6 @@ body {
   display: flex;
   min-height: 100vh;
   flex-direction: column;
-  border-color: red !important;
 }
 
 main {
@@ -11,7 +10,7 @@ main {
 
 .page_404 {
   padding: 40px 0;
-  background: #fff;
+  background: #d2d2d2;
   font-family: 'Arvo', serif;
 }
 
@@ -36,7 +35,7 @@ main {
 }
 
 .link_404 {
-  color: #fff !important;
+  color: #d2d2d2 !important;
   padding: 10px 20px;
   background: #39ac31;
   margin: 20px 0;
@@ -56,7 +55,7 @@ main {
   border-radius: 50%;
   width: 40px;
   height: 30px;
-  background-color: white;
+  background-color: #d2d2d2;
   color: black;
   display: flex;
   justify-content: center;
@@ -77,5 +76,26 @@ div > label[for="csrf_token"] {
     top: 1rem;
     right: 1rem;
     cursor: pointer;
+}
+
+
+
+
+/* Personalización de etiquetas */
+.custom-label {
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+/* Personalización de campos */
+.custom-input {
+  border-radius: 0.5rem;
+  box-shadow: none;
+  border: 1px solid #dee2e6;
+}
+
+.custom-input:focus {
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
  

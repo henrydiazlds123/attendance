@@ -1,35 +1,90 @@
 {% extends "layout.html" %}
 {% block title %}Attendance | Login{% endblock %}
 {% block content %}
+
+
+{% block head%}
+<style>
+html,
+body {
+  height: 100%;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  padding-top: 40px;
+  padding-bottom: 40px;
+  background-color: #ffff;
+  opacity: 1;
+}
+
+.form-signin {
+  width: 100%;
+  max-width: 330px;
+  padding: 15px;
+  margin: auto;
+}
+
+
+.form-signin .checkbox {
+  font-weight: 400;
+}
+
+.form-signin .form-floating:focus-within {
+  z-index: 2;
+}
+
+.form-signin input {
+  margin-bottom: -1px;
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.form-signin input[type="password"] {
+  margin-bottom: 10px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+</style>
+{% endblock%}
 <div class="container">
   <div class="row justify-content-center">
-    <div class="col-md-6">
+    <div class="col-md-5">
       <div class="card-group mb-0">
         <div class="card p-4 mb-3">
           <div class="card-body  text-center">
-            <h1>Login</h1>
-            <p class="text-muted">Entre a su cuenta</p>
+            <img class="mb-4" src="{{ url_for('static', filename='/img/favicon/android-chrome-512x512.png') }}" alt="" width="72" height="72">
+            <h1 class="h3 mb-3 fw-normal">Please sign in</h1>
             <form method="POST">
 
-              <div class="input-group mb-3">
+              <div class="input-group mb-3 form-floating">
 
-                  <span class="input-group-text" id="username"><i class="fa fa-user"></i></span>
-
+                <span class="input-group-text" id="username"><i class="fa fa-user"></i></span>
                 <input type="text" class="form-control" placeholder="Username" aria-label="Username"
-                  aria-describedby="username" name="username" required>
+                aria-describedby="username" name="username" required>
+                <!-- <label class="ml-2" for="username">Username</label> -->
               </div>
 
 
-              <div class="input-group mb-3">
+              <div class="input-group mb-3 form-floating">
 
                   <span class="input-group-text" id="password"><i class="fa fa-lock"></i></span>
                 <input type="password" class="form-control" placeholder="Contraseña" aria-label="Contraseña"
                   name="password" required aria-describedby="password">
+                  <!-- <label for="password">Password</label> -->
+              </div>
+              <div class="checkbox mb-3">
+                <label>
+                  <input type="checkbox" value="remember-me"> Remember me
+                </label>
               </div>
 
-              <div class="btn btn-block">
-                <button type="submit" class="btn btn-primary px-4">Iniciar Sesión</button>
-              </div>
+
+                <button type="submit" class="w-100 btn btn-lg btn-primary px-4">Sing in</button>
+                <p class="mt-5 mb-3 text-muted">© 2025</p>
+
             </form>
           </div>
         </div>
@@ -37,4 +92,33 @@
     </div>
   </div>
 </div>
+
+
+  <!-- <main class="form-signin text-center">
+    <form method="POST">
+      <img class="mb-4" src="{{ url_for('static', filename='/img/favicon/android-chrome-512x512.png') }}" alt="" width="72" height="72">
+      <h1 class="h3 mb-3 fw-normal">Please sign in</h1>
+
+      <div class="form-floating">
+        <input type="input" class="form-control" id="username" placeholder="Username">
+        <label for="username">Username</label>
+      </div>
+      <div class="form-floating">
+        <input type="password" class="form-control" id="password" placeholder="Password">
+        <label for="password">Password</label>
+      </div>
+
+      <div class="checkbox mb-3">
+        <label>
+          <input type="checkbox" value="remember-me"> Remember me
+        </label>
+      </div>
+      <button class="w-100 btn btn-lg btn-primary" type="submit">Sign in</button>
+      <p class="mt-5 mb-3 text-muted">© 2025</p>
+    </form>
+  </main>
+ -->
+
+
+
 {% endblock %}

@@ -1,0 +1,33 @@
+<!-- {% macro render_field(field, label_class="col-md-3 col-form-label", input_class="form-control", group_class="row mb-3") %}{% endmacro %} -->
+{% macro render_field(field, label_class="col-md-3 col-form-label custom-label", input_class="form-control custom-input", group_class="row mb-3") %}
+
+{% if field.type == "BooleanField" %}
+<div class="{{ group_class }}">
+    <div class="form-check">
+        {{ field(class="form-check-input", id=field.id) }}
+        <label for="{{ field.id }}" class="form-check-label">{{ field.label }}</label>
+    </div>
+    {% if field.errors %}
+        <div class="text-danger small mt-1">
+            {% for error in field.errors %}
+                <div>{{ error }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+{% else %}
+<div class="{{ group_class }}">
+    <label for="{{ field.id }}" class="{{ label_class }}">{{ field.label }}</label>
+    <div class="col-sm-9">
+        {{ field(class=input_class, id=field.id) }}
+        {% if field.errors %}
+            <div class="text-danger small mt-1">
+                {% for error in field.errors %}
+                    <div>{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endmacro %}

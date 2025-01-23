@@ -40,7 +40,8 @@ class Attendance(db.Model):
     id                  = db.Column(db.Integer, primary_key=True)
     student_name        = db.Column(db.String(50), nullable=False)
     class_id            = db.Column(db.Integer, db.ForeignKey('classes.id'), nullable=False)
-    class_type          = db.Column(db.String(10), nullable=False, default='Main')  # Nuevo campo para tipo de clase
+    #class_type          = db.Column(db.String(10), nullable=False, default='Main')  # Nuevo campo para tipo de clase
+    class_code          = db.Column(db.String(5), nullable=True)
     sunday_date         = db.Column(db.Date, nullable=False)
     sunday_code         = db.Column(db.String(10), nullable=True)
     submit_date         = db.Column(db.DateTime, default=lambda: datetime.now(Config.MOUNTAIN_TZ), nullable=False)

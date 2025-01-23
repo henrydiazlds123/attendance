@@ -12,14 +12,18 @@ Cada vez que cambies los modelos, crea un nuevo script de migración:
 
 flask db migrate -m "Descripción del cambio"
 flask db migrate -m ""
-win11: python -m flask db migrate -m ""
+win11: python -m flask db migrate -m "Drop class_type field from Attendances"
 
 Aplicar los Cambios a la Base de Datos
 Para aplicar los cambios:
 
 flask db upgrade
+win: python -m flask db upgrade
 
 
 Si es necesario deshacer una migración, usa:
 
 flask db downgrade
+
+
+Arreglar com se regustra la asistencia cuando se entra manualmente. No tiene campo class_code y se elimino tipo de clase

@@ -1,32 +1,23 @@
 {% extends "layout.html" %}
-{% import "bootstrap/wtf.html" as wtf %}
+{% import "_form_macros.html" as macros %}
 
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-    <h2 class="mb-4">{{ title }}</h2>
-    <div class="col-lg-8 m-auto">
-    <form method="post">
-        {{ form.hidden_tag() }}
-        {% for field in form %}
-            <div class="form-group row mb-1">
-                <label for="{{ field.id }}" class="col-sm-2 col-form-label">{{ field.label }}</label>
-                <div class="col-sm-10">
-                    {{ field(class="form-control", id=field.id) }}
+<div class="container">
+    <h2 class="mb-4 text-center">{{ title }}</h2>
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <form method="post" novalidate>
+                {{ form.hidden_tag() }}
+                {% for field in form %}
+                    {{ macros.render_field(field) }}
+                {% endfor %}
+                <div class="text-center">
+                    <button type="submit" class="btn btn-{{ clas }} btn-lg w-50">{{ submit_button_text }}</button>
                 </div>
-                {% if field.errors %}
-                    <div class="alert alert-danger mt-2">
-                        <ul>
-                            {% for error in field.errors %}
-                                <li>{{ error }}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                {% endif %}
-            </div>
-        {% endfor %}
-        <button class="btn btn-{{ clas }} w-100 offset-md-2 col-sm-10" type="submit">{{ submit_button_text }}</button>
-    </form>
+            </form>
+        </div>
+    </div>
 </div>
 {% endblock %}
-

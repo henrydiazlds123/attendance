@@ -519,6 +519,7 @@ def registrar():
         new_attendance          = Attendance(
             student_name        = formatted_name,
             class_id            = class_entry.id,
+            class_code          = class_code,
             sunday_date         = sunday_date,
             sunday_code         = sunday_code,
             meeting_center_id   = meeting_center.id
@@ -548,13 +549,26 @@ def registrar():
 def list_pdfs():
     OUTPUT_DIR = get_output_dir()
     
+    meeting_center_id = session.get('meeting_center_id')
+    # Verificar si hay clases asociadas al meeting center
+    has_classes       = Classes.query.filter_by(meeting_center_id=meeting_center_id, is_active=True).first() is not None
+    print(f"Has Classes (Meeting Center {meeting_center_id}): {has_classes}")
+    
+    # Verificar si hay clases 'Main' activas
+    has_main_classes  = Classes.query.filter_by(meeting_center_id=meeting_center_id, is_active=True, class_type='Main').first() is not None
+    print(f"Has Main Classes (Meeting Center {meeting_center_id}): {has_main_classes}")
+    
+    # Verificar si hay clases 'Extra' activas
+    has_extra_classes = Classes.query.filter_by(meeting_center_id=meeting_center_id, is_active=True, class_type='Extra').first() is not None
+    print(f"Has Extra Classes (Meeting Center {meeting_center_id}): {has_extra_classes}")
+    
     if not os.path.exists(OUTPUT_DIR):
       os.makedirs(OUTPUT_DIR)  # Crea el directorio si no existe
       
     directory = os.path.join(os.getcwd(), OUTPUT_DIR)
     pdf_files = os.listdir(directory)
     
-    return render_template('list_pdfs.html', pdf_files=pdf_files)
+    return render_template('list_pdfs.html', pdf_files=pdf_files, has_classes=has_classes, has_main_classes=has_main_classes, has_extra_classes=has_extra_classes)
 
 # =============================================================================================
 # Botones en la interfaz para generar PDFs:
@@ -570,20 +584,36 @@ def generate_week_pdfs():
     return redirect(url_for('routes.generate_pdfs', type='semana_especifica'))  # redirige a la misma función para PDFs de la semana específica
 
 # =============================================================================================
+@bp.route('/generate_week_pdfs', methods=['GET', 'POST'])
+@role_required('Admin', 'Owner')
+def generate_extra_pdfs():
+    return redirect(url_for('routes.generate_pdfs', type='extra'))  # redirige a la misma función para PDFs de la semana específica
+
+# =============================================================================================
 @bp.route('/generate_pdfs', methods=['GET', 'POST'])
 @role_required('Admin', 'Owner')
 def generate_pdfs():
+    
     OUTPUT_DIR = get_output_dir()
     
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     sunday_week = get_sunday_week(get_next_sunday())
+    
     clases_a_imprimir = (
-        # [c.class_name for c in Classes.query.all()]
         [c.class_name for c in Classes.query.filter_by(is_active=True)]
-        if request.args.get('type') == 'todos' 
+        if request.args.get('type') == 'todos'
+        else [c.class_name for c in Classes.query.filter_by(is_active=True, class_type='extra')]
+        if request.args.get('type') == 'extra'
         else [c.class_name for c in Classes.query.filter_by(is_active=True) if str(sunday_week) in c.schedule.split(',')]
     )
+    
+    # clases_a_imprimir = (
+    #     # [c.class_name for c in Classes.query.all()]
+    #     [c.class_name for c in Classes.query.filter_by(is_active=True)]
+    #     if request.args.get('type') == 'todos'         
+    #     else [c.class_name for c in Classes.query.filter_by(is_active=True) if str(sunday_week) in c.schedule.split(',')]
+    # )
 
     next_sunday_code = get_next_sunday_code(get_next_sunday())
     unit             = session['meeting_center_number']
@@ -594,7 +624,7 @@ def generate_pdfs():
     for class_name in clases_a_imprimir:
         class_entry = Classes.query.filter_by(class_name=class_name).first()
         if class_entry:
-            class_code = class_entry.class_code
+            class_code  = class_entry.class_code
             class_color = class_entry.class_color or "black"  # Usa el color almacenado o negro por defecto
         else:
             continue
@@ -852,75 +882,30 @@ def delete_class(id):
     return redirect(url_for('routes.classes'))
 
 # =============================================================================================
-@bp.route('/classes/populate/<int:id>', methods=['GET', 'POST'])
-@role_required('Owner')
-def populate_classes(id):
-    new_meeting_center_id = id
-    try:
-        existing_classes = Classes.query.filter_by(meeting_center_id=new_meeting_center_id).first()
-        if existing_classes:
-            flash("Classes already exist for this meeting center", "Warning", "danger")
-            return
-
-        main_classes = Classes.query.filter_by(class_type='Main').all()
-        for main_class in main_classes:
-            duplicate_class      = Classes(
-                class_name       =main_class.class_name,
-                short_name       =main_class.short_name,
-                class_code       =main_class.class_code,
-                class_type       =main_class.class_type,
-                schedule         =main_class.schedule,
-                is_active        =main_class.is_active,
-                class_color      =main_class.class_color,
-                meeting_center_id=new_meeting_center_id
-            )
-            db.session.add(duplicate_class)
-#         # Confirmar los cambios en la base de datos
-        db.session.commit()
-        flash("Main classes successfully populated.", "success")
-    except IntegrityError as ie:
-        db.session.rollback()
-        flash(f"Unique constraint error: {str(ie)}", "danger")
-    except Exception as e:
-        db.session.rollback()
-        raise ValueError(f"Error duplicating main classes for new meeting center: {str(e)}")
-    
-    return redirect(url_for('routes.meeting_centers'))  # Redirige a una vista después de completar la operación
-
-
 # @bp.route('/classes/populate/<int:id>', methods=['GET', 'POST'])
 # @role_required('Owner')
 # def populate_classes(id):
 #     new_meeting_center_id = id
 #     try:
-#         # Verificar si ya existen clases para el Meeting Center especificado
 #         existing_classes = Classes.query.filter_by(meeting_center_id=new_meeting_center_id).first()
 #         if existing_classes:
-#             flash("Classes already exist for this meeting center", "warning")
-#             return redirect(url_for('some_view_function'))  # Redirige a una vista adecuada
+#             flash("Classes already exist for this meeting center", "Warning", "danger")
+#             return
 
-#         # Obtener solo las clases de tipo 'Main'
 #         main_classes = Classes.query.filter_by(class_type='Main').all()
 #         for main_class in main_classes:
-#             # Prefijar los valores de short_name, class_code y class_name para evitar conflictos
-#             prefixed_class_name = f"{new_meeting_center_id}_{main_class.class_name}"
-#             prefixed_short_name = f"{new_meeting_center_id}_{main_class.short_name}"
-#             prefixed_class_code = f"{new_meeting_center_id}_{main_class.class_code}"
-            
-#             # Crear la nueva clase con los valores prefijados
-#             duplicate_class = Classes(
-#                 class_name=prefixed_class_name,
-#                 short_name=prefixed_short_name,
-#                 class_code=prefixed_class_code,
-#                 class_type=main_class.class_type,
-#                 schedule=main_class.schedule,
-#                 is_active=main_class.is_active,
-#                 class_color=main_class.class_color,
+#             duplicate_class      = Classes(
+#                 class_name       =main_class.class_name,
+#                 short_name       =main_class.short_name,
+#                 class_code       =main_class.class_code,
+#                 class_type       =main_class.class_type,
+#                 schedule         =main_class.schedule,
+#                 is_active        =main_class.is_active,
+#                 class_color      =main_class.class_color,
 #                 meeting_center_id=new_meeting_center_id
 #             )
 #             db.session.add(duplicate_class)
-        
-#         # Confirmar los cambios en la base de datos
+# #         # Confirmar los cambios en la base de datos
 #         db.session.commit()
 #         flash("Main classes successfully populated.", "success")
 #     except IntegrityError as ie:
@@ -931,6 +916,116 @@ def populate_classes(id):
 #         raise ValueError(f"Error duplicating main classes for new meeting center: {str(e)}")
     
 #     return redirect(url_for('routes.meeting_centers'))  # Redirige a una vista después de completar la operación
+
+
+
+@bp.route('/classes/populate/<int:id>', methods=['GET', 'POST'])
+@role_required('Owner')
+def populate_classes(id):
+    new_meeting_center_id = id
+
+    # Arreglo estático con las clases tipo Main
+    main_classes_static = [
+        {
+            "class_name": "Elders Quorum",
+            "short_name": "Elders_Q",
+            "class_code": "EQ",
+            "class_type": "Main",
+            "schedule"  : "2,4",
+            "is_active" : True,
+            "class_color": None  # Esto se puede ajustar en el futuro
+        },
+        {
+            "class_name": "Aaronic Priesthood",
+            "short_name": "Aaronic_P",
+            "class_code": "AP",
+            "class_type": "Main",
+            "schedule"  : "2,4",
+            "is_active" : True,
+            "class_color": None
+        },
+        {
+            "class_name": "Relief Society",
+            "short_name": "Relief_S",
+            "class_code": "RS",
+            "class_type": "Main",
+            "schedule"  : "2,4",
+            "is_active" : True,
+            "class_color": "#ba8e23"
+        },
+        {
+            "class_name": "Young Woman",
+            "short_name": "Young_W",
+            "class_code": "YW",
+            "class_type": "Main",
+            "schedule"  : "2,4",
+            "is_active" : True,
+            "class_color": "#943f88"
+        },
+        {
+            "class_name": "Sunday School - Adults",
+            "short_name": "S_S_Adults",
+            "class_code": "SSA",
+            "class_type": "Main",
+            "schedule"  : "1,3",
+            "is_active" : True,
+            "class_color": None
+        },
+        {
+            "class_name": "Sunday School - Youth",
+            "short_name": "S_S_Youth",
+            "class_code": "SSY",
+            "class_type": "Main",
+            "schedule"  : "1,3",
+            "is_active" : True,
+            "class_color": None
+        },
+        {
+            "class_name": "Fifth Sunday",
+            "short_name": "F_Sunday",
+            "class_code": "FS",
+            "class_type": "Main",
+            "schedule"  : "5",
+            "is_active" : True,
+            "class_color": None
+        }
+    ]
+
+    try:
+        # Validar si ya existen clases asociadas al nuevo Meeting Center
+        existing_classes = Classes.query.filter_by(meeting_center_id=new_meeting_center_id).first()
+        if existing_classes:
+            flash("Classes already exist for this meeting center", "warning")
+            return redirect(url_for('routes.meeting_centers'))
+
+        # Insertar las clases del arreglo estático
+        for class_data in main_classes_static:
+            new_class = Classes(
+                class_name=class_data["class_name"],
+                short_name=class_data["short_name"],
+                class_code=class_data["class_code"],
+                class_type=class_data["class_type"],
+                schedule=class_data["schedule"],
+                is_active=class_data["is_active"],
+                class_color=class_data["class_color"],
+                meeting_center_id=new_meeting_center_id
+            )
+            db.session.add(new_class)
+
+        # Confirmar los cambios en la base de datos
+        db.session.commit()
+        flash("Main classes successfully populated.", "success")
+
+    except IntegrityError as ie:
+        db.session.rollback()
+        flash(f"Unique constraint error: {str(ie)}", "danger")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error duplicating main classes for new meeting center: {str(e)}", "danger")
+
+    return redirect(url_for('routes.meeting_centers'))
+
+
 
 
 # =============================================================================================
