@@ -577,85 +577,133 @@ def generate_week_pdfs():
     return redirect(url_for('routes.generate_pdfs', type='semana_especifica'))  # redirige a la misma función para PDFs de la semana específica
 
 # =============================================================================================
-@bp.route('/generate_week_pdfs', methods=['GET', 'POST'])
+@bp.route('/generate_extra_pdfs', methods=['GET', 'POST'])
 @role_required('Admin', 'Owner')
 def generate_extra_pdfs():
-    return redirect(url_for('routes.generate_pdfs', type='extra'))  # redirige a la misma función para PDFs de la semana específica
+    selected_date = request.form.get('date')  # Obtener la fecha desde el formulario
+    print(f'Date: {selected_date}')
+
+    # Validar si la fecha fue proporcionada
+    if not selected_date:
+        flash('Debes proporcionar una fecha para las clases Extra.', 'error')
+        return redirect(url_for('routes.list_classes'))
+
+    # Redirigir a la función generate_pdfs con la fecha como argumento
+    return redirect(url_for('routes.generate_pdfs', type='extra', selected_date=selected_date))
 
 # =============================================================================================
 @bp.route('/generate_pdfs', methods=['GET', 'POST'])
 @role_required('Admin', 'Owner')
 def generate_pdfs():
+    user_date = request.args.get('selected_date')
+    print(f"User-provided date: {user_date}")  # Debugging
     
     OUTPUT_DIR = get_output_dir()
-    
+    print(f"Output directory: {OUTPUT_DIR}")
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    sunday_week = get_sunday_week(get_next_sunday())
-    
-    clases_a_imprimir = (
-        [c.class_name for c in Classes.query.filter_by(is_active=True)]
-        if request.args.get('type') == 'todos'
-        else [c.class_name for c in Classes.query.filter_by(is_active=True, class_type='extra')]
-        if request.args.get('type') == 'extra'
-        else [c.class_name for c in Classes.query.filter_by(is_active=True) if str(sunday_week) in c.schedule.split(',')]
-    )
-    
-    # clases_a_imprimir = (
-    #     # [c.class_name for c in Classes.query.all()]
-    #     [c.class_name for c in Classes.query.filter_by(is_active=True)]
-    #     if request.args.get('type') == 'todos'         
-    #     else [c.class_name for c in Classes.query.filter_by(is_active=True) if str(sunday_week) in c.schedule.split(',')]
-    # )
-
-    next_sunday_code = get_next_sunday_code(get_next_sunday())
-    unit             = session['meeting_center_number']
-    unit_name        = session['meeting_center_name']
-    
-    clean_qr_folder(OUTPUT_DIR)
-
-    for class_name in clases_a_imprimir:
-        class_entry = Classes.query.filter_by(class_name=class_name).first()
-        if class_entry:
-            class_code  = class_entry.class_code
-            class_color = class_entry.class_color or "black"  # Usa el color almacenado o negro por defecto
+    # Función auxiliar para obtener la fecha de la clase
+    def get_class_date(class_type, user_date=None):
+        if class_type == 'Main':
+            return get_next_sunday()  # Fecha del próximo domingo
+        elif class_type == 'Extra' and user_date:
+            try:
+                class_date = datetime.strptime(user_date, '%Y-%m-%d')
+                if class_date.date() >= datetime.today().date():
+                    return class_date
+                else:
+                    raise ValueError("La fecha debe ser hoy o en el futuro.")
+            except ValueError as e:
+                flash(str(e), 'error')
+                print(f"Error parsing date: {e}")
+                return None
         else:
+            flash("Fecha no válida para clase extra.", 'error')
+            print("Invalid date for extra class.")
+            return None
+
+    # Obtener el ID del meeting center desde la sesión
+    next_sunday_code  = get_next_sunday_code(get_next_sunday())
+    meeting_center_id = session['meeting_center_id']
+    unit_name         = session['meeting_center_name']
+    unit              = session['meeting_center_number']
+
+    # Obtener las clases filtradas por meeting center
+    clases_a_imprimir = list({
+        c for c in (
+            Classes.query.filter_by(is_active=True, meeting_center_id=meeting_center_id)
+            if request.args.get('type') == 'todos'
+            else Classes.query.filter_by(is_active=True, class_type='Extra', meeting_center_id=meeting_center_id)
+            if request.args.get('type') == 'extra'
+            else [
+                c for c in Classes.query.filter_by(is_active=True, meeting_center_id=meeting_center_id)
+                if str(get_next_sunday().isocalendar()[1]) in c.schedule.split(',')
+            ]
+        )
+    })
+
+    print(f"Classes to print for meeting center {meeting_center_id}: {[c.class_name for c in clases_a_imprimir]}")
+
+    clean_qr_folder(OUTPUT_DIR)
+    print("QR folder cleaned.")
+
+    for class_entry in clases_a_imprimir:
+        if class_entry.class_type == 'Extra' and not user_date:
+            print(f"No date provided for extra class: {class_entry.class_name}")
             continue
 
-        qr_url = f"{Config.BASE_URL}/attendance?class_name={class_name.replace(' ', '+')}&code={next_sunday_code}&unit={unit}&class={class_code}"
+        class_date = get_class_date(class_entry.class_type, user_date)
+        if not class_date:
+            print(f"Skipping class {class_entry.class_name} due to invalid date.")
+            continue
+
+        class_name  = class_entry.class_name
+        class_code  = class_entry.class_code
+        class_color = class_entry.class_color or "black"
+
+        qr_url = f"{Config.BASE_URL}/attendance?class_name={class_name.replace(' ', '+')}&code={next_sunday_code}&date={class_date.strftime('%Y-%m-%d')}&unit={unit}&class={class_code}"
+        print(f"QR URL for {class_name}: {qr_url}")
+
         qr = qrcode.QRCode(version=1, box_size=10, border=4)
         qr.add_data(qr_url)
         qr.make(fit=True)
         img = qr.make_image(fill_color=class_color, back_color="white")
-        
-        qr_filename = os.path.join(OUTPUT_DIR, f"{class_name}_{get_next_sunday()}.png")
+
+        qr_filename = os.path.join(OUTPUT_DIR, f"{class_name}_{class_date.strftime('%Y-%m-%d')}.png")
         img.save(qr_filename)
-        
-        pdf_filename = os.path.join(OUTPUT_DIR, f"{class_name}_{get_next_sunday()}.pdf")
+        print(f"QR code saved: {qr_filename}")
+
+        pdf_filename = os.path.join(OUTPUT_DIR, f"{class_name}_{class_date.strftime('%Y-%m-%d')}.pdf")
         c = canvas.Canvas(pdf_filename, pagesize=letter)
         page_width, page_height = letter
-        
+
         c.setFont("Helvetica-Bold", 24)
         c.setFillColor("black")
-        c.drawCentredString(page_width / 2, 670, f"Lista de Asistencia")
+        c.drawCentredString(page_width / 2, 670, f"Attendance Sheet")
         c.setFont("Helvetica-Bold", 35)
         c.drawCentredString(page_width / 2, 625, class_name)
-        
+
         qr_image = ImageReader(qr_filename)
-        qr_size  = 430
-        qr_x     = (page_width - qr_size) / 2
-        qr_y     = (page_height - qr_size) / 2
+        qr_size = 430
+        qr_x = (page_width - qr_size) / 2
+        qr_y = (page_height - qr_size) / 2
         c.drawImage(qr_image, qr_x, qr_y, width=qr_size, height=qr_size)
-        
+
         c.setFont("Helvetica", 18)
         c.setFillColor("black")
         c.drawCentredString(page_width / 2, qr_y - 15, unit_name)
-        c.drawCentredString(page_width / 2, qr_y - 40, f"{get_next_sunday().strftime('%B %d, %Y')}")
+        c.drawCentredString(page_width / 2, qr_y - 40, f"{class_date.strftime('%B %d, %Y')}")
         c.save()
+        print(f"PDF saved: {pdf_filename}")
 
     clean_qr_images(OUTPUT_DIR)
+    print("QR images cleaned.")
+
     flash('QR Codes generated successfully.', 'success')
     return redirect(url_for('routes.list_pdfs'))
+
+
+
 
 
 # =============================================================================================
