@@ -1,0 +1,57 @@
+<nav class="navbar navbar-expand-sm bg-dark navbar-dark fixed-top">
+    <div class="container" id="nana">
+        <a class="navbar-brand" href="{{ url_for('routes.index') }}"><img
+                src="{{ url_for('static', filename='/img/favicon/android-chrome-512x512.png') }}"
+                alt="Company Logo" style="width:40px;"></a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+            aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            
+            <ul class="navbar-nav">
+                
+                <li class="theme-toggle"><a class="btn" id="themeSwitcher" href="">Toggle Dark Mode</a></li>
+
+                {% if session['user_id'] %}
+                
+                    <li class="nav-item {{ 'active' if request.endpoint == 'routes.index' else '' }}"><a class="nav-link" href="{{ url_for('routes.index') }}"><i class="fa fa-home" aria-hidden="true"></i> Home <span class="sr-only">(current)</span></a></li>
+                    <li class="nav-item {{ 'active' if request.endpoint == 'routes.attendances' else '' }}"><a class="nav-link" href="{{ url_for('routes.attendances') }}"><i class="fa fa-check-square-o" aria-hidden="true"></i> Attendances</a></li>
+                    <li class="nav-item {{ 'active' if request.endpoint == 'routes.list_pdfs' else '' }}"><a class="nav-link" href="{{ url_for('routes.list_pdfs') }}"><i class="fa fa-file-pdf-o" aria-hidden="true"></i>  PDFs</a></li>
+                    {% if session['role'] =='User' %}
+                    <li class="nav-item {{ 'active' if request.endpoint == 'routes.manual_attendance' else '' }}"><a class="nav-link" href="{{ url_for('routes.manual_attendance') }}"><i class="fa fa-check-square-o" aria-hidden="true"></i>  Add Attendance</a></li>
+                               {% endif %}                  
+                    
+                    {% if session['role'] =='Owner' or session['role'] =='Admin' %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Admin
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.manual_attendance' else '' }}" href="{{ url_for('routes.manual_attendance') }}"><i class="fa fa-check-square-o" aria-hidden="true"></i>  Add Attendance</a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.users' else '' }}" href="{{ url_for('routes.users') }}"><i class="fa fa-user-circle-o" aria-hidden="true"></i>  Users</a>
+                                <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.classes' else '' }}" href="{{ url_for('routes.classes') }}"><i class="fa fa-graduation-cap" aria-hidden="true"></i>  Classes</a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.organizations' else '' }}" href="{{ url_for('routes.organizations') }}"><i class="fa fa-sitemap" aria-hidden="true"></i>  Organizations</a>
+                                {% if session['role'] =='Owner' %}
+                                    <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.meeting_centers' else '' }}" href="{{ url_for('routes.meeting_centers') }}"><i class="fa fa-building" aria-hidden="true"></i>   Meetinghouses</a>
+                                {% endif %}
+                            </div>
+                        </li>
+                    {% endif %}
+                        <div class="circle">
+                            <p style="font-size: 10px; display:block; padding-top: 15px;">{{ session['user_name'] }}</p>
+                        </div>
+                        
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.logout') }}"><i class="fa fa-power-off" aria-hidden="true"></i> Logout</a></li>
+                    {% else %}
+                    <li class="nav-item {{ 'active' if request.endpoint == 'routes.login' else '' }}"><a class="nav-link" href="{{ url_for('routes.login') }}"><i class="fa fa-sign-out" aria-hidden="true"></i> Login</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+

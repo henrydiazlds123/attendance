@@ -1,14 +1,11 @@
-<footer class="bg-dark text-center text-lg-start footer fixed-bottom mt-5">
-    <div class="footer-wrapper">
-        <div class="text-center p-3 text-light">
+<footer class="bg-dark text-center text-lg-start footer fixed-bottom mt-5 border-top py-2">
+
+        <div class="text-center text-light">
             <span id="copyright"></span>
-            <a class="text-light" href="#"> Índice Genealógico | 
-            {% if session['user_id'] %}
-                {{  session['meeting_center_name'] }} ({{ session['meeting_center_number']}})
-            {% else %}
-                Please log in.
-            {% endif %}
-        </a>
-        </div>
+            <p class="text-light pt-2" href="#"> Índice Genealógico | 
+                {% if session['user_id'] %}{{  session['meeting_center_name'] }} ({{ session['meeting_center_number']}}){% 
+                    else %}Please log in.
+                {% endif %} </p>
+
     </div>
 </footer>

@@ -59,37 +59,6 @@ def reset_name():
     return render_template('reset_name.html')
 
 # =============================================================================================
-
-# @bp.route('/users')
-# @role_required('Admin', 'Owner')
-# def users():
-#     role                = session.get('role')
-#     meeting_center_id   = session.get('meeting_center_id')
-#     admin_count         = User.query.filter_by(role='Admin').count()
-
-#     if role == 'Owner':
-#         # Los Owners pueden ver todos los usuarios
-#         query = db.session.query(
-#             User.id,
-#             User.username,
-#             User.email,
-#             User.role,
-#             MeetingCenter.short_name.label('meeting_short_name'),
-#             Organization.name.label('organization_name')
-#             ).join(MeetingCenter, User.meeting_center_id == MeetingCenter.id).join(Organization, User.organization_id == Organization.id)
-            
-
-                                
-#         users = query.all()
-#     elif role == 'Admin':
-#         # Los Admins solo pueden ver los usuarios de su Meeting Center, excluyendo a los Owners
-#         users = User.query.filter_by(meeting_center_id=meeting_center_id).filter(User.role != 'Owner').all()
-#     else:
-#         # Los usuarios regulares solo pueden ver su propio usuario
-#         users = User.query.filter_by(student_name=session.get('username')).all()
-
-#     return render_template('users.html', users=users, admin_count=admin_count)
-
 @bp.route('/users')
 @role_required('Admin', 'Owner')
 def users():
@@ -126,8 +95,6 @@ def users():
 
 
 
-
-
 # =============================================================================================
 @bp.route('/user/new', methods=['GET', 'POST'])
 @role_required('Admin', 'Owner')
@@ -153,6 +120,7 @@ def create_user():
         db.session.commit()
         return redirect(url_for('routes.users'))
     return render_template('form.html', form=form, title="Nuevo Usuario", submit_button_text="Crear", clas="warning")
+
 
 # =============================================================================================
 @bp.route('/user/edit/<int:id>', methods=['GET', 'POST'])
@@ -293,6 +261,7 @@ def attendances():
   
 
     # Get filter parameters from URL query string
+    class_code    = request.args.get('class')
     class_name    = request.args.get('class_name')
     student_name  = request.args.get('student_name')
     sunday_date   = request.args.get('sunday_date')
@@ -301,18 +270,35 @@ def attendances():
     code_verification_setting = Setup.query.filter_by(key='code_verification').first()
 
     # Build the base query for attendance
+#     query = db.session.query(
+#     Attendance.id,
+#     Attendance.student_name,
+#     Classes.short_name,
+#     Attendance.sunday_date,
+#     Attendance.submit_date,
+#     Attendance.sunday_code,
+#     MeetingCenter.short_name.label('meeting_short_name')).join(Classes, Attendance.class_id == Classes.id) \
+#  .join(MeetingCenter, Attendance.meeting_center_id == MeetingCenter.id)
+
     query = db.session.query(
     Attendance.id,
     Attendance.student_name,
-    Classes.short_name,
+    Classes.short_name.label('class_short_name'),
+    Attendance.class_code,
     Attendance.sunday_date,
     Attendance.submit_date,
     Attendance.sunday_code,
-    MeetingCenter.short_name.label('meeting_short_name')).join(Classes, Attendance.class_id == Classes.id) \
- .join(MeetingCenter, Attendance.meeting_center_id == MeetingCenter.id)
+    MeetingCenter.short_name.label('meeting_short_name')
+).join(
+    Classes, 
+    (Attendance.class_code == Classes.class_code) & (Attendance.meeting_center_id == Classes.meeting_center_id)
+).join(
+    MeetingCenter, 
+    Attendance.meeting_center_id == MeetingCenter.id)
+ 
 
     # Filter based on role and meeting_center_id
-    if role == 'Admin':
+    if role == 'Admin' or role == 'User':
         query = query.filter(Attendance.meeting_center_id == meeting_center_id)
     elif role == 'Owner':
         pass
@@ -402,10 +388,17 @@ def create_attendance():
         # Calculate sunday_code based on the provided sunday date
         # sunday_code = get_next_sunday_code(form.sunday_date.data)
         sunday_code = '0000'
+        
+        # Obtener el class_code basado en el class_id seleccionado
+        selected_class = Classes.query.filter_by(id=form.class_id.data).first()
+        if not selected_class:
+            flash('The selected class is invalid.', 'danger')
+            return render_template('form.html', form=form, title="Crear Asistencia Manual", submit_button_text="Crear", clas="warning")
 
         attendance = Attendance(
             student_name     = student_name,
             class_id         = form.class_id.data,
+            class_code       =selected_class.class_code,  # Asignar el class_code
             sunday_date      = form.sunday_date.data,
             sunday_code      = sunday_code,
             meeting_center_id= form.meeting_center_id.data

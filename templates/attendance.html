@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 {% block title %}Attendance | Manual Entry{% endblock %}
-{% block header %} Attendance Registration{% endblock %}
 {% block content %}
+ <h2><i class="bi bi-card-checklist"></i> Attendance Registration</h2>
 
     {% if not session['user_id'] %}
         <p class="mt-2">Use this page to add your attendance to the class listed below.</p>
@@ -15,27 +15,30 @@
 
     <h4 id="classNameDisplay" class="mb-3 text-center"></h4>
     
-    <form id="attendanceForm" method="POST" action="{{ url_for('routes.registrar') }}">
-        <div class="input-group">
-            <input type="text" class="form-control" id="studentName" name="studentName"  aria-label="Enter your Name and Last name" aria-describedby="button-addon2">
-            <div class="input-group-append">
-                <button class="btn btn-success" type="submit" id="button-addon2"><i class="fa fa-share-square-o" aria-hidden="true"></i> Send</button>
-                {% if session['user_id'] %}
-                <a class="btn btn-outline-info" type="button" id="button-back" href="{{ url_for('routes.manual_attendance')}}"><i class="fa fa-chevron-left" aria-hidden="true"></i> Back</a>
-                {% endif %}
-              </div>
-            
-          </div>
+    <div class="container">
+        <div class="row">
+            <form id="attendanceForm" method="POST" action="{{ url_for('routes.registrar') }}">
+                <div class="input-group">
+                    <input type="text" class="form-control" id="studentName" name="studentName"  aria-label="Enter your Name and Last name" aria-describedby="button-addon2">
+                    <div class="input-group-append">
+                        <button class="btn btn-success" type="submit" id="button-addon2"><i class="fa fa-share-square-o" aria-hidden="true"></i> Send</button>
+                        {% if session['user_id'] %}
+                        <a class="btn btn-outline-info" type="button" id="button-back" href="{{ url_for('routes.manual_attendance')}}"><i class="fa fa-chevron-left" aria-hidden="true"></i> Back</a>
+                        {% endif %}
+                        </div>
+                    
+                    </div>
+    
+                <input type="hidden" id="className"   name="className">
+                <input type="hidden" id="date"        name="date">
+                <input type="hidden" id="classCode"   name="classCode">
+                <input type="hidden" id="sundayCode"  name="sundayCode">
+                <input type="hidden" id="unitNumber"  name="unitNumber">      
+            </form>
+        </div>
+    </div>
 
 
-              
-        <input type="hidden" id="className"   name="className">
-        <input type="hidden" id="date"        name="date">
-        <input type="hidden" id="classCode"   name="classCode">
-        <input type="hidden" id="sundayCode"  name="sundayCode">
-        <input type="hidden" id="unitNumber"  name="unitNumber">
-
-    </form>
     <script>       
         // Configuración para mostrar y establecer la clase
         const urlParams  = new URLSearchParams(window.location.search);

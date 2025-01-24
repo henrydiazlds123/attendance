@@ -1,17 +1,17 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-  const attendanceForm    = document.getElementById("attendanceForm");
-  const studentNameInput  = document.getElementById("studentName");
+  const attendanceForm = document.getElementById("attendanceForm");
+  const studentNameInput = document.getElementById("studentName");
 
   // Detect system preference and user setting
   const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const storedTheme       = localStorage.getItem('theme');
-  const currentTheme      = storedTheme || (systemPrefersDark ? 'dark' : 'light');
-  const themeSwitcher     = document.getElementById('themeSwitcher');
+  const storedTheme = localStorage.getItem('theme');
+  const currentTheme = storedTheme || (systemPrefersDark ? 'dark' : 'light');
+  const themeSwitcher = document.getElementById('themeSwitcher');
 
   // Verifica si el usuario está autenticado usando la variable de sesión proporcionada por el servidor
-  const isLoggedIn        = document.body.classList.contains("logged-in"); // Asegúrate de agregar esta clase si el usuario ha iniciado sesión
-  const savedName         = localStorage.getItem("studentName");
+  const isLoggedIn = document.body.classList.contains("logged-in"); // Asegúrate de agregar esta clase si el usuario ha iniciado sesión
+  const savedName = localStorage.getItem("studentName");
 
 
   document.documentElement.setAttribute('data-bs-theme', currentTheme);
@@ -177,3 +177,32 @@ function confirmPromotion(userId, username) {
     }
   });
 }
+
+// ------------------------------------------------------------
+const themeSwitcher = document.getElementById('themeSwitcher');
+const body          = document.body;
+const currentTheme  = localStorage.getItem('theme') || 'light'; // Cargar tema guardado o 'light' por defecto
+
+// Función para actualizar el tema y el icono
+function updateTheme() {
+  if (currentTheme === 'dark') {
+    body.setAttribute('data-bs-theme', 'dark');
+    themeSwitcher.innerHTML = '<i class="bi bi-moon-stars"></i>'; // Cambiar a luna
+  } else {
+    body.setAttribute('data-bs-theme', 'light');
+    themeSwitcher.innerHTML = '<i class="bi bi-brightness-high">'; // Cambiar a sol
+  }
+}
+
+// Inicializar el tema al cargar la página
+window.addEventListener('DOMContentLoaded', () => {
+  updateTheme(); // Asegurar que el tema y el icono estén bien al cargar
+});
+
+// Cambiar el tema al hacer clic en el botón
+themeSwitcher.addEventListener('click', () => {
+  // Alternar entre dark y light
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('theme', newTheme); // Guardar el nuevo tema en localStorage
+  updateTheme(); // Actualizar tema y icono
+});

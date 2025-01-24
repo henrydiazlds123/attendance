@@ -12,7 +12,7 @@
 <div class="row mb-2">
 
     <div class="input-group col-md">
-        <span class="input-group-text"><i class="fa fa-user"></i></span>
+        <span class="input-group-text"><i class="bi bi-person-check-fill"></i></span>
         <select name="student_name" id="student_name" onchange="submitForm()" class="form-select">
             <option value="" disabled {% if not request.args.get('student_name') %}selected{% endif %}>Member</option>
             {% for student in students %}
@@ -24,9 +24,9 @@
     </div>
     
     <div class="input-group col-md">
-        <span class="input-group-text"><i class="fa fa-graduation-cap"></i></span>
+        <span class="input-group-text"><i class="bi bi-mortarboard-fill"></i></span>
         <select name="class_name" id="class_name" onchange="submitForm()" class="form-select">
-            <option value="" disabled {% if not request.args.get('class_name') %}selected{% endif %}>Class</option>
+            <option value="" disabled {% if not request.args.get('class_code') %}selected{% endif %}>Class</option>
             {% for class in classes %}
             <option value="{{ class[1] }}" {% if class[1]==request.args.get('class_name') %}selected{% endif %}>
                 {{ class[1] }}
@@ -34,8 +34,20 @@
             {% endfor %}
         </select>
     </div>
+    <!-- <div class="input-group col-md">
+        <span class="input-group-text"><i class="fa fa-graduation-cap"></i></span>
+        <select name="class_code" id="class_code" onchange="submitForm()" class="form-select">
+            <option value="" disabled {% if not request.args.get('class_code') %}selected{% endif %}>Class</option>
+            {% for class in classes %}
+            <option value="{{ class[0] }}" {% if class[0]==request.args.get('class_code') %}selected{% endif %}>
+                {{ class[1] }} ({{ class[0] }})
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+     -->
     <div class="input-group col-md">
-        <span class="input-group-text"><i class="fa fa-calendar-o"></i></span>
+        <span class="input-group-text"><i class="bi bi-calendar2-date"></i></span>
         <select name="sunday_date" id="sunday_date" onchange="submitForm()" class="form-select">
             <option value="" disabled {% if not request.args.get('sunday_date') %}selected{% endif %}>Date</option>
             {% for sunday in sundays %}
@@ -48,7 +60,7 @@
     </div>
     {% if years|length > 1 %}
     <div class="input-group col-md">
-        <span class="input-group-text"><i class="fa fa-calendar-check-o"></i></span>
+        <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
         <select name="year" id="year" onchange="submitForm()" class="form-select">
             <option value="" disabled {% if not request.args.get('year') %}selected{% endif %}>Year</option>
             {% for year in years %}
@@ -61,7 +73,7 @@
     {% endif %}
     {% if months|length > 1 %}
     <div class="input-group col-md">
-        <span class="input-group-text"><i class="fa fa-calendar"></i></span>
+        <span class="input-group-text"><i class="bi bi-calendar-month"></i></span>
         <select name="month" id="month" onchange="submitForm()" class="form-select">
             <option value="" disabled {% if not request.args.get('month') %}selected{% endif %}> Month </option>
             {% for month, name in [('1', 'Ene'), ('2', 'Feb'), ('3', 'Mar'), ('4', 'Abr'), ('5', 'May'),
@@ -76,7 +88,7 @@
     {% endif %}
     <div class="input-group col-md">
         <button id="filter-clear2" type="button" class="btn btn-warning form-control" onclick="clearFilters()">
-            Remove filters <i class="fa fa-filter"></i>
+            Remove filters <i class="bi bi-funnel"></i>
         </button>
     </div>
 </div>
