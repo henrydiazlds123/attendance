@@ -110,3 +110,25 @@ div > label[for="csrf_token"] {
 .theme-switcher {
   cursor: pointer;
 }
+
+.dot-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.large-checkbox {
+  transform: scale(2);
+}
+
+.class_color {
+  display: inline-block;
+  /* margin: auto; */
+  width: 25px; 
+  height: 25px;
+  border-radius: 50%;
+  vertical-align: middle;
+
+
+}

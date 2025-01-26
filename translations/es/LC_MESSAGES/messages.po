@@ -1,0 +1,729 @@
+# Spanish translations for PROJECT.
+# Copyright (C) 2025 Indice Genealogico
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR indicegenealogico@gmail.com, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-01-25 15:44-0700\n"
+"PO-Revision-Date: 2025-01-25 15:44-0700\n"
+"Last-Translator: FULL NAME henrydiazlds123@hotmail.com\n"
+"Language: es\n"
+"Language-Team: es <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+msgid "Username"
+msgstr "Nombre de usuario"
+
+msgid "Email"
+msgstr "Correo electrónico"
+
+msgid "Password"
+msgstr "Contraseña"
+
+msgid "Confirm Password"
+msgstr "confirmar Contraseña"
+
+msgid "Name"
+msgstr "Nombre"
+
+msgid "Lastname"
+msgstr "Apellido"
+
+msgid "Role"
+msgstr "Rol"
+
+msgid "Organization"
+msgstr "Organización"
+
+msgid "Unit"
+msgstr "Unidad"
+
+msgid "Is Active?"
+msgstr "¿Está activo?"
+
+msgid "You cannot change the Church Unit."
+msgstr "No se puede cambiar la Unidad de la Iglesia."
+
+msgid "Current Password"
+msgstr "Contraseña actual"
+
+msgid "New Password"
+msgstr "Nueva contraseña"
+
+msgid "Confirm New Password"
+msgstr "Confirmar nueva contraseña"
+
+msgid "Unit Name"
+msgstr "Nombre de la unidad"
+
+msgid "Unit #"
+msgstr "# Unidad"
+
+msgid "Short name"
+msgstr "Nombre corto"
+
+msgid "City"
+msgstr "Ciudad"
+
+msgid "Start Time"
+msgstr "Hora inicial"
+
+msgid "The start time is mandatory"
+msgstr "La hora de inicio es obligatoria."
+
+msgid "End Time"
+msgstr "Hora final"
+
+msgid "The end time is mandatory."
+msgstr "La hora final es obligatoria."
+
+msgid "Student Name"
+msgstr "Nombre del estudiante"
+
+msgid "Select a name"
+msgstr "Seleccione un nombre"
+
+msgid "New Student Name"
+msgstr "Nuevo nombre de miembro"
+
+msgid "Class"
+msgstr "Clase"
+
+msgid "Sunday Date"
+msgstr "Fecha del domingo"
+
+msgid "Class Name"
+msgstr "Nombre de clase"
+
+msgid "Short Name"
+msgstr "Nombre corto"
+
+msgid "Class Code"
+msgstr "Código de clase"
+
+msgid "Class Type"
+msgstr "Tipo de clase"
+
+msgid "Schedule"
+msgstr "Horario"
+
+msgid "Invalid color format"
+msgstr "Formato de color no válido"
+
+msgid "Church Unit"
+msgstr "Unidad de la Iglesia"
+
+msgid "Organization Name"
+msgstr "Nombre de la organización"
+
+msgid "Cannot delete a church unit with registered attendance."
+msgstr ""
+"No se puede eliminar una unidad de la iglesia con asistencia registrada."
+
+msgid "Cannot delete a class with registered attendance."
+msgstr "No se puede eliminar una clase con asistencia registrada."
+
+msgid "Login successful!"
+msgstr "¡Sesión iniciada exitosamente!"
+
+msgid "Invalid credentials. Please check your username and password.."
+msgstr ""
+"Credenciales no válidas. Por favor verifique su nombre de usuario y "
+"contraseña."
+
+msgid "Logout successful!"
+msgstr "¡Sesión cerrada correctamente!"
+
+msgid "New User"
+msgstr "Nuevo usuario"
+
+msgid "Create"
+msgstr "Crear"
+
+msgid "User updated successfully."
+msgstr "Usuario actualizado exitosamente."
+
+msgid "Edit User"
+msgstr "Editar usuario"
+
+msgid "Update"
+msgstr "Actualizar"
+
+msgid "Cannot delete last admin."
+msgstr "No se puede eliminar el último administrador."
+
+msgid "User deleted successfully"
+msgstr "Usuario eliminado exitosamente"
+
+msgid "You cannot delete another administrator."
+msgstr "No puede eliminar otro administrador."
+
+msgid "You have successfully eliminated yourself."
+msgstr "Te has eliminado con éxito."
+
+msgid "Current password is incorrect."
+msgstr "La contraseña actual es incorrecta."
+
+msgid "Password updated successfully."
+msgstr "¡Contraseña actualizada exitosamente!"
+
+msgid "The user is already an administrator."
+msgstr "El usuario ya es administrador."
+
+msgid "User %(username)s has been promoted to administrator."
+msgstr "El usuario %(username)s ha sido ascendido a administrador."
+
+msgid "The selected class is invalid."
+msgstr "La clase seleccionada no es válida."
+
+msgid "Create attendance"
+msgstr "Crear asistencia"
+
+msgid "Attendance registered successfully!"
+msgstr "¡Asistencia registrada exitosamente!"
+
+msgid "Create manual attendance"
+msgstr "Crear asistencia manual"
+
+msgid "Attendance record updated successfully."
+msgstr "Registro de asistencia actualizado exitosamente."
+
+msgid "Edit Attendance"
+msgstr "Editar asistencia"
+
+msgid "Attendance record deleted successfully."
+msgstr "Registro de asistencia eliminado exitosamente."
+
+msgid "La clase seleccionada no es válida."
+msgstr "La clase seleccionada no es válida."
+
+msgid "Attendance for Sunday classes can only be registered on Sunday"
+msgstr ""
+"La asistencia a las clases dominicales sólo se puede registrar el domingo."
+
+msgid "The church unit is invalid."
+msgstr "La unidad de la iglesia no es válida."
+
+msgid "Attendance cannot be recorded outside of meeting hours."
+msgstr "No se podrá registrar la asistencia fuera del horario de reunión."
+
+msgid ""
+"%(name)s! You already have an attendance registered for Sunday %(date)s!"
+msgstr ""
+"%(name)s! ¡Ya tienes una asistencia registrada para el domingo %(date)s!"
+
+msgid "Attendance recorded successfully."
+msgstr "Asistencia registrada exitosamente."
+
+msgid "There was an error recording attendance: %(error)s"
+msgstr "Hubo un error al registrar la asistencia: %(error)s"
+
+msgid "You must provide a date for this class."
+msgstr "Debe proporcionar una fecha para esta clase."
+
+msgid "The date must be today or in the future."
+msgstr "La fecha debe ser hoy o en el futuro."
+
+msgid "Invalid date for extra class."
+msgstr "Fecha no válida para clase extra."
+
+msgid "QR Codes generated successfully."
+msgstr "Códigos QR generados exitosamente."
+
+msgid "Meeting center created successfully!"
+msgstr "¡Centro de reuniones creado con éxito!"
+
+msgid "Create new Meeting center"
+msgstr "Crear nuevo centro de reuniones"
+
+msgid "Meeting Center updated successfully."
+msgstr "Centro de reuniones actualizado correctamente."
+
+msgid "Edit Meeting Center"
+msgstr "Editar centro de reuniones"
+
+msgid ""
+"The meeting center cannot be deleted because it has registered attendance."
+msgstr ""
+"El centro de reuniones no se puede eliminar porque tiene asistencia "
+"registrada."
+
+msgid "Meeting Center successfully removed."
+msgstr "El Centro de reuniones se eliminó correctamente."
+
+msgid "Class created successfully!"
+msgstr "¡Clase creada exitosamente!"
+
+msgid ""
+"A class with this name, short name, or code already exists in the same "
+"church unit."
+msgstr ""
+"Ya existe una clase con este nombre, nombre corto o código en la misma "
+"unidad de la iglesia."
+
+msgid "Create New Class"
+msgstr "Crear nueva clase"
+
+msgid "Class updated successfully!"
+msgstr "¡Clase actualizada exitosamente!"
+
+msgid "Edit Class"
+msgstr "Editar clase"
+
+msgid "The class cannot be deleted because it has attendance recorded."
+msgstr "La clase no se puede eliminar porque tiene registrada la asistencia."
+
+msgid "Cannot delete a main class."
+msgstr "No se puede eliminar una clase principal."
+
+msgid "Class deleted successfully!"
+msgstr "¡Clase eliminada exitosamente!"
+
+msgid "Error deleting class: %(error)s"
+msgstr "Error al eliminar clase: %(error)s"
+
+msgid "Elders Quorum"
+msgstr "Cuórum de élderes"
+
+msgid "Elders_Q"
+msgstr "Q_Elderes"
+
+msgid "Main"
+msgstr "Dominical"
+
+msgid "Aaronic Priesthood"
+msgstr "Sacerdocio Aarónico"
+
+msgid "Aaronic_P"
+msgstr "S_Aarónico"
+
+msgid "Relief Society"
+msgstr "Sociedad de Socorro"
+
+msgid "Relief_S"
+msgstr "S_Socorro"
+
+msgid "Young Woman"
+msgstr "Mujeres Jóvenes"
+
+msgid "Young_W"
+msgstr "M_Jóvenes"
+
+msgid "Sunday School Adults"
+msgstr "Esc. Dom. Adultos"
+
+msgid "S_S_Adults"
+msgstr "E_D_Adultos"
+
+msgid "Sunday School Youth"
+msgstr "Esc. Dom. Jóvenes"
+
+msgid "S_S_Youth"
+msgstr "E_D_Jóvenes"
+
+msgid "Fifth Sunday"
+msgstr "Quinto domingo"
+
+msgid "F_Sunday"
+msgstr "5_Domingo"
+
+msgid "Classes already exist for this meeting center"
+msgstr "Ya existen clases para este centro de reuniones."
+
+msgid "Main classes successfully populated."
+msgstr "Clases principales completadas correctamente."
+
+msgid "Unique constraint error: %(error)s"
+msgstr "Error de restricción única: %(error)s"
+
+msgid "Error duplicating main classes for new meeting center: %(error)s"
+msgstr ""
+"Error al duplicar clases principales para el nuevo centro de reuniones: "
+"%(error)s"
+
+msgid "Organization created successfully!"
+msgstr "¡Organización creada exitosamente!"
+
+msgid "Error: Organization name must be unique."
+msgstr "Error: el nombre de la organización debe ser único."
+
+msgid "Create new Organization"
+msgstr "Crear nueva organización"
+
+msgid "Organization updated successfully!"
+msgstr "¡Organización actualizada exitosamente!"
+
+msgid "Edit Organization"
+msgstr "Editar organización"
+
+msgid "Organization deleted successfully!"
+msgstr "¡Organización eliminada exitosamente!"
+
+msgid "Error: Could not delete organization."
+msgstr "Error: no se pudo eliminar la organización."
+
+msgid "You already have registered assistance on {sunday_date}."
+msgstr "Ya has registrado asistencia el {sunday_date}."
+
+msgid "Action canceled"
+msgstr "Acción cancelada"
+
+msgid "¡{student_name}, your attendance was recorded!"
+msgstr "¡{student_name}, tu asistencia fue registrada!"
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgid "Cancelled"
+msgstr "Cancelado"
+
+msgid "Cleared!"
+msgstr "¡Aclarado!"
+
+msgid "Confirm"
+msgstr "Confirmar"
+
+msgid "You 're sure?"
+msgstr "¿Estás seguro?"
+
+msgid "There was a problem connecting to the server."
+msgstr "Hubo un problema al conectarse al servidor."
+
+msgid "This action will delete all records and cannot be undone."
+msgstr "Esta acción eliminará todos los registros y no se puede deshacer."
+
+msgid "Error"
+msgstr "Error"
+
+msgid "Great!"
+msgstr "¡Excelente!"
+
+msgid "You must select a date!"
+msgstr "¡Debes seleccionar una fecha!"
+
+msgid "Please enter your name in 'First Name Last Name' format."
+msgstr "Ingrese su nombre en el formato '\\Nombre Apellido\\'."
+
+msgid "Your name was not removed."
+msgstr "Su nombre no fue eliminado."
+
+msgid "The name has been removed."
+msgstr "El nombre ha sido eliminado."
+
+msgid "No Name Found"
+msgstr "No se encontró ningún nombre"
+
+msgid "No name is currently saved."
+msgstr "Actualmente no hay ningún nombre guardado."
+
+msgid "QR codes were not generated"
+msgstr "No se generaron códigos QR"
+
+msgid "Reset Student Name"
+msgstr "Restablecer nombre de estudiante"
+
+msgid "The saved name is: \'{name}\'. Do you want to clear it?"
+msgstr "El nombre guardado es: \'{name}\'. ¿Quieres borrarlo?"
+
+msgid "Select a date for Extra classes"
+msgstr "Selecciona una fecha para clases extra"
+
+msgid "You cannot register a 'Sunday Class' outside of Sunday."
+msgstr "No puede registrar una 'Clase dominical' fuera del domingo."
+
+msgid "Yes"
+msgstr "Sí"
+
+msgid "Yes, delete everything"
+msgstr "Sí, borra todo"
+
+msgid "Yes, clear it!"
+msgstr "¡Sí, límpialo!"
+
+msgid "warning"
+msgstr "advertencia"
+
+msgid "Bishopric"
+msgstr "Obispado"
+
+msgid "Other"
+msgstr "Otro"
+
+msgid "Sunday School"
+msgstr "Escuela Dominical"
+
+msgid "Young Women"
+msgstr "Mujeres Jóvenes"
+
+msgid "Primary"
+msgstr "Primaria"
+
+msgid "Sunday School Adult"
+msgstr "Esc. Dom. Adultos"
+
+msgid "Sunday School Youth"
+msgstr "Jóvenes de la escuela dominical"
+
+msgid "Aaronic Priesthood Quorums"
+msgstr "Quórumes del Sacerdocio Aarónico"
+
+msgid "Jan"
+msgstr "Ene"
+
+msgid "Feb"
+msgstr "Feb"
+
+msgid "Mar"
+msgstr "Mar"
+
+msgid "Apr"
+msgstr "Abr"
+
+msgid "May"
+msgstr "May"
+
+msgid "Jun"
+msgstr "Jun"
+
+msgid "Jul"
+msgstr "Jul"
+
+msgid "Aug"
+msgstr "Ago"
+
+msgid "Sep"
+msgstr "Sep"
+
+msgid "Oct"
+msgstr "Oct"
+
+msgid "Nov"
+msgstr "Nov"
+
+msgid "Dec"
+msgstr "Dic"
+
+msgid "Class: {className}"
+msgstr "Clase: {className}"
+
+msgid "Choose a Class"
+msgstr "Elige una clase"
+
+msgid "Use this page to add your attendance to the class listed below."
+msgstr ""
+"Utilice esta página para agregar su asistencia a la clase que se enumera a "
+"continuación."
+
+msgid ""
+"Once you submit your attendance and receive a confirmation, you will be able"
+" to close the application."
+msgstr ""
+"Una vez que envíe su asistencia y reciba una confirmación, podrá cerrar la "
+"solicitud."
+
+msgid "Use this page to add the attendance to the class listed below."
+msgstr ""
+"Utilice esta página para agregar la asistencia a la clase que se enumera a "
+"continuación."
+
+msgid ""
+"You will be able to record attendance for those people who do not have the "
+"means to do so themselves."
+msgstr ""
+"Podrás registrar la asistencia de aquellas personas que no tengan medios "
+"para hacerlo por sí mismas."
+
+msgid "Back"
+msgstr "Atrás"
+
+msgid "Send"
+msgstr "Enviar"
+
+msgid "Attendance | List"
+msgstr "Asistencia | Lista"
+
+msgid "Class Attendance Records"
+msgstr "Registros de asistencia a clases"
+
+msgid ""
+"The table shows the attendance recorded each Sunday by members attending "
+"classes.Use the information in this list to Record each person's Attendance "
+"in the Tools application."
+msgstr ""
+"La tabla muestra la asistencia registrada cada domingo por los miembros que "
+"asisten a clases. Utilice la información de esta lista para registrar la "
+"asistencia de cada persona en la aplicación Herramientas."
+
+msgid "New Attendance"
+msgstr "Nueva asistencia"
+
+msgid "Lock QR code?"
+msgstr "¿Bloquear código QR?"
+
+msgid "Member"
+msgstr "Miembro"
+
+msgid "Date"
+msgstr "Fecha"
+
+msgid "Code"
+msgstr "Código"
+
+msgid "Submited"
+msgstr "Enviado"
+
+msgid "Actions"
+msgstr "Acciones"
+
+msgid "No Attendances to show"
+msgstr "No hay asistencias para mostrar"
+
+msgid "Delete all records"
+msgstr "Eliminar todos los registros"
+
+msgid "Attendance | Classes"
+msgstr "Asistencia | Clases"
+
+msgid "Classes Management"
+msgstr "Gestión de clases"
+
+msgid "Show Inactive Classes:"
+msgstr "Mostrar clases inactivas:"
+
+msgid "No"
+msgstr "No"
+
+msgid "Color"
+msgstr "Color"
+
+msgid "Attendance"
+msgstr "Asistencia"
+
+msgid "Attendance | PDFs"
+msgstr "Asistencia | PDF"
+
+msgid "QR Code Generation"
+msgstr "Generación de códigos QR"
+
+msgid ""
+"On this page, you can generate and download for printing, the sheets with "
+"the QR Code images that the member can scan to register their attendance at "
+"the classes."
+msgstr ""
+"En esta página se pueden generar y descargar para imprimir, las hojas con "
+"las imágenes del Código QR que el socio puede escanear para registrar su "
+"asistencia a las clases."
+
+msgid "Files Availables:"
+msgstr "Archivos disponibles:"
+
+msgid "Generate PDFs for Week"
+msgstr "Generar archivos PDF para la semana"
+
+msgid "Generate all PDFs"
+msgstr "Generar todos los PDF"
+
+msgid "Generate Extra class PDFs"
+msgstr "Generar archivos PDF de clases adicionales"
+
+msgid "Create PDF for each class in the current week"
+msgstr "Crear PDF para cada clase en la semana actual"
+
+msgid "Create PDF for all classes"
+msgstr "Crear PDF para todas las clases"
+
+msgid "Create PDF for all Extra classes"
+msgstr "Crear PDF para todas las clases adicionales"
+
+msgid "Attendance | Login"
+msgstr "Asistencia | Acceso"
+
+msgid "Please log in!"
+msgstr "¡Por favor inicia sesión!"
+
+msgid "Log in"
+msgstr "Acceso"
+
+msgid "Attendance | Manual"
+msgstr "Asistencia | Manual"
+
+msgid "Attendance Registration"
+msgstr "Registro de asistencia"
+
+msgid ""
+"Use this page to add the attendance to the classes listed below. You will be"
+" able to record attendance for those people who do not have the means to do "
+"so themselves."
+msgstr ""
+"Utilice esta página para agregar la asistencia a las clases que se enumeran "
+"a continuación. Podrás registrar la asistencia de aquellas personas que no "
+"tengan los medios para hacerlo por sí mismas."
+
+msgid ""
+"To be able register your attendance, first you will need to choose a class."
+msgstr ""
+"Para poder registrar tu asistencia, primero tendrás que elegir una clase."
+
+msgid "Enter your Name and Last name"
+msgstr "Ingresa tu Nombre y Apellido"
+
+msgid "Name & Lastname"
+msgstr "Nombre y Apellido"
+
+msgid "Unit Number"
+msgstr "Número de unidad"
+
+msgid "Edit Unit"
+msgstr "Editar unidad"
+
+msgid "Delete Unit"
+msgstr "Eliminar unidad"
+
+msgid "Add Main Classes to"
+msgstr "Agregar clases principales a"
+
+msgid "Attendance | Organizations"
+msgstr "Asistencia | Organizaciones"
+
+msgid "Organizations Management"
+msgstr "Gestión de Organizaciones"
+
+msgid "Add New Organization"
+msgstr "Agregar nueva organización"
+
+msgid "Attendance | Reset Name"
+msgstr "Asistencia | Restablecer nombre"
+
+msgid "Attendance | Users"
+msgstr "Asistencia | Usuarios"
+
+msgid "Users Management"
+msgstr "Gestión de usuarios"
+
+msgid "Create New User"
+msgstr "Crear nuevo usuario"
+
+msgid "Reset Password"
+msgstr "Restablecer contraseña"
+
+msgid "Edit user"
+msgstr "Editar usuario"
+
+msgid "Delete User"
+msgstr "Eliminar usuario"
+
+msgid "Change to Admin"
+msgstr "Cambiar a administrador"
+
+msgid "Generate QR Code"
+msgstr "Generar código QR"
+
+msgid "Total Attendance Records"
+msgstr "Registros de asistencia total"

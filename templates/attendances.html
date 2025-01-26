@@ -1,5 +1,6 @@
 {% extends "layout.html" %}
-{% block title %}Attendance | List{% endblock %}
+{% block title %}{{ _('Attendance | List') }}{% endblock %}
+
 {% block head %}
 <script>
   // Función para enviar el formulario al cambiar el valor de un select
@@ -13,39 +14,44 @@
 
 
 </script>
+
 {% endblock %}
 {% block content %}
 <div class="blog-post">
-  <h2 class="blog-post-title"><i class="bi bi-check2-square"></i> Class Attendance Records</h2>
+  <h2><i class="bi bi-check2-square"></i> {{ _('Class Attendance Records') }}</h2>
   <div class="twoColumns">
     <p class="mb-3">
 
-      The table shows the attendance recorded each Sunday by members attending classes.
-      Use the information in this list to Record each person's Attendance in the Tools application.
+      {{ _('The table shows the attendance recorded each Sunday by members attending classes.Use the information in this list to Record each person\'s Attendance in the Tools application.') }}
     </p>
   </div>
   {% if session['role'] == 'Owner' %}
 
   {% endif %}
   {% if session['role'] == 'Admin' or session['role'] == 'Owner' %}
-  <form class="mb-2" id="verificationForm" method="POST"
-    action="/attendances">
-    <div class="d-flex justify-content-between "> 
-    <a class="btn btn-primary col-md-2 col-sm-12" href="{{ url_for('routes.create_attendance') }}"><i class="bi bi-plus-circle-fill"></i> New Attendance</a>
 
-    <div class="row">
-      <label class="my-2 mr-2 col-auto" for="code_verification">Lock QR code? </label>
-      <div class="col">
-        <select class="form-select my-0 mr-sm-2" name="code_verification" id="code_verification" data-toggle="tooltip"
+  <div class="row g-2 d-flex justify-content-between">
+
+    <div class="col-auto">
+      <a class="btn btn-primary col-auto" href="{{ url_for('routes.create_attendance') }}"><i class="bi bi-plus-circle-fill"></i> {{ _('New Attendance') }}</a>
+    </div>
+
+    <form class="col-auto" id="verificationForm" method="POST" action="/attendances">
+      <div class="form-inline mb-3">
+        <label class="my-2 mr-2 col-auto" for="code_verification">{{ _('Lock QR code?') }} </label>
+        <select class="custom-select my-1 mr-sm-2" name="code_verification" id="code_verification" data-toggle="tooltip"
           title="Al activar la Verificacion de Domingo, solo se podrá usar la imagen de QR Code impresa para esa semana."
           onchange="submitVerificationForm()">
-          <option value="true" {% if verification_enabled=='true' %}selected{% endif %}>Yes</option>
+          <option value="true" {% if verification_enabled=='true' %}selected{% endif %}>{{ _('Yes') }}</option>
           <option value="false" {% if verification_enabled=='false' %}selected{% endif %}>No</option>
         </select>
       </div>
-    </div>
-</div>
-  </form>
+
+    </form>
+  </div>
+
+
+
   {% endif %}
   <div class="mb-5">
     <form id="filterForm" method="GET" action="/attendances" class="card mb-3 p-3">
@@ -57,18 +63,18 @@
         <thead class="thead-dark">
           <tr>
             <th scope="col">#</th>
-            <th scope="col">Member</th>
-            <th scope="col">Class</th>
-            <th scope="col">Date</th>
+            <th scope="col">{{ _('Member') }}</th>
+            <th scope="col">{{ _('Class') }}</th>
+            <th scope="col">{{ _('Date') }}</th>
             {% if session['role'] == 'Owner' %}
-            <th scope="col">Unit</th>
-            <th scope="col">Code</th>
+            <th scope="col">{{ _('Unit') }}</th>
+            <th scope="col">{{ _('Code') }}</th>
             {% endif %}
             {% if session['role'] == 'Admin' or session['role'] == 'Owner' %}
-            <th scope="col" class="d-none d-md-table-cell">Submited</th>
+            <th scope="col" class="d-none d-md-table-cell">{{ _('Submited') }}</th>
             {% endif %}
             {% if session['role'] == 'Owner' or session['role'] == 'Admin' %}
-            <th scope="col">Actions</th>
+            <th scope="col">{{ _('Actions') }}</th>
             {% endif %}
 
           </tr>
@@ -78,24 +84,25 @@
           <tr>
             <td scope="row">{{ loop.index }}</td>
             <td style="text-transform:capitalize">{{attendance.student_name}}</td>
-            <td>{{attendance.class_short_name}}</td>
-            <td>{{attendance.sunday_date.strftime("%b %d")}}</td>
+            <td>{{_(attendance.class_short_name)}}</td>
+            <td>{{_(attendance.sunday_date.strftime("%b %d"))}}</td>
             {% if session['role'] == 'Owner' %}
-            <td>{{attendance.meeting_short_name}}</td>
-            <td>{{attendance.sunday_code}}</td>
+            <td>{{_(attendance.meeting_short_name)}}</td>
+            <td>{{_(attendance.sunday_code)}}</td>
             {% endif %}
             {% if session['role'] == 'Admin' or session['role'] == 'Owner' %}
-            <td class="d-none d-md-table-cell">{{attendance.submit_date.strftime("%b %d, %I:%M %p")}}</td>
+            <td class="d-none d-md-table-cell">{{_(attendance.submit_date.strftime("%b %d, %I:%M %p"))}}</td>
             <td>
               <a type="button" class="btn btn-primary btn-sm"
-                href="{{ url_for('routes.update_attendance', id=attendance.id, **request.args.to_dict()) }}"><i class="bi bi-pencil-square"></i></a>
+                href="{{ url_for('routes.update_attendance', id=attendance.id, **request.args.to_dict()) }}"><i
+                  class="bi bi-pencil-square"></i></a>
 
               {% endif %}
               {% if session['role'] == 'Owner' %}
               <form id="deleteForm-attendance-{{ attendance.id }}"
                 action="{{ url_for('routes.delete_attendance', id=attendance.id, **request.args.to_dict()) }}"
                 method="post" style="display:inline;">
-                <button type="button" class="btn btn-danger btn-sm" data-toggle="tooltip" title="Eliminar asistencia"
+                <button type="button" class="btn btn-danger btn-sm" data-toggle="tooltip" title="{{ _('Eliminar asistencia') }}"
                   onclick="confirmDelete('attendance', {{ attendance.id }})">
                   <i class="bi bi-trash"></i>
                 </button>
@@ -113,11 +120,11 @@
     <form id="deleteAllForm" method="POST" action="/attendances" class="mb-5">
       <input type="hidden" name="delete_all" value="true">
       <button id="delete_all" class="btn btn-danger mb-5" type="button" data-toggle="tooltip"
-        title="Borra todos los registros de asistencia en la base de datos" {% if not has_records %}disabled{% endif %}>
+        title="{{ _('Borra todos los registros de asistencia en la base de datos') }}" {% if not has_records %}disabled{% endif %}>
         {% if not has_records %}
-        Sin asistencia para mostrar
+        {{ _('No Attendances to show') }}
         {% else %}
-        <i class="bi bi-eraser-fill"></i> Delete all records
+        <i class="bi bi-eraser-fill"></i> {{ _('Delete all records') }}
         {% endif %}
       </button>
     </form>

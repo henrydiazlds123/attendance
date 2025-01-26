@@ -17,3 +17,6 @@ class Config:
     MOUNTAIN_TZ   = pytz.timezone("America/Denver") # Define Mountain Time Zone
     MOUNTAIN_TIME = datetime.now(MOUNTAIN_TZ) # Get the current time in Mountain Time
     CURRENT_DATE  = MOUNTAIN_TIME.date() # Use mountain_time.date() to get the date part
+    
+    LANGUAGES                     = ['en', 'es', 'pt']
+

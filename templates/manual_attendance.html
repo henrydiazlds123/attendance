@@ -1,34 +1,28 @@
 {% extends "layout.html" %}
-{% block title %}Attendance | Manual {% endblock %}
+{% block title %}{{ _('Attendance | Manual') }} {% endblock %}
 
 
 
 {% block content %}
 <div class="col-md">
-    <h2><i class="bi bi-card-checklist"></i>  Attendance Registration</h2>
-    <p class="mt-2">Use this page to add the attendance to the classes listed below.
-    You will be able to record attendance for those people who do not have the means to do so themselves.</p>
+    <h2><i class="bi bi-card-checklist"></i>  {{ _('Attendance Registration') }}</h2>
+    <p class="mt-2">{{ _('Use this page to add the attendance to the classes listed below.
+    You will be able to record attendance for those people who do not have the means to do so themselves.') }}</p>
 
-<p>To be able register your attendance, first you will need to choose a class.</p>
-<h4 id="classNameDisplay" class="mb-3 text-center"></h4>
+    <p>{{ _('To be able register your attendance, first you will need to choose a class.') }}</p>
+    <h4 id="classNameDisplay" class="mb-3 text-center"></h4>
 
-        <div class="list-group mt-3">
-            {% for class_data in class_links.values() %}
-            <li style="list-style-type: none;" class="mb-2">
-                <a href="{{ class_data['url'] }}" class="list-group-item list-group-item-action">{{ class_data['name'] }}</a>
-                {% endfor %}
-        </div>
-
+    <div class="list-group my-3">
+        {% for class_data in class_links.values() %}
+        <li style="list-style-type: none;">
+            <a href="{{ class_data['url'] }}" class="list-group-item list-group-item-action">{{ class_data['name'] }}</a>
+        {% endfor %}
+    </div>
 
     <form id="attendanceForm" method="POST" action="{{ url_for('routes.registrar') }}">
         <div class="input-group mt-4">
-            <!-- <div class="input-group-prepend">
-                <span class="input-group-text" id="">First & Last name</span>
-            </div> -->
-            <input type="text" class="form-control" id="studentName" name="studentName" aria-label="Enter your Name and Last name" aria-describedby="button-addon2"  placeholder="Nombre y Apellido">
-            <div class="input-group-append">
-                <button class="btn btn-warning" type="submit" id="button-addon2"><i class="fa fa-share-square-o" aria-hidden="true"></i> Send</button>               
-            </div>
+            <input type="text" class="form-control" id="studentName" name="studentName" aria-label="{{ _('Enter your Name and Last name') }}" aria-describedby="button-addon2"  placeholder="{{ _('Name & Lastname') }}">
+            <button class="btn btn-primary" type="submit" id="button-addon2"><i class="fa fa-share-square-o" aria-hidden="true"></i> {{ _('Send') }}</button>               
         </div>
 
         <input type="hidden" id="className" name="className">
@@ -38,30 +32,5 @@
         <input type="hidden" id="unitNumber" name="unitNumber">
 
     </form>
-    <script>       
-        // Configuración para mostrar y establecer la clase
-        const urlParams  = new URLSearchParams(window.location.search);
-        const className  = urlParams.get('class_name');
-        const classCode  = urlParams.get('class');
-        const sundayCode = urlParams.get('code');
-        const unitNumber = urlParams.get('unit');
-
-        console.log("Parámetros de la URL:", { className, classCode, sundayCode, unitNumber });  // Salida de depuración
-    
-        // Asigna valores a los campos ocultos
-        if (className) {
-            document.getElementById('classNameDisplay').textContent = `Class: ${decodeURIComponent(className)}`;
-            document.getElementById('className').value              = decodeURIComponent(className);
-            document.getElementById('sundayCode').value             = sundayCode;
-            document.getElementById('unitNumber').value             = unitNumber;
-            document.getElementById('classCode').value              = classCode;
-        } else {
-            document.getElementById('classNameDisplay').textContent = 'Choose a Class';
-            document.getElementById('button-addon2').disabled       = true;
-            document.getElementById('studentName').disabled         = true;
-        }
-    
-        // Establece la fecha actual
-        document.getElementById('date').value = new Date().toISOString().split('T')[0];
- </script>
+      
     {% endblock %}

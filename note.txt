@@ -25,5 +25,28 @@ Si es necesario deshacer una migración, usa:
 
 flask db downgrade
 
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-Arreglar com se regustra la asistencia cuando se entra manualmente. No tiene campo class_code y se elimino tipo de clase
+Despues de marcar todo el texto  traducir, correr este comando para crear .po
+pybabel extract -F babel.cfg -k _l -o messages.pot .
+
+Despues crear catalago para idioma especifico. Este es para espanol:
+pybabel init -i messages.pot -d translations -l es
+
+Despues crear catalago para idioma especifico. Este es para portugues:
+pybabel init -i messages.pot -d translations -l pt
+
+Compilar un avez se haya traducido todo
+pybabel compile -d translations
+
+
+
+Para actualizar los archivos de traduccion:
+Identificar las cadenas nuevas y luego correr
+pybabel extract -F babel.cfg -k _l -o messages.pot .
+
+actualizar los archivos .po existentes sin borrar lo anterior
+pybabel update -i messages.pot -d translations
+
+Traducir las nuevas cadenas de texto y correr
+pybabel compile -d translations

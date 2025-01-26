@@ -3,11 +3,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime          import datetime
 from flask_login       import UserMixin
 from config            import Config
-from sqlalchemy        import Time
 from sqlalchemy.orm    import validates
 from sqlalchemy.exc    import IntegrityError
 from sqlalchemy        import UniqueConstraint
-from wtforms.validators import Regexp
+
+
 
 db = SQLAlchemy()
 
@@ -88,41 +88,15 @@ class MeetingCenter(db.Model):
     @validates('attendances')
     def validate_no_attendance(self, key, value):
         if self.attendances:
-            raise IntegrityError("Cannot delete a meeting center with registered attendance", params={}, statement=None)
+            raise IntegrityError(_('Cannot delete a church unit with registered attendance.'), params={}, statement=None)
         return value
 
     def delete(self):
         if self.attendances:
-            raise ValueError("Cannot delete a meeting center with registered attendance.")
+            raise ValueError(_('Cannot delete a church unit with registered attendance.'))
         db.session.delete(self)
 
-#=======================================================================
-# class Classes(db.Model):
-#     __tablename__ = 'classes'
-    
-#     id                = db.Column(db.Integer, primary_key=True)
-#     class_name        = db.Column(db.String(50), nullable=False, unique=True)
-#     short_name        = db.Column(db.String(20), nullable=False, unique=True)
-#     class_code        = db.Column(db.String(10), nullable=False, unique=True)
-#     class_type        = db.Column(db.String(10), nullable=False, default='Main')
-#     schedule          = db.Column(db.String(10), nullable=True)
-#     is_active         = db.Column(db.Boolean, nullable=False, default=True)  # Nuevo campo
-#     class_color       = db.Column(db.String(7), nullable=True, default="#000000")  # Formato de color hexadecimal
-#     meeting_center_id = db.Column(db.Integer, db.ForeignKey('meeting_center.id'), nullable=False)  # Clave foránea
-#     attendances       = db.relationship('Attendance', backref=db.backref('classes', lazy=True), cascade="all, delete-orphan")
-    
-#     @validates('attendances')
-#     def validate_no_attendance(self, key, value):
-#         if self.attendances:
-#             raise IntegrityError("Cannot delete a class with registered attendance", params={}, statement=None)
-#         return value
-
-#     def delete(self):
-#         if self.attendances:
-#             raise ValueError("Cannot delete a class with registered attendance.")
-#         db.session.delete(self)
-        
-        
+#=======================================================================      
 class Classes(db.Model):
     __tablename__     = 'classes'
 
@@ -148,15 +122,35 @@ class Classes(db.Model):
     @validates('attendances')
     def validate_no_attendance(self, key, value):
         if self.attendances:
-            raise IntegrityError("Cannot delete a class with registered attendance", params={}, statement=None)
+            raise IntegrityError(_('Cannot delete a class with registered attendance.'), params={}, statement=None)
         return value
 
     def delete(self):
         if self.attendances:
-            raise ValueError("Cannot delete a class with registered attendance.")
+            raise ValueError(_('Cannot delete a class with registered attendance.'))
         db.session.delete(self)        
         
 #=======================================================================        
+# class Organization(db.Model):
+#     __tablename__ = 'organization'
+
+#     id    = db.Column(db.Integer, primary_key=True)
+#     name  = db.Column(db.String(50), unique=True, nullable=False)
+#     users = db.relationship('User', backref=db.backref('organization', lazy=True), cascade="all, delete-orphan")
+    
+#     @validates('users')
+#     def validate_no_attendance(self, key, value):
+#         if self.users:
+#             raise IntegrityError(_('Cannot delete a organization with users registered.'), params={}, statement=None)
+#         return value
+
+#     def delete(self):
+#         if self.users:
+#             raise ValueError(_('Cannot delete a church unit with registered attendance.'))
+#         db.session.delete(self)
+
+from sqlalchemy.exc import IntegrityError
+
 class Organization(db.Model):
     __tablename__ = 'organization'
 
@@ -164,13 +158,17 @@ class Organization(db.Model):
     name  = db.Column(db.String(50), unique=True, nullable=False)
     users = db.relationship('User', backref=db.backref('organization', lazy=True), cascade="all, delete-orphan")
     
-    @validates('users')
-    def validate_no_attendance(self, key, value):
-        if self.users:
-            raise IntegrityError("Cannot delete a organization with users registered", params={}, statement=None)
-        return value
+    # Remove the validation logic here
+    # @validates('users')
+    # def validate_no_attendance(self, key, value):
+    #     if self.users:
+    #         raise IntegrityError(_('Cannot delete a organization with users registered.'), params={}, statement=None)
+    #     return value
 
     def delete(self):
+        # Check if there are users associated before trying to delete
         if self.users:
-            raise ValueError("Cannot delete a meeting center with registered attendance.")
+            raise ValueError(_('Cannot delete a church unit with registered attendance.'))
+        
+        # If no users are associated, proceed to delete
         db.session.delete(self)

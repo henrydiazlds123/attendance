@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Attendance{% endblock %}</title>
+    <title>{% block title %}{{ _('Attendance') }}{% endblock %}</title>
 
     {% include 'partials/head.html' %}
 
@@ -13,30 +13,44 @@
 </head>
 
 <body class="{{ 'logged-in' if session['user_id'] else '' }}">
+
     <head>
         {% include 'partials/navbar.html' %}
     </head>
-    <main>
-<div class="container">
-    <div class="row">
-        <h2 class="blog-post-title">
-            {% block header %}{% endblock %}
-        </h2>
-        <p class="mb-3">{% block subtitle%}{% endblock%}</p>
-        {% block content %} {% endblock %}
-    </div>
-</div>
 
+    <main  class="pb-5">
+        <div class="container">
+            <div class="row">
+                <p class="my-3">{% block subtitle%}{% endblock%}</p>
+                {% block content %} {% endblock %}
+            </div>
+            <div class="col">           
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    <div id="flash-messages" class="flashes">
+                        {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            <p>{{ message }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                {% endwith %}
+            </div>
+        </div>
     </main>
+    
+    {% if session['user_id'] %}
     <footer>
         {% include 'partials/footer.html' %}
     </footer>
+    {% endif %}
 
     {% block scripts %}
-        {% include 'partials/scripts.html' %}
+    {% include 'partials/scripts.html' %}
     {% endblock %}
 
-    
+
 </body>
 
 </html>

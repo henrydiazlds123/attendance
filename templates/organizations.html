@@ -1,18 +1,20 @@
 {% extends "layout.html" %}
-{% block title %}Attendance | Organizations{% endblock %}
+{% block title %}{{ _('Attendance | Organizations') }}{% endblock %}
 
 {% block head %}
 
 {% endblock %}
 
 {% block content %}
-    <h2><i class="fa fa-sitemap" aria-hidden="true"></i>  Organizations Management</h2>
-    <a class="btn btn-primary mb-3" href="{{ url_for('routes.create_organization') }}"><i class="fa fa-plus" aria-hidden="true"></i>  Add New Organization</a>   
+    <h2><i class="fa fa-sitemap" aria-hidden="true"></i>  {{ _('Organizations Management') }}</h2>
+    <div>
+      <a class="btn btn-primary mb-3" href="{{ url_for('routes.create_organization') }}"><i class="fa fa-plus" aria-hidden="true"></i>  {{ _('Add New Organization') }}</a> 
+    </div> 
     <div class="list-group list-group-numbered">
       {% for org in organizations %}
-        <a class="list-group-item list-group-item-action" data-toggle="tooltip" title="Edit Organization" href="{{ url_for('routes.edit_organization', id=org.id) }}">
+        <a class="list-group-item list-group-item-action" data-toggle="tooltip" title="{{ _('Edit Organization') }}" href="{{ url_for('routes.edit_organization', id=org.id) }}">
           
-          {{ org.name }}
+          {{ _(org.name) }}
         </a>
 
       {% endfor%}

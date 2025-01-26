@@ -1,39 +1,41 @@
 {% extends "layout.html" %}
-{% block title %}Attendance | Manual {% endblock %}
+{% block title %}{{ _('Attendance | Reset Name') }} {% endblock %}
 {% block head %}
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const savedName = localStorage.getItem("studentName");
+document.addEventListener('DOMContentLoaded', () => {
+    const savedName = localStorage.getItem("studentName");
 
-        if (savedName) {
-            Swal.fire({
-                title: 'Reset Student Name',
-                text: `The saved name is: "${savedName}". Do you want to clear it?`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Yes, clear it!',
-                cancelButtonText: 'Cancel'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    localStorage.removeItem("studentName");
-                    Swal.fire('Cleared!', 'The name has been removed.', 'success').then(() => {
-                        window.location.href = 'https://www.churchofjesuschrist.org/?lang=spa';  // Redirigir a la página principal
-                    });
-                } else {
-                    Swal.fire('Cancelled', 'Your name was not removed.', 'info').then(() => {
-                        window.location.href = 'https://www.churchofjesuschrist.org/?lang=spa';
-                    });
-                }
-            });
-        } else {
-            Swal.fire('No Name Found', 'No name is currently saved.', 'info').then(() => {
-                window.location.href = 'https://www.churchofjesuschrist.org/?lang=spa';
-            });
-        }
-    });
+    fetch('/get_swal_texts')
+        .then(response => response.json())
+        .then(texts => {
+            if (savedName) {
+                Swal.fire({
+                    title: texts.resetStudentName,
+                    text: texts.savedNameText.replace("{name}", savedName),
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: texts.yesClearIt,
+                    cancelButtonText: texts.cancel
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        localStorage.removeItem("studentName");
+                        Swal.fire(texts.cleared, texts.nameRemoved, 'success').then(() => {
+                            window.location.href = 'https://www.churchofjesuschrist.org/?lang=spa';
+                        });
+                    } else {
+                        Swal.fire(texts.cancelled, texts.nameNotRemoved, 'info').then(() => {
+                            window.location.href = 'https://www.churchofjesuschrist.org/?lang=spa';
+                        });
+                    }
+                });
+            } else {
+                Swal.fire(texts.noNameFound, texts.noNameSaved, 'info').then(() => {
+                    window.location.href = 'https://www.churchofjesuschrist.org/?lang=spa';
+                });
+            }
+        })
+        .catch(error => console.error('Error fetching texts:', error));
+});
 </script>
-          
+
 {% endblock %}
-
-
-
