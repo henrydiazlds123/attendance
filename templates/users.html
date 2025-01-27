@@ -25,13 +25,13 @@
         {% for user in users %}
           <tr>
             <td scope="row">{{ loop.index }}</td>
-            <td>{{ user.username }}</td>
+            <td>{{ _(user.username) }}</td>
             <td class="d-none d-lg-table-cell dot-1">{{ user.email }}</td>
-            <td class="dot-1">{{ user.organization_name }}</td>
+            <td class="dot-1">{{ _(user.organization_name) }}</td>
             {% if session['role'] == 'Owner' %}
             <td class="d-none d-md-table-cell">{{ user.meeting_short_name }}</td>
             {% endif %}
-            <td class="d-none d-md-table-cell">{{ user.role }}</td>
+            <td class="d-none d-md-table-cell">{{ _(user.role) }}</td>
             <td>
               {% if not user['role'] == 'Owner' %}
                 <a href="{{ url_for('routes.reset_password', id=user.id) }}" class="btn btn-warning btn-sm" data-toggle="tooltip" title="{{ _('Reset Password') }}">

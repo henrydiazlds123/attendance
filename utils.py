@@ -2,7 +2,7 @@ import os
 from functools    import wraps
 from datetime     import datetime, timedelta
 from flask        import flash, redirect, session, url_for, request
-from flask_babel  import gettext as _
+from flask_babel  import format_date, gettext as _
 from config       import Config
 from itsdangerous import URLSafeTimedSerializer
 
@@ -30,14 +30,27 @@ def get_current_time(timezone='America/Denver'):
     return datetime.now(tz)
 
 
+# def get_next_sunday():
+#     """Devuelve la fecha del próximo domingo. Si hoy es domingo, devuelve la fecha de hoy."""
+#     today = datetime.now().date()
+#     if today.weekday() == 6:  # 6 es domingo
+#         return format_datetime(today)
+#     else:
+#         days_until_sunday = 6 - today.weekday()
+#         return today + timedelta(days=days_until_sunday)
 def get_next_sunday():
-    """Devuelve la fecha del próximo domingo. Si hoy es domingo, devuelve la fecha de hoy."""
+    """Devuelve la fecha del próximo domingo, formateada según el locale. Si hoy es domingo, devuelve la fecha de hoy."""
     today = datetime.now().date()
+    
+    # Si hoy es domingo
     if today.weekday() == 6:  # 6 es domingo
-        return today
+        return today  # Formatear la fecha actual según el locale
     else:
+        # Calcular cuántos días faltan para el siguiente domingo
         days_until_sunday = 6 - today.weekday()
-        return today + timedelta(days=days_until_sunday)
+        next_sunday = today + timedelta(days=days_until_sunday)
+        print(format_date(next_sunday) )
+        return next_sunday  # Formatear la fecha del siguiente domingo
 
 
 def get_sunday_week(fecha):
@@ -80,6 +93,25 @@ def get_output_dir():
 def generate_token(user_id):
     serializer = URLSafeTimedSerializer(Config.SECRET_KEY)
     return serializer.dumps(user_id, salt='login-salt')
+
+
+def format_date_custom(date_obj, locale=None):
+    """
+    Formats a date object based on the locale.
+    :param date_obj: The date object to format.
+    :param locale: The locale to use for formatting.
+    :return: A formatted date string.
+    """
+    # Default to application-wide locale if not provided
+    if not locale:
+        locale = get_locale()
+    return format_date(date_obj, format='long', locale=locale)
+
+def get_locale():
+    lang = request.cookies.get('lang')  # Example: Retrieve from cookie
+    if lang in Config.LANGUAGES:
+        return lang
+    return request.accept_languages.best_match(Config.LANGUAGES)
 
 
 def get_months():

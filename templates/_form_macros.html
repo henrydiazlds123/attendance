@@ -19,7 +19,7 @@
     <label for="{{ field.id }}" class="{{ label_class }}">{{ field.label }}</label>
     <div class="col-sm-9 d-flex align-items-center">
         {{ field(class="form-control form-control-color", id=field.id, type="color", oninput="updateColorLabel(this)") }}
-        <span id="{{ field.id }}_label" class="ms-3">{{ field.data or '#000000' }}</span>
+        <span id="{{ field.id }}_label" class="ms-3">{{ _(field.data) or '#000000' }}</span>
         {% if field.errors %}
             <div class="text-danger small mt-1">
                 {% for error in field.errors %}
@@ -37,7 +37,7 @@
         {% if field.errors %}
             <div class="text-danger small mt-1">
                 {% for error in field.errors %}
-                    <div>{{ error }}</div>
+                    <div>{{ _(error) }}</div>
                 {% endfor %}
             </div>
         {% endif %}

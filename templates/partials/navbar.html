@@ -41,15 +41,44 @@
                             <p style="font-size: 10px; display:block; padding-top: 15px;">{{ session['user_name'] }}</p>
                         </div>
                         
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.logout') }}"><i class="bi bi-box-arrow-left"></i> {{ _('Logout') }}</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.logout') }}"></i>{{ _('Logout') }}  <i class="bi bi-box-arrow-right"></i></a></i></li>
                     {% else %}
                     <li class="nav-item {{ 'active' if request.endpoint == 'routes.login' else '' }}"><a class="nav-link" href="{{ url_for('routes.login') }}"><i class="bi bi-box-arrow-in-right"></i> {{ _('Login') }}</a></li>
                {% endif %}
                <!-- <li class="nav-item"><a class="nav-link"  id="themeSwitcher" href=""><i class="fa fa-sun-o" aria-hidden="true"></i></a></li>  -->
-               <li class="nav-item"><a class="nav-link"  id="themeSwitcher" href=""><i class="bi bi-brightness-high"></i></i></a></li> 
-               <script>
+               <li class="nav-item"><a class="nav-link"  id="themeSwitcher" href=""><i class="bi bi-brightness-high"></i></a></li> 
+               <!-- <form class="d-flex">
+                    <select id="language-switcher" class="form-select form-select-sm" onchange="changeLanguage(this.value)">
+                        <option value="en" {% if get_locale() == 'en' %}selected{% endif %}>English</option>
+                        <option value="es" {% if get_locale() == 'es' %}selected{% endif %}>Español</option>
+                        <option value="pt" {% if get_locale() == 'pt' %}selected{% endif %}>Português</option>
+                    </select>
+                </form> -->
+                <div class="dropdown">
+                    <button class="btn btn-dark dropdown-toggle" type="button" id="languageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <img src="{{ url_for('static', filename='img/flags/' + get_locale() + '.png') }}" alt="{{ get_locale() }}" class="flag-icon">
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="languageDropdown">
+                        <li>
+                            <a class="dropdown-item" href="?lang=en">
+                                <img src="{{ url_for('static', filename='/img/flags/en.png') }}" alt="English" class="flag-icon"> English
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="?lang=es">
+                                <img src="{{ url_for('static', filename='/img/flags/es.png') }}" alt="Español" class="flag-icon"> Español
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="?lang=pt">
+                                <img src="{{ url_for('static', filename='/img/flags/pt.png') }}" alt="Português" class="flag-icon"> Português
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            <script>
 
-              </script>   
+            </script>  
 
                 </ul>
             </div>

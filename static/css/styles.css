@@ -129,6 +129,31 @@ div > label[for="csrf_token"] {
   height: 25px;
   border-radius: 50%;
   vertical-align: middle;
-
-
 }
+
+.flag-icon {
+  width: 20px;
+  height: auto;
+  margin-right: 8px;
+  border-radius: 2px; /* Para redondear las esquinas de las banderas */
+}
+
+
+
+  /* Personalización del tema claro */
+  [data-bs-theme="light"] {
+    --bs-body-bg: #f8f9fa; /* Fondo claro más cálido */
+    --bs-body-color: #212529; /* Color del texto */
+    --bs-link-color: #0d6efd; /* Color de los enlaces */
+    --bs-border-color: #dee2e6; /* Color de bordes */
+    --bs-btn-bg: #e9ecef; /* Fondo de botones */
+    --bs-btn-hover-bg: #d6d8db; /* Fondo de botones al pasar el mouse */
+  }
+
+
+  [data-bs-theme="dark"] {
+    --bs-body-bg: #121212; /* Fondo oscuro más suave */
+    --bs-body-color: #e9ecef; /* Color del texto */
+    --bs-link-color: #66b2ff; /* Color de los enlaces */
+    --bs-border-color: #444; /* Color de bordes */
+  }

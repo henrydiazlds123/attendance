@@ -73,6 +73,8 @@ async function initAttendanceForm() {
   });
 }
 
+
+
 async function sendAttendanceForm(formData) {
   try {
     const response = await fetch("/registrar", { method: "POST", body: formData });
@@ -84,12 +86,14 @@ async function sendAttendanceForm(formData) {
         document.getElementById("studentName").value = "";
       });
     } else {
-      const errorMsg = data.error_type === "main_class_restriction"
+      // Obtener el mensaje de error desde el servidor o un mensaje genérico
+      const errorMsg = data.message || (data.error_type === "main_class_restriction"
         ? texts.sundayClassRestriction
-        : texts.alreadyRegistered.replace("{sunday_date}", data.sunday_date || "unknown");
-
+        : texts.alreadyRegistered.replace("{sunday_date}", data.sunday_date || "unknown"));
+    
       Swal.fire(texts.errorTitle, errorMsg, "error");
     }
+
   } catch (error) {
     const texts = await fetch('/get_swal_texts').then(response => response.json());
     Swal.fire(texts.errorTitle, texts.connectionError, "error");
@@ -107,7 +111,7 @@ function initDeleteAllButton() {
 
     Swal.fire({
       title             : texts.confirmDelete,
-      text              : texts.deleteConfirmationText,
+      text              : texts.yesDeleteEverything,
       icon              : "warning",
       showCancelButton  : true,
       confirmButtonColor: "#d33",
@@ -141,20 +145,26 @@ function setupClassParameters() {
   const unitNumber = urlParams.get("unit");
 
   if (className) {
-    // Traducción de la etiqueta con un marcador dinámico
-    const translatedMessage = gettext('Class: {className}').replace(
-      '{className}',
-      decodeURIComponent(className)
-    );
-
-    document.getElementById("classNameDisplay").textContent = translatedMessage;
+    document.getElementById("classNameDisplay").textContent =  className;
     document.getElementById("className").value = decodeURIComponent(className);
     document.getElementById("classCode").value = classCode;
     document.getElementById("sundayCode").value = sundayCode;
     document.getElementById("unitNumber").value = unitNumber;
+
+    const listGroupItems = document.querySelectorAll('.list-group-item');
+    listGroupItems.forEach(item => {
+        if (item.textContent.trim() === decodedClassName) {
+            item.classList.add('active');
+        } else {
+            item.classList.remove('active'); // Asegurarse de que los demás elementos no estén activos
+        }
+    });
+
+
+
   } else {
     // Traducción de mensajes estáticos
-    document.getElementById("classNameDisplay").textContent = _('Choose a Class');
+    document.getElementById("classNameDisplay").textContent = 'Choose a Class';
     document.getElementById("button-addon2").disabled = true;
     document.getElementById("studentName").disabled = true;
   }
@@ -226,3 +236,29 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
+async function confirmDelete(entityType, entityId) {
+  const formId = `deleteForm-${entityType}-${entityId}`; // Formulario con id basado en el tipo de entidad y su ID
+
+  // Obtener los textos localizados para SweetAlert
+  const texts = await fetch('/get_swal_texts').then(response => response.json());
+
+  Swal.fire({
+    title             : texts.confirmDelete,
+    text              : texts.deleteOneRecordText,
+    icon              : "warning",
+    showCancelButton  : true,
+    confirmButtonColor: "#d33",
+    cancelButtonColor : "#3085d6",
+    confirmButtonText : texts.yesDeleteIt,
+    cancelButtonText  : texts.cancel,
+  }).then((result) => {
+    if (result.isConfirmed) {
+      document.getElementById(formId).submit(); // Envía el formulario correspondiente
+    }
+  });
+}
+
+function changeLanguage(lang) {
+  const currentUrl = window.location.href.split('?')[0];
+  window.location.href = `${currentUrl}?lang=${lang}`;
+}

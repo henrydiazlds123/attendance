@@ -1,6 +1,6 @@
 import qrcode
 from flask                   import Blueprint, abort, jsonify, render_template, redirect, request, session, url_for, flash, send_from_directory, send_file
-from flask_babel             import gettext as _
+from flask_babel             import format_datetime, gettext as _
 from sqlalchemy              import func
 from config                  import Config
 from models                  import db, Classes, User, Attendance, MeetingCenter, Setup, Organization
@@ -458,166 +458,13 @@ def manual_attendance():
 
     return render_template('manual_attendance.html', class_links=class_links)
 # =============================================================================================
-# @bp.route('/registrar', methods=['POST'])
-# def registrar():
-#     try:
-#         student_name        = request.form.get('studentName').title()
-#         nombre, apellido    = student_name.split(" ", 1)
-#         formatted_name      = f"{apellido}, {nombre}"
-#         class_code          = request.form.get('classCode')  # Usar código de clase en lugar del nombre
-#         sunday_date         = get_next_sunday()
-#         sunday_code         = request.form.get('sundayCode')
-#         unit_number         = request.form.get('unitNumber')
-
-#         # Verificar si la clase es válida
-#         class_entry = Classes.query.filter_by(class_code=class_code).first()
-#         if not class_entry:
-#             return jsonify({
-#                 "success": False,
-#                 "message": "La clase seleccionada no es válida.",
-#             }), 400
-
-#         # Verificar si el MeetingCenter es válido
-#         meeting_center = MeetingCenter.query.filter_by(unit_number=unit_number).first()
-#         if not meeting_center:
-#             return jsonify({
-#                 "success": False,
-#                 "message": "El centro de reuniones no es válido.",
-#             }), 400
-
-#         # Verificar si ya existe un registro para este estudiante, clase, y fecha
-#         existing_attendance   = Attendance.query.filter_by(
-#             student_name      = formatted_name,
-#             class_id          = class_entry.id,
-#             sunday_date       = sunday_date,
-#             meeting_center_id = meeting_center.id
-#         ).first()
-
-#         if existing_attendance:
-#             return jsonify({
-#                 "success": False,
-#                 "message": "El estudiante ya tiene un registro para esta clase y fecha.",
-#                 "nombre": nombre,
-#                 "sunday_date": sunday_date.strftime("%b %d, %Y")
-#             }), 400
-
-#         # Registrar la asistencia
-#         new_attendance          = Attendance(
-#             student_name        = formatted_name,
-#             class_id            = class_entry.id,
-#             class_code          = class_code,
-#             sunday_date         = sunday_date,
-#             sunday_code         = sunday_code,
-#             meeting_center_id   = meeting_center.id
-#         )
-#         db.session.add(new_attendance)
-#         db.session.commit()
-
-#         return jsonify({
-#             "success"     : True,
-#             "message"     : "Asistencia registrada exitosamente.",
-#             "student_name": student_name,
-#             "class_name"  : class_entry.class_name,
-#             "sunday_date" : sunday_date.strftime("%b %d, %Y")
-#         }), 200
-
-#     except Exception as e:
-#         return jsonify({
-#             "success": False,
-#             "message": f"Hubo un error al registrar la asistencia: {str(e)}"
-#         }), 500
-
-
-
-# @bp.route('/registrar', methods=['POST'])
-# def registrar():
-#     try:
-#         student_name        = request.form.get('studentName').title()
-#         nombre, apellido    = student_name.split(" ", 1)
-#         formatted_name      = f"{apellido}, {nombre}"
-#         class_code          = request.form.get('classCode')  # Usar código de clase en lugar del nombre
-#         sunday_date         = get_next_sunday()
-#         sunday_code         = request.form.get('sundayCode')
-#         unit_number         = request.form.get('unitNumber')
-
-#         # Verificar si la clase es válida
-#         class_entry = Classes.query.filter_by(class_code=class_code).first()
-#         if not class_entry:
-#             return jsonify({
-#                 "success": False,
-#                 "message": "La clase seleccionada no es válida.",
-#             }), 400
-
-#         # Verificar restricciones para clases Main
-#         if class_entry.class_type == "Main":
-#             today = datetime.now().weekday()  # 0 = Lunes, 6 = Domingo
-
-#             setup = Setup.query.filter_by(key='restrict_main_to_sunday').first()
-#             if setup and setup.value == 'true' and today != 6:  # Si la restricción está activada y no es domingo
-#                 return jsonify({
-#                     "success": False,
-#                     "student_name": student_name,
-#                     "error_type": "main_class_restriction",  # Este es el nuevo campo para diferenciar el error
-#                     "message": "!No se puede registrar asistencia para una clase Main fuera del domingo.",
-#                 }), 400
-
-
-#         # Verificar si el MeetingCenter es válido
-#         meeting_center = MeetingCenter.query.filter_by(unit_number=unit_number).first()
-#         if not meeting_center:
-#             return jsonify({
-#                 "success": False,
-#                 "message": "El centro de reuniones no es válido.",
-#             }), 400
-
-#         # Verificar si ya existe un registro para este estudiante, clase, y fecha
-#         existing_attendance = Attendance.query.filter_by(
-#             student_name      = formatted_name,
-#             class_id          = class_entry.id,
-#             sunday_date       = sunday_date,
-#             meeting_center_id = meeting_center.id
-#         ).first()
-
-#         if existing_attendance:
-#             return jsonify({
-#                 "success": False,
-#                 "message": f"{formatted_name}! Ya tienes una asistencia registrada para el domingo {sunday_date.strftime('%b %d, %Y')}!",
-#             }), 400
-
-#         # Registrar la asistencia
-#         new_attendance = Attendance(
-#             student_name        = formatted_name,
-#             class_id            = class_entry.id,
-#             class_code          = class_code,
-#             sunday_date         = sunday_date,
-#             sunday_code         = sunday_code,
-#             meeting_center_id   = meeting_center.id
-#         )
-#         db.session.add(new_attendance)
-#         db.session.commit()
-
-#         return jsonify({
-#             "success"     : True,
-#             "message"     : "Asistencia registrada exitosamente.",
-#             "student_name": student_name,
-#             "class_name"  : class_entry.class_name,
-#             "sunday_date" : sunday_date.strftime("%b %d, %Y")
-#         }), 200
-
-#     except Exception as e:
-#         return jsonify({
-#             "success": False,
-#             "message": f"Hubo un error al registrar la asistencia: {str(e)}"
-#         }), 500
-
-
 @bp.route('/registrar', methods=['POST'])
 def registrar():
     try:
         student_name        = request.form.get('studentName').title()
         nombre, apellido    = student_name.split(" ", 1)
         formatted_name      = f"{apellido}, {nombre}"
-        class_code          = request.form.get('classCode')
+        class_code          = request.form.get('classCode')  # Usar código de clase en lugar del nombre
         sunday_date         = get_next_sunday()
         sunday_code         = request.form.get('sundayCode')
         unit_number         = request.form.get('unitNumber')
@@ -627,48 +474,54 @@ def registrar():
         if not class_entry:
             return jsonify({
                 "success": False,
-                "message": _('La clase seleccionada no es válida.'),
+                "message": "The selected class is not valid.",
             }), 400
 
         # Verificar restricciones para clases Main
         if class_entry.class_type == "Main":
             today = datetime.now().weekday()  # 0 = Lunes, 6 = Domingo
-            setup = Setup.query.filter_by(key='restrict_main_to_sunday').first()
 
+            setup = Setup.query.filter_by(key='restrict_main_to_sunday').first()
             if setup and setup.value == 'true' and today != 6:  # Si la restricción está activada y no es domingo
                 return jsonify({
-                    "success"     : False,
+                    "success": False,
                     "student_name": student_name,
-                    "error_type"  : 'main_class_restriction', # Este es el nuevo campo para diferenciar el error
-                    "message"     : _('Attendance for Sunday classes can only be registered on Sunday'),
+                    "error_type": "main_class_restriction",  # Este es el nuevo campo para diferenciar el error
+                    "message": _('Attendance for Sunday classes can only be registered on Sunday'),
                 }), 400
 
-            # Verificar el horario de la clase
-            meeting_center = MeetingCenter.query.filter_by(unit_number=unit_number).first()
-            if not meeting_center:
-                return jsonify({
-                    "success": False,
-                    "message": _('The church unit is invalid.'),
-                }), 400
+        #Verificar el horario de la clase
+        meeting_center = MeetingCenter.query.filter_by(unit_number=unit_number).first()
+        if not meeting_center:
+            return jsonify({
+                "success": False,
+                "message": _('The church unit is invalid.'),
+            }), 400
 
-            start_time = meeting_center.start_time  # Hora de inicio de la reunión
-            end_time   = meeting_center.end_time  # Hora de finalización de la reunión
+        start_time = meeting_center.start_time  # Hora de inicio de la reunión
+        end_time = meeting_center.end_time  # Hora de finalización de la reunión
 
-            # Asegúrate de que start_time y end_time estén en formato datetime (si no lo están)
-            if isinstance(start_time, str):
-                start_time = datetime.strptime(start_time, "%H:%M")
-            if isinstance(end_time, str):
-                end_time = datetime.strptime(end_time, "%H:%M")
+        # Asegúrate de que start_time y end_time estén en formato datetime (si no lo están)
+        if isinstance(start_time, str):
+            start_time = datetime.strptime(start_time, "%H:%M").time()
+        if isinstance(end_time, str):
+            end_time = datetime.strptime(end_time, "%H:%M").time()
 
-            # Obtener la hora actual
-            current_time = datetime.now().time()
+        # Obtener la hora actual
+        current_time = datetime.now().time()
 
-            # Verificar si la hora actual está dentro del rango permitido
-            if not (start_time - timedelta(hours=1) <= current_time <= end_time + timedelta(hours=1)):
-                return jsonify({
-                    "success": False,
-                    "message": _('Attendance cannot be recorded outside of meeting hours.'),
-                }), 400
+        # Convierte las horas a datetime para poder trabajar con ellas
+        today = datetime.today()
+        start_time_dt = datetime.combine(today, start_time)
+        end_time_dt = datetime.combine(today, end_time)
+        current_time_dt = datetime.combine(today, current_time)
+
+        # Verificar si la hora actual está dentro del rango permitido
+        if not (start_time_dt - timedelta(hours=1) <= current_time_dt <= end_time_dt + timedelta(hours=1)):
+            return jsonify({
+                "success": False,
+                "message": _('Attendance cannot be recorded outside of meeting hours.'),
+            }), 400
 
         # Verificar si el MeetingCenter es válido
         meeting_center = MeetingCenter.query.filter_by(unit_number=unit_number).first()
@@ -690,9 +543,9 @@ def registrar():
             return jsonify({
                 "success": False,
                 "message": _("%(name)s! You already have an attendance registered for Sunday %(date)s!") % {
-                    'name': formatted_name, 
-                    'date': sunday_date.strftime('%b %d, %Y')
-                    }
+                   'name': formatted_name, 
+                  'date': sunday_date.strftime('%b %d, %Y')
+                 }
             }), 400
 
         # Registrar la asistencia
@@ -720,6 +573,7 @@ def registrar():
             "success": False,
             "message": _('There was an error recording attendance: %(error)s') % {'error': str(e)}
         }), 500
+
 
 
 
@@ -857,19 +711,19 @@ def generate_pdfs():
         qr.make(fit=True)
         img = qr.make_image(fill_color=class_color, back_color="white")
 
-        qr_filename = os.path.join(OUTPUT_DIR, f"{class_name}_{class_date.strftime('%Y-%m-%d')}.png")
+        qr_filename = os.path.join(OUTPUT_DIR, f"{class_name}_{format_date(class_date)}.png")
         img.save(qr_filename)
         print(f"QR code saved: {qr_filename}")
 
-        pdf_filename = os.path.join(OUTPUT_DIR, f"{class_name}_{class_date.strftime('%Y-%m-%d')}.pdf")
+        pdf_filename = os.path.join(OUTPUT_DIR, f"{_(class_name)}_{format_date(class_date)}.pdf")
         c = canvas.Canvas(pdf_filename, pagesize=letter)
         page_width, page_height = letter
 
         c.setFont("Helvetica-Bold", 24)
         c.setFillColor("black")
-        c.drawCentredString(page_width / 2, 670, f"Attendance Sheet")
+        c.drawCentredString(page_width / 2, 670, _(f"Attendance Sheet"))
         c.setFont("Helvetica-Bold", 35)
-        c.drawCentredString(page_width / 2, 625, class_name)
+        c.drawCentredString(page_width / 2, 625, _(class_name))
 
         qr_image = ImageReader(qr_filename)
         qr_size = 430
@@ -880,7 +734,7 @@ def generate_pdfs():
         c.setFont("Helvetica", 18)
         c.setFillColor("black")
         c.drawCentredString(page_width / 2, qr_y - 15, unit_name)
-        c.drawCentredString(page_width / 2, qr_y - 40, f"{class_date.strftime('%B %d, %Y')}")
+        c.drawCentredString(page_width / 2, qr_y - 40, f"{format_date(class_date)}")
         c.save()
         print(f"PDF saved: {pdf_filename}")
 
@@ -1111,44 +965,101 @@ def delete_class(id):
         
     return redirect(url_for('routes.classes'))
 
+
 # =============================================================================================
-# @bp.route('/classes/populate/<int:id>', methods=['GET', 'POST'])
-# @role_required('Owner')
-# def populate_classes(id):
-#     new_meeting_center_id = id
-#     try:
-#         existing_classes = Classes.query.filter_by(meeting_center_id=new_meeting_center_id).first()
-#         if existing_classes:
-#             flash("Classes already exist for this meeting center", 'warning', "danger")
-#             return
+@bp.route('/organizations', methods=['GET'])
+def organizations():
+    organizations = Organization.query.all()
+    return render_template('organizations.html', organizations=organizations)
 
-#         main_classes = Classes.query.filter_by(class_type='Main').all()
-#         for main_class in main_classes:
-#             duplicate_class      = Classes(
-#                 class_name       =main_class.class_name,
-#                 short_name       =main_class.short_name,
-#                 class_code       =main_class.class_code,
-#                 class_type       =main_class.class_type,
-#                 schedule         =main_class.schedule,
-#                 is_active        =main_class.is_active,
-#                 class_color      =main_class.class_color,
-#                 meeting_center_id=new_meeting_center_id
-#             )
-#             db.session.add(duplicate_class)
-# #         # Confirmar los cambios en la base de datos
-#         db.session.commit()
-#         flash("Main classes successfully populated.", "success")
-#     except IntegrityError as ie:
-#         db.session.rollback()
-#         flash(f"Unique constraint error: {str(ie)}", "danger")
-#     except Exception as e:
-#         db.session.rollback()
-#         raise ValueError(f"Error duplicating main classes for new meeting center: {str(e)}")
+# =============================================================================================
+@bp.route('/organizations/new', methods=['GET', 'POST'])
+def create_organization():
+    form = OrganizationForm()
+    if form.validate_on_submit():
+        new_org = Organization(name=form.name.data)
+        try:
+            db.session.add(new_org)
+            db.session.commit()
+            flash(_('Organization created successfully!'), 'success')
+            return redirect(url_for('routes.organizations'))
+        except Exception as e:
+            db.session.rollback()
+            flash(_('Error: Organization name must be unique.'), 'danger')
+            return redirect(url_for('routes.organizations'))
+    return render_template('form.html', form=form, title=_('Create new Organization'), submit_button_text=_('Create'), clas='warning')
+
+# =============================================================================================
+# Update
+@bp.route('/organizations/edit/<int:id>', methods=['GET', 'POST'])
+@role_required('Admin', 'Owner')
+def edit_organization(id):
+    organization = Organization.query.get_or_404(id)
+    form         = OrganizationForm(obj=organization)
+    if form.validate_on_submit():
+        organization.name = form.name.data
+        try:
+            db.session.commit()
+            flash(_('Organization updated successfully!'), 'success')
+            return redirect(url_for('routes.organizations'))
+        except Exception as e:
+            db.session.rollback()
+            flash(_('Error: Organization name must be unique.'), 'danger')
+    return render_template('form.html', form=form, title=_('Edit Organization'), submit_button_text=_('Update'), clas='warning', organization=organization)
+
+# Delete
+@bp.route('/organizations/delete/<int:id>', methods=['POST'])
+def delete_organization(id):
+    organization = Organization.query.get_or_404(id)
+    try:
+        db.session.delete(organization)
+        db.session.commit()
+        flash(_('Organization deleted successfully!'), 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(_('Error: Could not delete organization.'), 'danger')
+    return redirect(url_for('routes.organizations'))
+
+
+
+# =============================================================================================
+@bp.route('/get_swal_texts', methods=['GET'])
+def get_swal_texts():
+    return {
+        
+        'alreadyRegistered'     : _('You already have registered assistance on {sunday_date}.'),
+        'actionCanceled'        : _('Action canceled'),
+        'attendanceRecorded'    : _('¡{student_name}, your attendance was recorded!'),
+        'cancel'                : _('Cancel'),
+        'cancelled'             : _('Cancelled'),
+        'cleared'               : _('Cleared!'),
+        'confirm'               : _('Confirm'),
+        'confirmDelete'         : _('You \'re sure?'),
+        'connectionError'       : _('There was a problem connecting to the server.'),
+        'deleteConfirmationText': _('This action will delete all records and cannot be undone.'),
+        'deleteOneRecordText   ': _('This record will be deleted.'),
+        'errorTitle'            : _('Error'),
+        'great'                 : _('Great!'),
+        'mustSelectDate'        : _('You must select a date!'),
+        'nameFormatText'        : _('Please enter your name in \'First Name Last Name\' format.'),
+        'nameNotRemoved'        : _('Your name was not removed.'),
+        'nameRemoved'           : _('The name has been removed.'),
+        'noNameFound'           : _('No Name Found'),
+        'noNameSaved'           : _('No name is currently saved.'),
+        'noQrGenerated'         : _('QR codes were not generated'),
+        'resetStudentName'      : _('Reset Student Name'),
+        'savedNameText'         : _('The saved name is: \'{name}\'. Do you want to clear it?'),
+        'selectDateExtraClasses': _('Select a date for Extra classes'),
+        'sundayClassRestriction': _('You cannot register a \'Sunday Class\' outside of Sunday.'),
+        'yes'                   : _('Yes'),
+        'yesDeleteEverything'   : _('Yes, delete everything'),
+        'yesClearIt'            : _('Yes, clear it!'),
+        'yesDeleteIt'           : _('Yes, Delete it!'),
+        'warningTitle'          : _('warning'),
+
+    }
     
-#     return redirect(url_for('routes.meeting_centers'))  # Redirige a una vista después de completar la operación
-
-
-
+# =============================================================================================   
 @bp.route('/classes/populate/<int:id>', methods=['GET', 'POST'])
 @role_required('Owner')
 def populate_classes(id):
@@ -1256,96 +1167,4 @@ def populate_classes(id):
 
     return redirect(url_for('routes.meeting_centers'))
 
-
-
-
 # =============================================================================================
-@bp.route('/organizations', methods=['GET'])
-def organizations():
-    organizations = Organization.query.all()
-    return render_template('organizations.html', organizations=organizations)
-
-# =============================================================================================
-@bp.route('/organizations/new', methods=['GET', 'POST'])
-def create_organization():
-    form = OrganizationForm()
-    if form.validate_on_submit():
-        new_org = Organization(name=form.name.data)
-        try:
-            db.session.add(new_org)
-            db.session.commit()
-            flash(_('Organization created successfully!'), 'success')
-            return redirect(url_for('routes.organizations'))
-        except Exception as e:
-            db.session.rollback()
-            flash(_('Error: Organization name must be unique.'), 'danger')
-            return redirect(url_for('routes.organizations'))
-    return render_template('form.html', form=form, title=_('Create new Organization'), submit_button_text=_('Create'), clas='warning')
-
-
-# Update
-@bp.route('/organizations/edit/<int:id>', methods=['GET', 'POST'])
-@role_required('Admin', 'Owner')
-def edit_organization(id):
-    organization = Organization.query.get_or_404(id)
-    form         = OrganizationForm(obj=organization)
-    if form.validate_on_submit():
-        organization.name = form.name.data
-        try:
-            db.session.commit()
-            flash(_('Organization updated successfully!'), 'success')
-            return redirect(url_for('routes.organizations'))
-        except Exception as e:
-            db.session.rollback()
-            flash(_('Error: Organization name must be unique.'), 'danger')
-    return render_template('form.html', form=form, title=_('Edit Organization'), submit_button_text=_('Update'), clas='warning', organization=organization)
-
-# Delete
-@bp.route('/organizations/delete/<int:id>', methods=['POST'])
-def delete_organization(id):
-    organization = Organization.query.get_or_404(id)
-    try:
-        db.session.delete(organization)
-        db.session.commit()
-        flash(_('Organization deleted successfully!'), 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash(_('Error: Could not delete organization.'), 'danger')
-    return redirect(url_for('routes.organizations'))
-
-
-
-
-@bp.route('/get_swal_texts', methods=['GET'])
-def get_swal_texts():
-    return {
-        
-        'alreadyRegistered'     : _('You already have registered assistance on {sunday_date}.'),
-        'actionCanceled'        : _('Action canceled'),
-        'attendanceRecorded'    : _('¡{student_name}, your attendance was recorded!'),
-        'cancel'                : _('Cancel'),
-        'cancelled'             : _('Cancelled'),
-        'cleared'               : _('Cleared!'),
-        'confirm'               : _('Confirm'),
-        'confirmDelete'         : _('You \'re sure?'),
-        'connectionError'       : _('There was a problem connecting to the server.'),
-        'deleteConfirmationText': _('This action will delete all records and cannot be undone.'),
-        'errorTitle'            : _('Error'),
-        'great'                 : _('Great!'),
-        'mustSelectDate'        : _('You must select a date!'),
-        'nameFormatText'        : _('Please enter your name in \'First Name Last Name\' format.'),
-        'nameNotRemoved'        : _('Your name was not removed.'),
-        'nameRemoved'           : _('The name has been removed.'),
-        'noNameFound'           : _('No Name Found'),
-        'noNameSaved'           : _('No name is currently saved.'),
-        'noQrGenerated'         : _('QR codes were not generated'),
-        'resetStudentName'      : _('Reset Student Name'),
-        'savedNameText'         : _('The saved name is: \'{name}\'. Do you want to clear it?'),
-        'selectDateExtraClasses': _('Select a date for Extra classes'),
-        'sundayClassRestriction': _('You cannot register a \'Sunday Class\' outside of Sunday.'),
-        'yes'                   : _('Yes'),
-        'yesDeleteEverything'   : _('Yes, delete everything'),
-        'yesClearIt'            : _('Yes, clear it!'),
-        'warningTitle'          : _('warning'),
-
-    }

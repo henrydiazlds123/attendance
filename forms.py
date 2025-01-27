@@ -29,10 +29,10 @@ class UserForm(FlaskForm):
         if 'role' in session:
             if session['role'] == 'Owner':
                 # Si el usuario es Owner, puede ver todos los roles
-                self.role.choices = [('Owner', 'Owner'), ('Admin', 'Admin'), ('User', 'User')]
+                self.role.choices = [('Owner', _('Owner')), ('Admin', _('Admin')), ('User', _('User'))]
             else:
                 # Si el usuario no es Owner, no se muestra 'Owner' en la lista
-                self.role.choices = [('Admin', 'Admin'), ('User', 'User')]
+                self.role.choices = [('Admin', _('Admin')), ('User', _('User'))]
 
             # Si no es Owner, no puede cambiar el Meeting Center
             if session['role'] != 'Owner':
@@ -61,9 +61,9 @@ class EditUserForm(FlaskForm):
         super(EditUserForm, self).__init__(*args, **kwargs)
         if 'role' in session:
             if session['role'] == 'Admin':
-                self.role.choices = [('User', 'User'), ('Admin', 'Admin')]
+                self.role.choices = [('Admin', _('Admin')), ('User', _('User'))]
             else:
-                self.role.choices = [('Owner', 'Owner'), ('Admin', 'Admin'), ('User', 'User')]
+                self.role.choices = [('Owner', _('Owner')), ('Admin', _('Admin')), ('User', _('User'))]
 
             if session['role'] != 'Owner':
                 self.meeting_center_id.data = session.get('meeting_center_id')
@@ -79,7 +79,7 @@ class EditUserForm(FlaskForm):
 class ResetPasswordForm(FlaskForm):
     current_password = PasswordField(_l('Current Password'), validators=[DataRequired()])
     new_password     = PasswordField(_l('New Password'), validators=[DataRequired(), Length(min=6)])
-    confirm_password = PasswordField(_l('Confirm New Password'), validators=[DataRequired(), EqualTo('new_password', message='Passwords must match')])
+    confirm_password = PasswordField(_l('Confirm New Password'), validators=[DataRequired(), EqualTo('new_password', message= _l('Passwords must match'))])
 
 #==================================================================================================
 class MeetingCenterForm(FlaskForm):
@@ -87,8 +87,8 @@ class MeetingCenterForm(FlaskForm):
     unit_number = StringField(_l('Unit #'), validators=[DataRequired(), Length(max=10)])
     short_name  = StringField(_l('Short name'), validators=[DataRequired(), Length(max=20)])
     city        = StringField(_l('City'), validators=[Optional(), Length(max=100)])
-    start_time  = TimeField(_l('Start Time'), validators=[DataRequired(message=_l("The start time is mandatory"))])
-    end_time    = TimeField(_l('End Time'), validators=[DataRequired(message=_l(u"The end time is mandatory."))])
+    start_time  = TimeField(_l('Start Time'), validators=[DataRequired(message=_l('The start time is mandatory'))])
+    end_time    = TimeField(_l('End Time'), validators=[DataRequired(message=_l('The end time is mandatory.'))])
 
 
 #==================================================================================================
@@ -103,7 +103,7 @@ class AttendanceForm(FlaskForm):
         """Validates that sunday_date is not a future date."""
         today = datetime.now().date()
         if field.data > today:
-            raise ValidationError("_('Sunday Date cannot be a future date.')")
+            raise ValidationError(_('Sunday Date cannot be a future date.'))
     
     def set_default_sunday_date(self):
         """Sets default sunday_date to last Sunday if today is not Sunday, otherwise uses today."""
@@ -122,21 +122,12 @@ class AttendanceEditForm(FlaskForm):
     
 #==================================================================================================    
 
-# class ClassForm(FlaskForm):
-#     class_name        = StringField('Class Name', validators=[DataRequired(), Length(max=50)])
-#     short_name        = StringField('Short Name', validators=[DataRequired(), Length(max=20)])
-#     class_code        = StringField('Class Code', validators=[DataRequired(), Length(max=10)])
-#     class_type        = SelectField('Class Type', choices=[('Main', 'Main'), ('Extra', 'Extra')], default='Extra')
-#     schedule          = StringField('Schedule', validators=[Length(max=10)])
-#     is_active         = BooleanField('Is Active?', default=True)
-#     class_color       = StringField('Hex Color', validators=[Length(max=7), Regexp(r'^#(?:[0-9a-fA-F]{3}){1,2}$', message="Invalid color format")])
-#     meeting_center_id = SelectField('Meeting Center', coerce=int, validators=[DataRequired()])
 
 class ClassForm(FlaskForm):
     class_name  = StringField(_l('Class Name'), validators=[DataRequired(), Length(max=50)])
     short_name  = StringField(_l('Short Name'), validators=[DataRequired(), Length(max=20)])
     class_code  = StringField(_l('Class Code'), validators=[DataRequired(), Length(max=10)])
-    class_type  = SelectField(_l('Class Type'), choices=[('Main', 'Main'), ('Extra', 'Extra')], default='Extra')
+    class_type  = SelectField(_l('Class Type'), choices=[('Main', _('Main')), ('Extra', _('Extra'))], default='Extra')
     schedule    = StringField(_l('Schedule'), validators=[Length(max=10)])
     is_active   = BooleanField(_l('Is Active?'), default=True)
     class_color = StringField(

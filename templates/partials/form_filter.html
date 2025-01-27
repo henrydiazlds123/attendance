@@ -29,7 +29,7 @@
             <option value="" disabled {% if not request.args.get('class_code') %}selected{% endif %}>{{ _('Class') }}</option>
             {% for class in classes %}
             <option value="{{ class[1] }}" {% if class[1]==request.args.get('class_name') %}selected{% endif %}>
-                {{ class[1] }}
+                {{ _(class[1]) }}
             </option>
             {% endfor %}
         </select>
@@ -71,7 +71,7 @@
         </select>
     </div>
     {% endif %}
-    {% if months|length > 1 %}{% endif %}
+    {% if months|length > 1 %}
     <div class="input-group col-md">
         <span class="input-group-text"><i class="bi bi-calendar-month"></i></span>
         <select name="month" id="month" onchange="submitForm()" class="form-select">
@@ -83,7 +83,7 @@
             {% endfor %}
         </select>
     </div>
-    
+    {% endif %}
     <div class="input-group col-md">
         <button id="filter-clear2" type="button" class="btn btn-warning form-control" onclick="clearFilters()">
             {{ _('Remove filters') }} <i class="bi bi-funnel"></i>

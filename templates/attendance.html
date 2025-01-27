@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% block title %}_(Attendance | Manual Entry){% endblock %}
+{% block title %}{{ _('Attendance | QR Entry') }}{% endblock %}
 {% block content %}
  <h2><i class="bi bi-card-checklist"></i> Attendance Registration</h2>
 
@@ -19,7 +19,7 @@
         <div class="row">
             <form id="attendanceForm" method="POST" action="{{ url_for('routes.registrar') }}">
                 <div class="input-group">
-                    <input type="text" class="form-control" id="studentName" name="studentName"  placeholder="Name & Lastname" aria-label="Enter your Name and Last name" aria-describedby="button-addon2">
+                    <input type="text" class="form-control" id="studentName" name="studentName"  placeholder="{{ _('Name & Lastname') }}" aria-label="{{ _('Enter your Name and Last name') }}" aria-describedby="button-addon2">
                     {% if session['user_id'] %}
                     <a class="btn btn-info" type="button" id="button-back" href="{{ url_for('routes.manual_attendance')}}"></i><i class="bi bi-arrow-left-circle-fill"></i> {{ _('Back') }}</a>
                     {% endif %}
@@ -35,30 +35,5 @@
     </div>
 
 
-    <script>       
-        // Configuración para mostrar y establecer la clase
-        const urlParams  = new URLSearchParams(window.location.search);
-        const className  = urlParams.get('class_name');
-        const classCode  = urlParams.get('class');
-        const sundayCode = urlParams.get('code');
-        const unitNumber = urlParams.get('unit');
-    
-        console.log("URL Parameters:", { className, classCode, sundayCode, unitNumber });  // Salida de depuración
-    
-        // Asigna valores a los campos ocultos
-        if (className) {
-            document.getElementById('classNameDisplay').textContent = `Class: ${decodeURIComponent(className)}`;
-            document.getElementById('className').value              = decodeURIComponent(className);
-            document.getElementById('sundayCode').value             = sundayCode;
-            document.getElementById('unitNumber').value             = unitNumber;
-            document.getElementById('classCode').value              = classCode;
-        } else {
-            document.getElementById('classNameDisplay').textContent = _('Clase no especificada');
-            document.getElementById('button-addon2').disabled       = true;
-        }
-    
-        // Establece la fecha actual
-        document.getElementById('date').value = new Date().toISOString().split('T')[0];
- </script>
     
 {% endblock %}

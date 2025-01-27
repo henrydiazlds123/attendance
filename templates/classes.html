@@ -70,10 +70,10 @@
     {% for class in classes %}
       <tr class="class-row" data-is-active="{{ 'true' if class.is_active else 'false' }}">
         <td scope="row">{{ loop.index }}</td>
-        <td class="col-md-2">{{ class.class_name }}</td>
-        <td class="col-md-2 d-none d-md-table-cell">{{ class.short_name }}</td>
-        <td class="col-md-1 d-none d-md-table-cell">{{ class.class_code}}</td>
-        <td class="col-md-2">{{ class.class_type}}</td>
+        <td class="col-md-2">{{ _(class.class_name) }}</td>
+        <td class="col-md-2 d-none d-md-table-cell">{{ _(class.short_name) }}</td>
+        <td class="col-md-1 d-none d-md-table-cell">{{ _(class.class_code)}}</td>
+        <td class="col-md-2">{{ _(class.class_type)}}</td>
         <td class="col-md-1">{{ class.schedule}}</td>
         <td style="color: {{ class.class_color }};" class="col-md-1 d-none d-lg-table-cell"><div class="class_color" style="background-color: {{ class.class_color }};"></div></td>
         <!-- <td class="col-md-1">{{ class.is_active}}</td> -->

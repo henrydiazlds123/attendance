@@ -21,8 +21,7 @@
   <h2><i class="bi bi-check2-square"></i> {{ _('Class Attendance Records') }}</h2>
   <div class="twoColumns">
     <p class="mb-3">
-
-      {{ _('The table shows the attendance recorded each Sunday by members attending classes.Use the information in this list to Record each person\'s Attendance in the Tools application.') }}
+      {{ _("The table shows the attendance recorded each Sunday by members attending classes. Use the information in this list to Record each person's Attendance in the Tools application or <a href='https://lcr.churchofjesuschrist.org/report/class-and-quorum-attendance/overview?lang=spa'>LCR</a>.") | safe }}
     </p>
   </div>
   {% if session['role'] == 'Owner' %}
@@ -91,7 +90,9 @@
             <td>{{_(attendance.sunday_code)}}</td>
             {% endif %}
             {% if session['role'] == 'Admin' or session['role'] == 'Owner' %}
-            <td class="d-none d-md-table-cell">{{_(attendance.submit_date.strftime("%b %d, %I:%M %p"))}}</td>
+            <!-- <td class="d-none d-md-table-cell">{{ attendance.submit_date.strftime("%b %d, %I:%M %p")}}</td> -->
+            <td class="d-none d-md-table-cell">{{ format_datetime(attendance.submit_date, format='short') }}</td>
+
             <td>
               <a type="button" class="btn btn-primary btn-sm"
                 href="{{ url_for('routes.update_attendance', id=attendance.id, **request.args.to_dict()) }}"><i
@@ -102,7 +103,7 @@
               <form id="deleteForm-attendance-{{ attendance.id }}"
                 action="{{ url_for('routes.delete_attendance', id=attendance.id, **request.args.to_dict()) }}"
                 method="post" style="display:inline;">
-                <button type="button" class="btn btn-danger btn-sm" data-toggle="tooltip" title="{{ _('Eliminar asistencia') }}"
+                <button type="button" class="btn btn-danger btn-sm" data-toggle="tooltip" title="{{ _('Delete attendance') }}"
                   onclick="confirmDelete('attendance', {{ attendance.id }})">
                   <i class="bi bi-trash"></i>
                 </button>
@@ -120,7 +121,7 @@
     <form id="deleteAllForm" method="POST" action="/attendances" class="mb-5">
       <input type="hidden" name="delete_all" value="true">
       <button id="delete_all" class="btn btn-danger mb-5" type="button" data-toggle="tooltip"
-        title="{{ _('Borra todos los registros de asistencia en la base de datos') }}" {% if not has_records %}disabled{% endif %}>
+        title="{{ _('Delete all attendance records in the database') }}" {% if not has_records %}disabled{% endif %}>
         {% if not has_records %}
         {{ _('No Attendances to show') }}
         {% else %}
