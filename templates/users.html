@@ -27,7 +27,7 @@
             <td scope="row">{{ loop.index }}</td>
             <td>{{ _(user.username) }}</td>
             <td class="d-none d-lg-table-cell dot-1">{{ user.email }}</td>
-            <td class="dot-1">{{ _(user.organization_name) }}</td>
+            <td class="">{{ _(user.organization_name) }}</td>
             {% if session['role'] == 'Owner' %}
             <td class="d-none d-md-table-cell">{{ user.meeting_short_name }}</td>
             {% endif %}

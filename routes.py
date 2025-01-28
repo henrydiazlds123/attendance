@@ -1,6 +1,6 @@
 import qrcode
 from flask                   import Blueprint, abort, jsonify, render_template, redirect, request, session, url_for, flash, send_from_directory, send_file
-from flask_babel             import format_datetime, gettext as _
+from flask_babel             import gettext as _
 from sqlalchemy              import func
 from config                  import Config
 from models                  import db, Classes, User, Attendance, MeetingCenter, Setup, Organization
@@ -12,6 +12,7 @@ from urllib.parse            import unquote
 from utils                   import *
 from sqlalchemy.exc          import IntegrityError
 from datetime                import datetime, timedelta
+from io                      import BytesIO
 
 
 bp = Blueprint('routes', __name__)
@@ -499,7 +500,7 @@ def registrar():
             }), 400
 
         start_time = meeting_center.start_time  # Hora de inicio de la reunión
-        end_time = meeting_center.end_time  # Hora de finalización de la reunión
+        end_time   = meeting_center.end_time  # Hora de finalización de la reunión
 
         # Asegúrate de que start_time y end_time estén en formato datetime (si no lo están)
         if isinstance(start_time, str):
@@ -511,9 +512,9 @@ def registrar():
         current_time = datetime.now().time()
 
         # Convierte las horas a datetime para poder trabajar con ellas
-        today = datetime.today()
-        start_time_dt = datetime.combine(today, start_time)
-        end_time_dt = datetime.combine(today, end_time)
+        today           = datetime.today()
+        start_time_dt   = datetime.combine(today, start_time)
+        end_time_dt     = datetime.combine(today, end_time)
         current_time_dt = datetime.combine(today, current_time)
 
         # Verificar si la hora actual está dentro del rango permitido
@@ -793,8 +794,12 @@ def generate_qr_code(user_id):
         qr.save(img_io, 'PNG')
         img_io.seek(0)
 
+        # Create a custom file name using the user's name
+        sanitized_username = ''.join(e for e in user.username if e.isalnum() or e in [' ', '_', '-']).strip()
+        file_name = f"direct_login_{sanitized_username}.png"
+
         # Return the QR code as a file response
-        return send_file(img_io, mimetype='image/png', as_attachment=True, download_name='login_qr_code.png')
+        return send_file(img_io, mimetype='image/png', as_attachment=True, download_name=file_name)
 
     except Exception as e:
         flash(f"An error occurred: {str(e)}", "danger")
@@ -1168,3 +1173,6 @@ def populate_classes(id):
     return redirect(url_for('routes.meeting_centers'))
 
 # =============================================================================================
+@bp.route('/export-attendance', methods=['GET'])
+def export_attendance():
+    return export_attendance_to_csv()

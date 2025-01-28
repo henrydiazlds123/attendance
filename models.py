@@ -6,6 +6,7 @@ from config            import Config
 from sqlalchemy.orm    import validates
 from sqlalchemy.exc    import IntegrityError
 from sqlalchemy        import UniqueConstraint
+from flask_babel       import _
 
 
 
@@ -45,8 +46,9 @@ class Attendance(db.Model):
     sunday_date         = db.Column(db.Date, nullable=False)
     sunday_code         = db.Column(db.String(10), nullable=True)
     submit_date         = db.Column(db.DateTime, default=lambda: datetime.now(Config.MOUNTAIN_TZ), nullable=False)
-    meeting_center_id   = db.Column(db.Integer, db.ForeignKey('meeting_center.id'), nullable=False)   
-
+    meeting_center_id   = db.Column(db.Integer, db.ForeignKey('meeting_center.id'), nullable=False)
+    fix_name            = db.Column(db.Boolean, default=True) # Nuevo campo para definir si student_name necesita cambiar
+    
     __table_args__ = (db.UniqueConstraint('student_name', 'sunday_date', 'meeting_center_id', name='unique_attendance'),)
     
     @property
@@ -59,8 +61,16 @@ class Attendance(db.Model):
 
     def __repr__(self):
         return f"<Attendance {self.student_name} - {self.class_id} - {self.sunday_date}>"
-
-
+    
+#=======================================================================
+class NameTracking(db.Model):
+    __tablename__ = 'names'
+    
+    id            = db.Column(db.Integer, primary_key=True)
+    unformat_name = db.Column(db.String(50), unique=True, nullable=False)
+    fixed_name    = db.Column(db.String(50), nullable=False)
+    
+    
 #=======================================================================
 class Setup(db.Model):
     __tablename__ = 'setup'

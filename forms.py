@@ -29,10 +29,10 @@ class UserForm(FlaskForm):
         if 'role' in session:
             if session['role'] == 'Owner':
                 # Si el usuario es Owner, puede ver todos los roles
-                self.role.choices = [('Owner', _('Owner')), ('Admin', _('Admin')), ('User', _('User'))]
+                self.role.choices = [('Owner', _('Owner')), ('Admin', _('Admin')), ('Pwr', _('Power user')), ('User', _('User'))]
             else:
                 # Si el usuario no es Owner, no se muestra 'Owner' en la lista
-                self.role.choices = [('Admin', _('Admin')), ('User', _('User'))]
+                self.role.choices = [('Admin', _('Admin')), ('Pwr', _('Power user')), ('User', _('User'))]
 
             # Si no es Owner, no puede cambiar el Meeting Center
             if session['role'] != 'Owner':
@@ -61,9 +61,9 @@ class EditUserForm(FlaskForm):
         super(EditUserForm, self).__init__(*args, **kwargs)
         if 'role' in session:
             if session['role'] == 'Admin':
-                self.role.choices = [('Admin', _('Admin')), ('User', _('User'))]
+                self.role.choices = [('Admin', _('Admin')), ('Pwr', _('Power user')), ('User', _('User'))]
             else:
-                self.role.choices = [('Owner', _('Owner')), ('Admin', _('Admin')), ('User', _('User'))]
+                self.role.choices = [('Owner', _('Owner')), ('Admin', _('Admin')), ('Pwr', _('Power user')), ('User', _('User'))]
 
             if session['role'] != 'Owner':
                 self.meeting_center_id.data = session.get('meeting_center_id')

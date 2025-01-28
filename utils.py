@@ -1,10 +1,13 @@
 import os
+import io
+import csv
 from functools    import wraps
 from datetime     import datetime, timedelta
-from flask        import flash, redirect, session, url_for, request
+from flask        import flash, redirect, session, url_for, request, Response
 from flask_babel  import format_date, gettext as _
 from config       import Config
 from itsdangerous import URLSafeTimedSerializer
+from models       import Attendance
 
 
 
@@ -129,3 +132,69 @@ def get_months():
         ('11', _('Nov')), 
         ('12', _('Dec'))
     ]
+
+from flask import request, Response
+import csv
+from datetime import datetime
+import io  # Importar io para usar StringIO
+
+def export_attendance_to_csv():
+    # Obtener la fecha actual en formato YYYY-MM-DD para el nombre del archivo
+    current_date = datetime.now().strftime('%Y-%m-%d')
+    filename = f"attendance_{current_date}.csv"
+
+    # Obtener los parámetros de filtro de la solicitud (si existen)
+    filter_date = request.args.get('date')  # Fecha en formato YYYY-MM-DD
+    filter_meeting_center = request.args.get('meeting_center_id')  # ID de centro de reunión
+
+    # Convertir la fecha de filtro en un objeto datetime, si se proporcionó
+    if filter_date:
+        filter_date = datetime.strptime(filter_date, '%Y-%m-%d').date()
+
+    # Crear una consulta con filtros opcionales
+    query = Attendance.query
+
+    if filter_date:
+        query = query.filter(Attendance.sunday_date == filter_date)
+
+    if filter_meeting_center:
+        query = query.filter(Attendance.meeting_center_id == int(filter_meeting_center))
+
+    # Obtener los registros de la tabla con los filtros aplicados
+    records = query.all()
+
+    # Crear una respuesta Flask con el contenido CSV
+    def generate_csv():
+        # Usar StringIO como buffer para escribir el CSV
+        output = io.StringIO()
+        writer = csv.writer(output)
+
+        # Escribir los encabezados del archivo CSV
+        headers = ['ID', 'Student Name', 'Class ID', 'Class Code', 'Sunday Date', 'Sunday Code', 'Submit Date', 'Meeting Center ID']
+        writer.writerow(headers)
+
+        # Escribir los datos de los registros
+        for record in records:
+            writer.writerow([
+                record.id,
+                record.student_name,
+                record.class_id,
+                record.class_code,
+                record.sunday_date.strftime('%Y-%m-%d'),
+                record.sunday_code,
+                record.submit_date.strftime('%Y-%m-%d %H:%M:%S'),
+                record.meeting_center_id
+            ])
+
+        # Mover el cursor al inicio del archivo en memoria para enviarlo como respuesta
+        output.seek(0)
+        return output.getvalue()
+
+    # Crear la respuesta para el cliente
+    return Response(
+        generate_csv(),
+        mimetype='text/csv',
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}"
+        }
+    )
