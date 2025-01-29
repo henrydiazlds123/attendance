@@ -35,6 +35,11 @@
 
 {% block content %}
 <h2><i class="bi bi-mortarboard-fill"></i>  {{ _('Classes Management') }}</h2>
+<div class="col-xl-8">
+  <p class="mb-3">
+    {{ _("Something") }}
+  </p>
+</div>
 
 <div class="row d-flex justify-content-between">
   <div class="col-auto">
@@ -60,7 +65,6 @@
       <th scope="col">{{ _('Class Type') }}</th>
       <th scope="col">{{ _('Schedule') }}</th>
       <th scope="col" class="d-none d-lg-table-cell">{{ _('Color') }}</th>
-      <!-- <th scope="col">Active</th> -->
       <th scope="col" class="d-none d-lg-table-cell">{{ _('Unit') }}</th>
       <th scope="col">{{ _('Actions') }}</th>
     </tr>
@@ -76,7 +80,6 @@
         <td class="col-md-2">{{ _(class.class_type)}}</td>
         <td class="col-md-1">{{ class.schedule}}</td>
         <td style="color: {{ class.class_color }};" class="col-md-1 d-none d-lg-table-cell"><div class="class_color" style="background-color: {{ class.class_color }};"></div></td>
-        <!-- <td class="col-md-1">{{ class.is_active}}</td> -->
         <td class="col-md-2 d-none d-lg-table-cell dot-1">{{ class.meeting_short_name}}</td>
         <td class="col-md-2">
           <a class="btn btn-primary btn-sm" data-toggle="tooltip" title="Edit class" href="{{ url_for('routes.update_class', id=class.id) }}">
@@ -92,7 +95,6 @@
         </td>
       </tr>
     {% endfor%}
-
   </tbody>
 </table>   
 {% endblock %}

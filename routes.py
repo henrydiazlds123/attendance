@@ -3,7 +3,7 @@ from flask                   import Blueprint, abort, jsonify, render_template, 
 from flask_babel             import gettext as _
 from sqlalchemy              import func
 from config                  import Config
-from models                  import db, Classes, User, Attendance, MeetingCenter, Setup, Organization
+from models                  import db, Classes, User, Attendance, MeetingCenter, Setup, Organization, NameCorrections
 from forms                   import AttendanceEditForm, AttendanceForm, MeetingCenterForm, UserForm, EditUserForm, ResetPasswordForm, ClassForm, OrganizationForm
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.utils     import ImageReader
@@ -40,6 +40,9 @@ def login():
             session['meeting_center_id']     = meeting_center.id
             session['meeting_center_name']   = meeting_center.name
             session['meeting_center_number'] = meeting_center.unit_number
+            
+            if session['role'] == 'Operator':
+                return redirect(url_for('routes.manual_attendance'))
 
             flash(_('Login successful!'), 'success')
             return redirect(url_for('routes.attendances'))
@@ -232,7 +235,7 @@ def attendance():
 
     # if not class_code or not sunday_code or class_code not in CLASES:
     if not class_code or not sunday_code or not unit_number:
-        return render_template('400.html'), 400
+        return render_template('4xx.html', page_title=_('400 Bad Request'), error_number='404', error_title=_(_('Check what you wrote')), error_messages=_('The address you entered is incomplete!')), 400
 
     code_verification_setting = Setup.query.filter_by(key='code_verification').first()
     code_verification_enabled = code_verification_setting.value if code_verification_setting else 'true'
@@ -244,7 +247,7 @@ def attendance():
     if int(sunday_code) == expected_code:
         return render_template('attendance.html', class_code=class_code, sunday_code=sunday_code, sunday=get_next_sunday(),unit_number=unit_number)
     else:
-        return render_template('403.html'), 403
+        return render_template('4xx.html', page_title='403 Forbidden', error_number='403', error_title=_('It seems that you are lost'), error_messages=_("Incorrect QR for this week's classes!")), 403
     
 
 
@@ -256,6 +259,10 @@ def attendances():
     role              = session.get('role')
     months_abr        = get_months()
     meeting_center_id = session.get('meeting_center_id')
+    corrected_names = [
+        correction.correct_name 
+        for correction in NameCorrections.query.filter_by(meeting_center_id=meeting_center_id).all()
+    ]
 
     # Get distinct values for filters
     classes  = db.session.query(Classes.id, Classes.short_name).join(Attendance, Attendance.class_id == Classes.id).distinct().all()
@@ -282,6 +289,7 @@ def attendances():
     Attendance.sunday_date,
     Attendance.submit_date,
     Attendance.sunday_code,
+    Attendance.meeting_center_id,
     MeetingCenter.short_name.label('meeting_short_name')
 ).join(
     Classes, 
@@ -351,7 +359,7 @@ def attendances():
     
     return render_template('attendances.html', attendances=attendances, verification_enabled=verification_enabled,
                            has_records=has_records, classes=classes, students=students, sundays=sundays, months=months,
-                           years=years, total_registros=total_registros, months_abr=months_abr)
+                           years=years, total_registros=total_registros, months_abr=months_abr, corrected_names=corrected_names)
 
 
 # =============================================================================================
@@ -376,8 +384,8 @@ def create_attendance():
 
         # Check if no name was provided in either field
         if not student_name:
-            flash('Please select an existing student or provide a new name.', 'danger')
-            return render_template('form.html', form=form, title="Crear Asistencia Manual", submit_button_text="Crear", clas='warning')
+            flash(_('Please select an existing student or provide a new name.'), 'danger')
+            return render_template('form.html', form=form, title=_('Create manual attendance'), submit_button_text=_('Create'), clas='warning')
 
         # Calculate sunday_code based on the provided sunday date
         # sunday_code = get_next_sunday_code(form.sunday_date.data)
@@ -406,22 +414,43 @@ def create_attendance():
 
 
 # =============================================================================================
+# @bp.route('/attendance/edit/<int:id>', methods=['GET', 'POST'])
+# @role_required('Admin', 'Owner')
+# def update_attendance(id):
+#     attendance                     = Attendance.query.get_or_404(id)
+#     form                           = AttendanceEditForm(obj=attendance)
+#     form.class_id.choices          = [(c.id, c.short_name) for c in Classes.query.all()]
+
+#     if form.validate_on_submit():
+#         attendance.student_name      =form.student_name.data
+#         attendance.class_id          =form.class_id.data 
+#         attendance.sunday_date       =form.sunday_date.data
+
+#         db.session.commit()
+#         flash(_('Attendance record updated successfully.'), 'success')
+#         return redirect(url_for('routes.attendances',**request.args.to_dict()))
+#     return render_template('form.html', form=form, title=_('Edit Attendance'), submit_button_text=_('Update'), clas='warning')
 @bp.route('/attendance/edit/<int:id>', methods=['GET', 'POST'])
 @role_required('Admin', 'Owner')
 def update_attendance(id):
-    attendance                     = Attendance.query.get_or_404(id)
-    form                           = AttendanceEditForm(obj=attendance)
-    form.class_id.choices          = [(c.id, c.short_name) for c in Classes.query.all()]
-    # form.meeting_center_id.choices = [(mc.id, mc.name) for mc in MeetingCenter.query.all()]
+    attendance = Attendance.query.get_or_404(id)
+    form = AttendanceEditForm(obj=attendance)
+    
+    # Obtener el meeting_center_id relacionado con la asistencia (puede ser del usuario o de otra fuente)
+    meeting_center_id = attendance.meeting_center_id  # O de donde sea necesario
+
+    # Filtrar las clases por el meeting_center_id
+    form.class_id.choices = [(c.id, c.translated_name) for c in Classes.query.filter_by(meeting_center_id=meeting_center_id).all()]
 
     if form.validate_on_submit():
-        attendance.student_name      =form.student_name.data
-        attendance.class_id          =form.class_id.data 
-        attendance.sunday_date       =form.sunday_date.data
+        attendance.student_name = form.student_name.data
+        attendance.class_id     = form.class_id.data
+        attendance.sunday_date  = form.sunday_date.data
 
         db.session.commit()
         flash(_('Attendance record updated successfully.'), 'success')
-        return redirect(url_for('routes.attendances',**request.args.to_dict()))
+        return redirect(url_for('routes.attendances', **request.args.to_dict()))
+
     return render_template('form.html', form=form, title=_('Edit Attendance'), submit_button_text=_('Update'), clas='warning')
 
 
@@ -436,118 +465,119 @@ def delete_attendance(id):
     flash(_('Attendance record deleted successfully.'), 'success')
     return redirect(url_for('routes.attendances', **request.args.to_dict()))
 
+
 # =============================================================================================
 @bp.route('/attendance/manual')
-@role_required('User', 'Admin', 'Owner')
+@role_required('User', 'Admin', 'Owner', 'Operator')
 def manual_attendance():
     """Genera enlaces solo para las clases correspondientes al próximo domingo."""
-
     next_sunday_code = get_next_sunday_code(get_next_sunday())
     sunday_week      = (get_next_sunday().day - 1) // 7 + 1  # Determina la semana del mes
     unit             = session['meeting_center_number']
-    
         
     # Generar enlaces solo para las clases correspondientes
-
     class_links = {
         class_entry.class_code: {
-            'url': f"{Config.BASE_URL}/attendance/manual?class_name={class_entry.class_name}&class={class_entry.class_code}&code={next_sunday_code}&unit={unit}",
+            'url': f"{Config.BASE_URL}/attendance/manual?class_name={class_entry.translated_name}&class={class_entry.class_code}&code={next_sunday_code}&unit={unit}",
             'name': class_entry.class_name
         }
         for class_entry in Classes.query.all() if str(sunday_week) in class_entry.schedule.split(',')
     }
-
     return render_template('manual_attendance.html', class_links=class_links)
+
+
 # =============================================================================================
 @bp.route('/registrar', methods=['POST'])
 def registrar():
     try:
         student_name        = request.form.get('studentName').title()
-        nombre, apellido    = student_name.split(" ", 1)
-        formatted_name      = f"{apellido}, {nombre}"
         class_code          = request.form.get('classCode')  # Usar código de clase en lugar del nombre
         sunday_date         = get_next_sunday()
         sunday_code         = request.form.get('sundayCode')
         unit_number         = request.form.get('unitNumber')
+        
+        # correction = NameCorrections.query.filter_by(wrong_name=student_name).first()
+        # if correction:
+        #     student_name = correction.correct_name  # Usa el nombre corregido.
+            
+        nombre, apellido    = student_name.split(" ", 1)
+        formatted_name      = f"{apellido}, {nombre}"
 
         # Verificar si la clase es válida
         class_entry = Classes.query.filter_by(class_code=class_code).first()
         if not class_entry:
             return jsonify({
                 "success": False,
-                "message": "The selected class is not valid.",
+                "message": _('The selected class is not valid.'),
             }), 400
 
-        # Verificar restricciones para clases Main
-        if class_entry.class_type == "Main":
-            today = datetime.now().weekday()  # 0 = Lunes, 6 = Domingo
+        # Verificar si el MeetingCenter tiene restricción mediante el campo is_restricted
+        meeting_center = MeetingCenter.query.filter_by(unit_number=unit_number).first()
+        if not meeting_center:
+            return jsonify({
+                "success": False,
+                "message": _('The church unit is invalid.'),
+            }), 400
 
-            setup = Setup.query.filter_by(key='restrict_main_to_sunday').first()
-            if setup and setup.value == 'true' and today != 6:  # Si la restricción está activada y no es domingo
+        if class_entry.class_type == "Main":
+            # Verificar restricciones de tiempo solo si el Meeting Center está restringido
+            if meeting_center.is_restricted:
+                grace_period_hours = int(meeting_center.grace_period_hours) if meeting_center.grace_period_hours else 0
+                time_now = datetime.now()
+
+                # Asegurarse de que start_time y end_time están en formato datetime
+                start_time = meeting_center.start_time
+                end_time   = meeting_center.end_time
+
+                if isinstance(start_time, str):
+                    start_time = datetime.strptime(start_time, "%H:%M").time()
+                if isinstance(end_time, str):
+                    end_time = datetime.strptime(end_time, "%H:%M").time()
+
+                today = datetime.today()
+                start_time_dt = datetime.combine(today, start_time)
+                end_time_dt   = datetime.combine(today, end_time)
+
+                grace_start_time = start_time_dt - timedelta(hours=grace_period_hours)
+                grace_end_time   = end_time_dt + timedelta(hours=grace_period_hours)
+
+                if not (grace_start_time <= time_now <= grace_end_time):
+                    return jsonify({
+                        "success": False,
+                        "message": _('Attendance can only be recorded during the grace period or meeting time.'),
+                    }), 400
+
+            # Verificar si ya existe un registro para este estudiante en una clase `Main` en el mismo domingo
+            existing_main_attendance = Attendance.query.filter_by(
+                student_name      = formatted_name,
+                sunday_date       = sunday_date,
+                meeting_center_id = meeting_center.id,
+            ).join(Classes).filter(Classes.class_type == "Main").first()
+
+            if existing_main_attendance:
                 return jsonify({
                     "success": False,
-                    "student_name": student_name,
-                    "error_type": "main_class_restriction",  # Este es el nuevo campo para diferenciar el error
-                    "message": _('Attendance for Sunday classes can only be registered on Sunday'),
+                    "error_type": "main_class_restriction",
+                    "message": _("%(name)s! You have already registered for a Sunday class today!") % {'name': formatted_name}
                 }), 400
 
-        #Verificar el horario de la clase
-        meeting_center = MeetingCenter.query.filter_by(unit_number=unit_number).first()
-        if not meeting_center:
-            return jsonify({
-                "success": False,
-                "message": _('The church unit is invalid.'),
-            }), 400
+        elif class_entry.class_type == "Extra":
+            # Verificar si ya existe un registro para este estudiante y la misma clase `Extra` en el mismo domingo
+            existing_extra_attendance = Attendance.query.filter_by(
+                student_name      = formatted_name,
+                class_id          = class_entry.id,
+                sunday_date       = sunday_date,
+                meeting_center_id = meeting_center.id
+            ).first()
 
-        start_time = meeting_center.start_time  # Hora de inicio de la reunión
-        end_time   = meeting_center.end_time  # Hora de finalización de la reunión
-
-        # Asegúrate de que start_time y end_time estén en formato datetime (si no lo están)
-        if isinstance(start_time, str):
-            start_time = datetime.strptime(start_time, "%H:%M").time()
-        if isinstance(end_time, str):
-            end_time = datetime.strptime(end_time, "%H:%M").time()
-
-        # Obtener la hora actual
-        current_time = datetime.now().time()
-
-        # Convierte las horas a datetime para poder trabajar con ellas
-        today           = datetime.today()
-        start_time_dt   = datetime.combine(today, start_time)
-        end_time_dt     = datetime.combine(today, end_time)
-        current_time_dt = datetime.combine(today, current_time)
-
-        # Verificar si la hora actual está dentro del rango permitido
-        if not (start_time_dt - timedelta(hours=1) <= current_time_dt <= end_time_dt + timedelta(hours=1)):
-            return jsonify({
-                "success": False,
-                "message": _('Attendance cannot be recorded outside of meeting hours.'),
-            }), 400
-
-        # Verificar si el MeetingCenter es válido
-        meeting_center = MeetingCenter.query.filter_by(unit_number=unit_number).first()
-        if not meeting_center:
-            return jsonify({
-                "success": False,
-                "message": _('The church unit is invalid.'),
-            }), 400
-
-        # Verificar si ya existe un registro para este estudiante, clase, y fecha
-        existing_attendance = Attendance.query.filter_by(
-            student_name      = formatted_name,
-            class_id          = class_entry.id,
-            sunday_date       = sunday_date,
-            meeting_center_id = meeting_center.id
-        ).first()
-
-        if existing_attendance:
-            return jsonify({
-                "success": False,
-                "message": _("%(name)s! You already have an attendance registered for Sunday %(date)s!") % {
-                   'name': formatted_name, 
-                  'date': sunday_date.strftime('%b %d, %Y')
-                 }
-            }), 400
+            if existing_extra_attendance:
+                return jsonify({
+                    "success": False,
+                    "message": _("%(name)s! You already have an attendance registered for this class on Sunday %(date)s!") % {
+                        'name': formatted_name, 
+                        'date': sunday_date.strftime('%b %d, %Y')
+                    }
+                }), 400
 
         # Registrar la asistencia
         new_attendance = Attendance(
@@ -574,10 +604,8 @@ def registrar():
             "success": False,
             "message": _('There was an error recording attendance: %(error)s') % {'error': str(e)}
         }), 500
-
-
-
-
+        
+        
 # =============================================================================================
 # Rutas para la Administracion de PDF
 @bp.route('/list_pdfs', methods=['GET'])
@@ -606,6 +634,7 @@ def list_pdfs():
     
     return render_template('list_pdfs.html', pdf_files=pdf_files, has_classes=has_classes, has_main_classes=has_main_classes, has_extra_classes=has_extra_classes)
 
+
 # =============================================================================================
 # Botones en la interfaz para generar PDFs:
 @bp.route('/generate_all_pdfs', methods=['GET', 'POST'])
@@ -613,11 +642,13 @@ def list_pdfs():
 def generate_all_pdfs():
     return redirect(url_for('routes.generate_pdfs', type='todos'))  # redirige a la misma función con parámetro "todos"
 
+
 # =============================================================================================
 @bp.route('/generate_week_pdfs', methods=['GET', 'POST'])
 @role_required('Admin', 'Owner')
 def generate_week_pdfs():
     return redirect(url_for('routes.generate_pdfs', type='semana_especifica'))  # redirige a la misma función para PDFs de la semana específica
+
 
 # =============================================================================================
 @bp.route('/generate_extra_pdfs', methods=['GET', 'POST'])
@@ -633,6 +664,7 @@ def generate_extra_pdfs():
 
     # Redirigir a la función generate_pdfs con la fecha como argumento
     return redirect(url_for('routes.generate_pdfs', type='extra', selected_date=selected_date))
+
 
 # =============================================================================================
 @bp.route('/generate_pdfs', methods=['GET', 'POST'])
@@ -670,6 +702,7 @@ def generate_pdfs():
     meeting_center_id = session['meeting_center_id']
     unit_name         = session['meeting_center_name']
     unit              = session['meeting_center_number']
+    sunday_week       = (get_next_sunday().day - 1) // 7 + 1
 
     # Obtener las clases filtradas por meeting center
     clases_a_imprimir = list({
@@ -680,7 +713,8 @@ def generate_pdfs():
             if request.args.get('type') == 'extra'
             else [
                 c for c in Classes.query.filter_by(is_active=True, meeting_center_id=meeting_center_id)
-                if str(get_next_sunday().isocalendar()[1]) in c.schedule.split(',')
+                if str(sunday_week) in c.schedule.split(',')
+
             ]
         )
     })
@@ -700,7 +734,7 @@ def generate_pdfs():
             print(f"Skipping class {class_entry.class_name} due to invalid date.")
             continue
 
-        class_name  = class_entry.class_name
+        class_name  = class_entry.translated_name
         class_code  = class_entry.class_code
         class_color = class_entry.class_color or "black"
 
@@ -746,9 +780,6 @@ def generate_pdfs():
     return redirect(url_for('routes.list_pdfs'))
 
 
-
-
-
 # =============================================================================================
 @bp.route('/download_pdf/<path:filename>', methods=['GET'])
 @role_required('User', 'Admin', 'Owner')
@@ -769,6 +800,7 @@ def download_pdf(filename):
     except Exception as e:
         print(f"Error: {e}")  # Log the actual error for debugging
         abort(500, description=str(e))
+        
         
 # =============================================================================================
 @bp.route('/generate_qr_code/<int:user_id>', methods=['GET'])
@@ -889,12 +921,12 @@ def classes():
     elif role == 'Owner':
         pass
     
-    
     classes = query.all()
 
     return render_template('classes.html', classes=classes)
-# =============================================================================================
 
+
+# =============================================================================================
 @bp.route('/classes/new', methods=['GET', 'POST'])
 @role_required('Admin', 'Owner')
 def create_class():
@@ -921,6 +953,7 @@ def create_class():
             db.session.rollback()
             flash(_('A class with this name, short name, or code already exists in the same church unit.'), 'danger')
     return render_template('form.html', form=form, title=_('Create New Class'), submit_button_text=_('Create'), clas='warning')
+
 
 # =============================================================================================
 @bp.route('/classes/edit/<int:id>', methods=['GET', 'POST'])
@@ -977,6 +1010,7 @@ def organizations():
     organizations = Organization.query.all()
     return render_template('organizations.html', organizations=organizations)
 
+
 # =============================================================================================
 @bp.route('/organizations/new', methods=['GET', 'POST'])
 def create_organization():
@@ -993,6 +1027,7 @@ def create_organization():
             flash(_('Error: Organization name must be unique.'), 'danger')
             return redirect(url_for('routes.organizations'))
     return render_template('form.html', form=form, title=_('Create new Organization'), submit_button_text=_('Create'), clas='warning')
+
 
 # =============================================================================================
 # Update
@@ -1012,7 +1047,8 @@ def edit_organization(id):
             flash(_('Error: Organization name must be unique.'), 'danger')
     return render_template('form.html', form=form, title=_('Edit Organization'), submit_button_text=_('Update'), clas='warning', organization=organization)
 
-# Delete
+
+# =============================================================================================
 @bp.route('/organizations/delete/<int:id>', methods=['POST'])
 def delete_organization(id):
     organization = Organization.query.get_or_404(id)
@@ -1024,7 +1060,6 @@ def delete_organization(id):
         db.session.rollback()
         flash(_('Error: Could not delete organization.'), 'danger')
     return redirect(url_for('routes.organizations'))
-
 
 
 # =============================================================================================
@@ -1061,8 +1096,19 @@ def get_swal_texts():
         'yesClearIt'            : _('Yes, clear it!'),
         'yesDeleteIt'           : _('Yes, Delete it!'),
         'warningTitle'          : _('warning'),
-
+        'wrongNameTitle'        : _('Please enter the correct name'),
+        'wrongNameText'         : _('Please enter the correct name for '),
+        'wrongNameLabel'        : _('Correct Format: Last Name, First Name'),
+        'wrongNamePlaceholder'  : _('Enter the new name'),
+        'confirmSave'           : _('Confirm'),
+        'successTitle'          : _('¡Success'),
+        'successMessage'        : _('The name has been corrected'),
+        'errorMessage'          : _('There was a problem saving the correction'),
+        'cancelledMessage'      : _('No correction has been made.'),
+        'incorrectPatternLabel' : _('Incorrect format'),
+        'incorrectPatternText'  : _('The name must be in the format "Last Name, First Name", separated by a comma.'),
     }
+    
     
 # =============================================================================================   
 @bp.route('/classes/populate/<int:id>', methods=['GET', 'POST'])
@@ -1085,7 +1131,7 @@ def populate_classes(id):
             'class_name': _('Aaronic Priesthood'),
             'short_name': _('Aaronic_P'),
             'class_code': 'AP',
-            'class_type': 'Main',
+            'class_type': _('Main'),
             'schedule'  : '2,4',
             'is_active' : True,
             'class_color': None
@@ -1094,7 +1140,7 @@ def populate_classes(id):
             'class_name': _('Relief Society'),
             'short_name': _('Relief_S'),
             'class_code': 'RS',
-            'class_type': 'Main',
+            'class_type': _('Main'),
             'schedule'  : '2,4',
             'is_active' : True,
             'class_color': '#ba8e23'
@@ -1103,25 +1149,25 @@ def populate_classes(id):
             'class_name': _('Young Woman'),
             'short_name': _('Young_W'),
             'class_code': 'YW',
-            'class_type': 'Main',
+            'class_type': _('Main'),
             'schedule'  : '2,4',
             'is_active' : True,
             'class_color': '#943f88'
         },
         {
-            'class_name': _('Sunday School - Adults'),
+            'class_name': _('Sunday School Adults'),
             'short_name': _('S_S_Adults'),
             'class_code': 'SSA',
-            'class_type': 'Main',
+            'class_type': _('Main'),
             'schedule'  : '1,3',
             'is_active' : True,
             'class_color': None
         },
         {
-            'class_name': _('Sunday School - Youth'),
+            'class_name': _('Sunday School Youth'),
             'short_name': _('S_S_Youth'),
             'class_code': 'SSY',
-            'class_type': 'Main',
+            'class_type': _('Main'),
             'schedule'  : '1,3',
             'is_active' : True,
             'class_color': None
@@ -1130,7 +1176,7 @@ def populate_classes(id):
             'class_name': _('Fifth Sunday'),
             'short_name': _('F_Sunday'),
             'class_code': 'FS',
-            'class_type': 'Main',
+            'class_type': _('Main'),
             'schedule'  : '5',
             'is_active' : True,
             'class_color': None
@@ -1172,7 +1218,49 @@ def populate_classes(id):
 
     return redirect(url_for('routes.meeting_centers'))
 
+
 # =============================================================================================
 @bp.route('/export-attendance', methods=['GET'])
 def export_attendance():
     return export_attendance_to_csv()
+
+# =============================================================================================
+@bp.route('/update_name_correction', methods=['POST'])
+@role_required('Admin', 'Owner')
+def update_name_correction():
+    data = request.get_json()
+    print("Datos recibidos:", data)  # Esto imprimirá los datos recibidos para depurar
+    
+    wrong_name = data.get('wrong_name')
+    correct_name = data.get('correct_name')
+    meeting_center_id = data.get('meeting_center_id')
+    admin_name = session.get('user_name')
+
+    if not wrong_name or not correct_name or not meeting_center_id:
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    # Verifica si ya existe un registro con ese nombre incorrecto para el meeting center
+    correction = NameCorrections.query.filter_by(wrong_name=wrong_name, meeting_center_id=meeting_center_id).first()
+    if correction:
+        correction.correct_name = correct_name
+    else:
+        correction = NameCorrections(
+            wrong_name=wrong_name, 
+            correct_name=correct_name, 
+            meeting_center_id=meeting_center_id, 
+            added_by=admin_name
+        )
+        db.session.add(correction)
+
+    # Actualiza los registros en Attendance
+    attendances_to_update = Attendance.query.filter_by(student_name=wrong_name, meeting_center_id=meeting_center_id).all()
+    for attendance in attendances_to_update:
+        attendance.student_name = correct_name
+    
+    try:
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error al guardar en la base de datos: {e}")
+        return jsonify({'error': 'Error al guardar la corrección'}), 500

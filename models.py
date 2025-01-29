@@ -41,15 +41,14 @@ class Attendance(db.Model):
     id                  = db.Column(db.Integer, primary_key=True)
     student_name        = db.Column(db.String(50), nullable=False)
     class_id            = db.Column(db.Integer, db.ForeignKey('classes.id'), nullable=False)
-    #class_type          = db.Column(db.String(10), nullable=False, default='Main')  # Nuevo campo para tipo de clase
     class_code          = db.Column(db.String(5), nullable=True)
     sunday_date         = db.Column(db.Date, nullable=False)
     sunday_code         = db.Column(db.String(10), nullable=True)
     submit_date         = db.Column(db.DateTime, default=lambda: datetime.now(Config.MOUNTAIN_TZ), nullable=False)
     meeting_center_id   = db.Column(db.Integer, db.ForeignKey('meeting_center.id'), nullable=False)
-    fix_name            = db.Column(db.Boolean, default=True) # Nuevo campo para definir si student_name necesita cambiar
+    fix_name            = db.Column(db.Boolean, default=False) # Nuevo campo para definir si student_name necesita cambiar
     
-    __table_args__ = (db.UniqueConstraint('student_name', 'sunday_date', 'meeting_center_id', name='unique_attendance'),)
+    __table_args__ = (db.UniqueConstraint('student_name', 'sunday_date', 'meeting_center_id', 'class_id', name='unique_attendance'),)
     
     @property
     def month(self):
@@ -63,12 +62,19 @@ class Attendance(db.Model):
         return f"<Attendance {self.student_name} - {self.class_id} - {self.sunday_date}>"
     
 #=======================================================================
-class NameTracking(db.Model):
-    __tablename__ = 'names'
+class NameCorrections(db.Model):
+    __tablename__ = 'name_corrections'
     
-    id            = db.Column(db.Integer, primary_key=True)
-    unformat_name = db.Column(db.String(50), unique=True, nullable=False)
-    fixed_name    = db.Column(db.String(50), nullable=False)
+    id                = db.Column(db.Integer, primary_key=True)
+    wrong_name        = db.Column(db.String(50), nullable=False, unique=False)
+    correct_name      = db.Column(db.String(50), nullable=False)
+    meeting_center_id = db.Column(db.Integer, db.ForeignKey('meeting_center.id'), nullable=False)
+    added_by          = db.Column(db.String(50), nullable=True)  # Opcional: para registrar quién hizo la corrección
+    created_at        = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    __table_args__ = (
+        db.UniqueConstraint('wrong_name', 'meeting_center_id', name='uq_wrong_name_meeting_center'),
+    )
     
     
 #=======================================================================
@@ -84,16 +90,18 @@ class Setup(db.Model):
 class MeetingCenter(db.Model):
     __tablename__ = 'meeting_center'
 
-    id          = db.Column(db.Integer, primary_key=True)
-    unit_number = db.Column(db.Integer, unique=True, nullable=False)
-    name        = db.Column(db.String(50), nullable=False)
-    short_name  = db.Column(db.String(20), nullable=False)
-    city        = db.Column(db.String(50), nullable=True)
-    start_time  = db.Column(db.Time, nullable=True)
-    end_time    = db.Column(db.Time, nullable=True)
-    attendances = db.relationship('Attendance', backref=db.backref('meeting_center', lazy=True), cascade="all, delete-orphan")
-    users       = db.relationship('User',       backref=db.backref('meeting_center', lazy=True), cascade="all, delete-orphan")
-    classes     = db.relationship('Classes',    backref=db.backref('meeting_center', lazy=True), cascade="all, delete-orphan")
+    id                 = db.Column(db.Integer, primary_key=True)
+    unit_number        = db.Column(db.Integer, unique=True, nullable=False)
+    name               = db.Column(db.String(50), nullable=False)
+    short_name         = db.Column(db.String(20), nullable=False)
+    city               = db.Column(db.String(50), nullable=True)
+    start_time         = db.Column(db.Time, nullable=True)
+    end_time           = db.Column(db.Time, nullable=True)
+    is_restricted      = db.Column(db.Boolean, default=False)
+    grace_period_hours = db.Column(db.Integer, nullable=True, default=0)
+    attendances        = db.relationship('Attendance', backref=db.backref('meeting_center', lazy=True), cascade="all, delete-orphan")
+    users              = db.relationship('User',       backref=db.backref('meeting_center', lazy=True), cascade="all, delete-orphan")
+    classes            = db.relationship('Classes',    backref=db.backref('meeting_center', lazy=True), cascade="all, delete-orphan")
 
     @validates('attendances')
     def validate_no_attendance(self, key, value):
@@ -138,28 +146,13 @@ class Classes(db.Model):
     def delete(self):
         if self.attendances:
             raise ValueError(_('Cannot delete a class with registered attendance.'))
-        db.session.delete(self)        
+        db.session.delete(self) 
+        
+    @property
+    def translated_name(self):
+        return _(self.class_name)  # Devuelve el nombre traducido       
         
 #=======================================================================        
-# class Organization(db.Model):
-#     __tablename__ = 'organization'
-
-#     id    = db.Column(db.Integer, primary_key=True)
-#     name  = db.Column(db.String(50), unique=True, nullable=False)
-#     users = db.relationship('User', backref=db.backref('organization', lazy=True), cascade="all, delete-orphan")
-    
-#     @validates('users')
-#     def validate_no_attendance(self, key, value):
-#         if self.users:
-#             raise IntegrityError(_('Cannot delete a organization with users registered.'), params={}, statement=None)
-#         return value
-
-#     def delete(self):
-#         if self.users:
-#             raise ValueError(_('Cannot delete a church unit with registered attendance.'))
-#         db.session.delete(self)
-
-from sqlalchemy.exc import IntegrityError
 
 class Organization(db.Model):
     __tablename__ = 'organization'
@@ -168,13 +161,6 @@ class Organization(db.Model):
     name  = db.Column(db.String(50), unique=True, nullable=False)
     users = db.relationship('User', backref=db.backref('organization', lazy=True), cascade="all, delete-orphan")
     
-    # Remove the validation logic here
-    # @validates('users')
-    # def validate_no_attendance(self, key, value):
-    #     if self.users:
-    #         raise IntegrityError(_('Cannot delete a organization with users registered.'), params={}, statement=None)
-    #     return value
-
     def delete(self):
         # Check if there are users associated before trying to delete
         if self.users:

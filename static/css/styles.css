@@ -9,13 +9,13 @@ main {
   flex: 1;
 }
 
-.page_404 {
+.page_4xx {
   padding: 40px 0;
   background: #d2d2d2;
   font-family: 'Arvo', serif;
 }
 
-.page_404 img {
+.page_4xx img {
   width: 100%;
 }
 
@@ -35,7 +35,7 @@ main {
   font-size: 80px;
 }
 
-.link_404 {
+.link_4xx {
   color: #d2d2d2 !important;
   padding: 10px 20px;
   background: #39ac31;
@@ -43,7 +43,7 @@ main {
   display: inline-block;
 }
 
-.contant_box_404 {
+.contant_box_4xx {
   margin-top: -50px;
 }
 
@@ -132,7 +132,7 @@ div > label[for="csrf_token"] {
 }
 
 .flag-icon {
-  width: 20px;
+  width: 14px;
   height: auto;
   margin-right: 8px;
   border-radius: 2px; /* Para redondear las esquinas de las banderas */
@@ -157,3 +157,34 @@ div > label[for="csrf_token"] {
     --bs-link-color: #66b2ff; /* Color de los enlaces */
     --bs-border-color: #444; /* Color de bordes */
   }
+  
+td button[type="button"], 
+td a[type="button"] {
+    padding: 4px;  /* Reduce el espacio interno del botón */
+    font-size: 0.65rem; /* Hace que el texto e íconos sean más pequeños */
+    line-height: 1;     /* Ajusta la altura del botón */
+}
+
+td button[type="button"] i, 
+td a[type="button"] i {
+    font-size: 0.65rem;  /* Reduce el tamaño del icono */
+    padding: 0;          /* Elimina cualquier padding extra */
+    /* margin: 0;           Asegura que no haya margen adicional */
+    line-height: 1;      /* Ajusta la altura de línea para hacerlo más compacto */
+    vertical-align: middle; /* Asegura una alineación correcta dentro del botón */
+}
+
+table {
+  font-size: 0.85rem;  /* Reduce el tamaño de la fuente de toda la tabla */
+}
+
+table th, 
+table td {
+  padding: 4px 8px; /* Reduce el espacio interno en celdas */
+  line-height: 1.2; /* Reduce la altura de línea para hacerlas más compactas */
+  vertical-align: middle; /* Asegura que el contenido esté alineado */
+}
+
+table th {
+  font-weight: 600; /* Mantiene los encabezados resaltados */
+}

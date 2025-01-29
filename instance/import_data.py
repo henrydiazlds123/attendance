@@ -35,7 +35,7 @@ def import_attendance_data():
             id=row['id'],
             student_name=row['student_name'],
             class_id=row['class_id'],
-            class_type=row['class_type'],
+            class_code=row['class_code'],
             sunday_date=pd.to_datetime(row['sunday_date']).date(),
             sunday_code=row['sunday_code'],
             submit_date=pd.to_datetime(row['submit_date']),

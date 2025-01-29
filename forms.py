@@ -2,11 +2,10 @@ from flask              import session
 from flask_wtf          import FlaskForm
 from flask_babel        import _
 from flask_babel        import lazy_gettext as _l
-from wtforms            import BooleanField, StringField, PasswordField, DateField, SelectField, TimeField
+from wtforms            import BooleanField, StringField, PasswordField, DateField, SelectField, TimeField, IntegerField
 from wtforms.validators import DataRequired, Email, Length, Optional, EqualTo, ValidationError
 from datetime           import datetime, timedelta
 from wtforms.validators import Regexp
-
 
 
 #==================================================================================================
@@ -29,7 +28,8 @@ class UserForm(FlaskForm):
         if 'role' in session:
             if session['role'] == 'Owner':
                 # Si el usuario es Owner, puede ver todos los roles
-                self.role.choices = [('Owner', _('Owner')), ('Admin', _('Admin')), ('Pwr', _('Power user')), ('User', _('User'))]
+                # self.role.choices = [('Owner', _('Owner')), ('Admin', _('Admin')), ('Pwr', _('Power user')), ('User', _('User'))]
+                self.role.choices = [('Admin', _('Admin')), ('Pwr', _('Power user')), ('User', _('User')), ('Operator', _('Operator'))]
             else:
                 # Si el usuario no es Owner, no se muestra 'Owner' en la lista
                 self.role.choices = [('Admin', _('Admin')), ('Pwr', _('Power user')), ('User', _('User'))]
@@ -45,6 +45,7 @@ class UserForm(FlaskForm):
             self.meeting_center_id.errors.append(_('You cannot change the Church Unit.'))
             return False
         return super(UserForm, self).validate(extra_validators=extra_validators)
+    
 
 #==================================================================================================
 class EditUserForm(FlaskForm):
@@ -61,9 +62,10 @@ class EditUserForm(FlaskForm):
         super(EditUserForm, self).__init__(*args, **kwargs)
         if 'role' in session:
             if session['role'] == 'Admin':
-                self.role.choices = [('Admin', _('Admin')), ('Pwr', _('Power user')), ('User', _('User'))]
+                self.role.choices = [('Admin', _('Admin')), ('Pwr', _('Power user')), ('User', _('User')), ('Operator', _('Operator'))]
             else:
-                self.role.choices = [('Owner', _('Owner')), ('Admin', _('Admin')), ('Pwr', _('Power user')), ('User', _('User'))]
+                # self.role.choices = [('Owner', _('Owner')), ('Admin', _('Admin')), ('Pwr', _('Power user')), ('User', _('User'))]
+                self.role.choices = [('Admin', _('Admin')), ('Pwr', _('Power user')), ('User', _('User')), ('Operator', _('Operator'))]
 
             if session['role'] != 'Owner':
                 self.meeting_center_id.data = session.get('meeting_center_id')
@@ -74,21 +76,25 @@ class EditUserForm(FlaskForm):
             self.meeting_center_id.errors.append(_('You cannot change the Church Unit.'))
             return False
         return super(EditUserForm, self).validate(extra_validators=extra_validators)
+    
 
 #==================================================================================================
 class ResetPasswordForm(FlaskForm):
     current_password = PasswordField(_l('Current Password'), validators=[DataRequired()])
     new_password     = PasswordField(_l('New Password'), validators=[DataRequired(), Length(min=6)])
     confirm_password = PasswordField(_l('Confirm New Password'), validators=[DataRequired(), EqualTo('new_password', message= _l('Passwords must match'))])
+    
 
 #==================================================================================================
 class MeetingCenterForm(FlaskForm):
-    name        = StringField(_l('Unit Name'), validators=[DataRequired(), Length(max=100)])
-    unit_number = StringField(_l('Unit #'), validators=[DataRequired(), Length(max=10)])
-    short_name  = StringField(_l('Short name'), validators=[DataRequired(), Length(max=20)])
-    city        = StringField(_l('City'), validators=[Optional(), Length(max=100)])
-    start_time  = TimeField(_l('Start Time'), validators=[DataRequired(message=_l('The start time is mandatory'))])
-    end_time    = TimeField(_l('End Time'), validators=[DataRequired(message=_l('The end time is mandatory.'))])
+    name               = StringField(_l('Unit Name'), validators=[DataRequired(), Length(max=100)])
+    unit_number        = StringField(_l('Unit #'), validators=[DataRequired(), Length(max=10)])
+    short_name         = StringField(_l('Short name'), validators=[DataRequired(), Length(max=20)])
+    city               = StringField(_l('City'), validators=[Optional(), Length(max=100)])
+    start_time         = TimeField(_l('Start Time'), validators=[DataRequired(message=_l('The start time is mandatory'))])
+    end_time           = TimeField(_l('End Time'), validators=[DataRequired(message=_l('The end time is mandatory.'))])
+    is_restricted      = BooleanField(_l('Is Restricted?'), default=False)
+    grace_period_hours = IntegerField(_l('Grace Period (hrs)?'), default=0)
 
 
 #==================================================================================================
@@ -112,6 +118,7 @@ class AttendanceForm(FlaskForm):
         days_since_sunday       = today.weekday()  # 0 = Monday, 6 = Sunday
         last_sunday             = today - timedelta(days=days_since_sunday + 1) if today.weekday() != 6 else today
         self.sunday_date.data   = last_sunday
+        
 
 #==================================================================================================
 class AttendanceEditForm(FlaskForm):
@@ -120,9 +127,8 @@ class AttendanceEditForm(FlaskForm):
     sunday_date         = DateField(_l('Sunday Date'), format='%Y-%m-%d', validators=[DataRequired()])
     # meeting_center_id   = SelectField('Unit', coerce=int, validators=[DataRequired()])
     
+    
 #==================================================================================================    
-
-
 class ClassForm(FlaskForm):
     class_name  = StringField(_l('Class Name'), validators=[DataRequired(), Length(max=50)])
     short_name  = StringField(_l('Short Name'), validators=[DataRequired(), Length(max=20)])
@@ -155,6 +161,7 @@ class ClassForm(FlaskForm):
                 self.meeting_center_id.data = session.get('meeting_center_id')
                 self.meeting_center_id.render_kw = {'disabled': 'disabled'}
                 self.class_type.render_kw = {'disabled': 'disabled'}
+                
 
 #==================================================================================================
 class OrganizationForm(FlaskForm):

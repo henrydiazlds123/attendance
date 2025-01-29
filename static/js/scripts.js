@@ -5,8 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initAttendanceForm();
   initDeleteAllButton();
   initColorPickers();
-  setupClassParameters();
-  setTodayDate();
+
 });
 
 // ----------- Módulo de tema (Dark/Light Mode) -----------
@@ -136,44 +135,7 @@ function initColorPickers() {
   });
 }
 
-// ----------- Configuración de parámetros de clase desde URL -----------
-function setupClassParameters() {
-  const urlParams  = new URLSearchParams(window.location.search);
-  const className  = urlParams.get("class_name");
-  const classCode  = urlParams.get("class");
-  const sundayCode = urlParams.get("code");
-  const unitNumber = urlParams.get("unit");
 
-  if (className) {
-    document.getElementById("classNameDisplay").textContent =  className;
-    document.getElementById("className").value = decodeURIComponent(className);
-    document.getElementById("classCode").value = classCode;
-    document.getElementById("sundayCode").value = sundayCode;
-    document.getElementById("unitNumber").value = unitNumber;
-
-    const listGroupItems = document.querySelectorAll('.list-group-item');
-    listGroupItems.forEach(item => {
-        if (item.textContent.trim() === decodedClassName) {
-            item.classList.add('active');
-        } else {
-            item.classList.remove('active'); // Asegurarse de que los demás elementos no estén activos
-        }
-    });
-
-
-
-  } else {
-    // Traducción de mensajes estáticos
-    document.getElementById("classNameDisplay").textContent = 'Choose a Class';
-    document.getElementById("button-addon2").disabled = true;
-    document.getElementById("studentName").disabled = true;
-  }
-}
-
-// ----------- Establecer la fecha actual -----------
-function setTodayDate() {
-  document.getElementById("date").value = new Date().toISOString().split("T")[0];
-}
 
 
 
@@ -197,51 +159,21 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
-document.addEventListener('DOMContentLoaded', () => {
-  const generateButton = document.getElementById('generate-extra-pdfs-btn');
-  const extraClassForm = document.getElementById('extra-class-form');
-  const dateInput      = document.getElementById('extra-class-date');
-
-  generateButton.addEventListener('click', async (event) => {
-      event.preventDefault(); // Evitar el envío automático del formulario
-
-      const texts = await fetch('/get_swal_texts').then(response => response.json());
-
-      // Mostrar SweetAlert2 para seleccionar la fecha
-      const { value: selectedDate } = await Swal.fire({
-          title: texts.selectDateExtraClasses,
-          input: 'date',
-          inputAttributes: {
-              min: new Date().toISOString().split('T')[0] // Fechas desde hoy en adelante
-          },
-          showCancelButton: true,
-          confirmButtonText: texts.confirm,
-          cancelButtonText: texts.cancel,
-          inputValidator: (value) => {
-              if (!value) {
-                  return texts.mustSelectDate;
-              }
-          }
-      });
-
-      if (selectedDate) {
-          // Guardar la fecha en el campo oculto del formulario y enviarlo
-          dateInput.value = selectedDate;
-          extraClassForm.submit();
-      } else {
-          // Mostrar mensaje de cancelación
-          Swal.fire(texts.actionCanceled, texts.noQrGenerated, 'info');
-      }
-  });
-});
-
-
 async function confirmDelete(entityType, entityId) {
-  const formId = `deleteForm-${entityType}-${entityId}`; // Formulario con id basado en el tipo de entidad y su ID
+  const formId = `deleteForm-${entityType}-${entityId}`;
+  console.log(`Attempting to delete form with ID: ${formId}`);
+  
+  const formElement = document.getElementById(formId);
+  if (!formElement) {
+    Swal.fire({
+      title: "Error",
+      text : `The form with ID ${formId} does not exist.`,
+      icon : "error",
+    });
+    return; // Salir si no encuentra el formulario
+  }
 
-  // Obtener los textos localizados para SweetAlert
   const texts = await fetch('/get_swal_texts').then(response => response.json());
-
   Swal.fire({
     title             : texts.confirmDelete,
     text              : texts.deleteOneRecordText,
@@ -253,7 +185,8 @@ async function confirmDelete(entityType, entityId) {
     cancelButtonText  : texts.cancel,
   }).then((result) => {
     if (result.isConfirmed) {
-      document.getElementById(formId).submit(); // Envía el formulario correspondiente
+      console.log(`Submitting form ID: ${formId}`);
+      formElement.submit(); // Enviar el formulario
     }
   });
 }
@@ -261,4 +194,62 @@ async function confirmDelete(entityType, entityId) {
 function changeLanguage(lang) {
   const currentUrl = window.location.href.split('?')[0];
   window.location.href = `${currentUrl}?lang=${lang}`;
+}
+
+// Definir la función correctName
+async function correctName(checkbox) {
+  // Obtener el nombre incorrecto y el ID del centro de reunión + textos para sweetalert
+  const wrongName       = checkbox.getAttribute('data-wrong-name');
+  const meetingCenterId = checkbox.getAttribute('data-meeting-center-id');
+  const texts           = await fetch('/get_swal_texts').then(response => response.json());
+
+  Swal.fire({
+      title            : texts.wrongNameTitle,
+      text             : texts.wrongNameText + wrongName,
+      input            : 'text',
+      inputLabel       : texts.wrongNameLabel,
+      inputPlaceholder : texts.wrongNamePlaceholder,
+      showCancelButton : true,
+      confirmButtonText: texts.confirmSave,
+  }).then((result) => {
+      if (result.isConfirmed) {
+          const correctName = result.value;
+
+          // Verificar que el nombre tenga el formato "Apellido, Nombre"
+          const namePattern = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+,\s[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+          if (!namePattern.test(correctName)) {
+            Swal.fire({
+                icon : 'error',
+                title: texts.incorrectPatternLabel,
+                text : texts.incorrectPatternText,
+            });
+            return; // Detener la ejecución si el formato es incorrecto
+        }
+
+          // Enviar la corrección al servidor usando fetch
+          fetch('/update_name_correction', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                  wrong_name       : wrongName,
+                  correct_name     : correctName,
+                  meeting_center_id: meetingCenterId
+              })
+          })
+          .then(response => response.json())
+          .then(data => {
+              if (data.success) {
+                  Swal.fire(texts.successTitle, texts.successMessage, 'success');
+                  // Deshabilitar el checkbox después de la corrección
+                  checkbox.disabled = true;
+              } else {
+                  Swal.fire(texts.errorTitle, texts.errorMessage, 'error');
+              }
+          });
+      } else {
+          Swal.fire(texts.cancelledTitle, texts.cancelledMessage, 'info');
+      }
+  });
 }

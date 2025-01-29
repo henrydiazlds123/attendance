@@ -19,7 +19,7 @@
 {% block content %}
 <div class="blog-post">
   <h2><i class="bi bi-check2-square"></i> {{ _('Class Attendance Records') }}</h2>
-  <div class="twoColumns">
+  <div class="col-xl-8">
     <p class="mb-3">
       {{ _("The table shows the attendance recorded each Sunday by members attending classes. Use the information in this list to Record each person's Attendance in the Tools application or <a href='https://lcr.churchofjesuschrist.org/report/class-and-quorum-attendance/overview?lang=spa'>LCR</a>.") | safe }}
     </p>
@@ -49,11 +49,11 @@
     </form>
   </div>
 
-
-
   {% endif %}
   <div class="mb-5">
+    
     <form id="filterForm" method="GET" action="/attendances" class="card mb-3 p-3">
+
       {% include 'partials/form_filter.html' %}
     </form>
     <!-- Actions Form -->
@@ -62,6 +62,7 @@
         <thead class="thead-dark">
           <tr>
             <th scope="col">#</th>
+            <th scope="col">{{ _('Fix') }}</th>
             <th scope="col">{{ _('Member') }}</th>
             <th scope="col">{{ _('Class') }}</th>
             <th scope="col">{{ _('Date') }}</th>
@@ -82,6 +83,15 @@
           {% for attendance in attendances %}
           <tr>
             <td scope="row">{{ loop.index }}</td>
+            <td>
+              {% if attendance.student_name in corrected_names %}
+                <input type="checkbox" disabled>
+              {% else %}
+              <input type="checkbox" data-wrong-name="{{ attendance.student_name }}" 
+                     data-meeting-center-id="{{ attendance.meeting_center_id }}" 
+                     onclick="correctName(this)">
+              {% endif %}
+            </td>
             <td style="text-transform:capitalize">{{attendance.student_name}}</td>
             <td>{{_(attendance.class_short_name)}}</td>
             <td>{{_(attendance.sunday_date.strftime("%b %d"))}}</td>
@@ -100,17 +110,19 @@
 
               {% endif %}
               {% if session['role'] == 'Owner' %}
-              <form id="deleteForm-attendance-{{ attendance.id }}"
-                action="{{ url_for('routes.delete_attendance', id=attendance.id, **request.args.to_dict()) }}"
+              {% if attendance.id %}
+                <form id="deleteForm-attendance-{{ attendance.id }}"
+                             action="{{ url_for('routes.delete_attendance', id=attendance.id, **request.args.to_dict()) }}"
                 method="post" style="display:inline;">
                 <button type="button" class="btn btn-danger btn-sm" data-toggle="tooltip" title="{{ _('Delete attendance') }}"
                   onclick="confirmDelete('attendance', {{ attendance.id }})">
                   <i class="bi bi-trash"></i>
                 </button>
               </form>
-              <!-- <a  data-toggle="tooltip" title="Elimina esta asistencia de {{ attendance.student_name }}" href="{{ url_for('routes.delete_attendance', id=attendance.id, **request.args.to_dict()) }}"><i class="fa fa-trash-o fa-fw"></i></a> -->
+              {% else %}
+              <p>Error: Attendance ID is missing!</p>
+            {% endif %}
               {% endif %}
-
             </td>
           </tr>
           {% endfor %}

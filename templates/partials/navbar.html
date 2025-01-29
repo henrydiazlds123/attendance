@@ -12,31 +12,33 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav">
                     {% if session['user_id'] %}
-                        <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'routes.index' else '' }}" href="{{ url_for('routes.index') }}"><i class="bi bi-house-fill"></i> {{_('Home') }}</a></li>
-                        <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'routes.attendances' else '' }}" href="{{ url_for('routes.attendances') }}"><i class="bi bi-journal-check"></i> {{ _('Attendances') }}</a></li>
-                        <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'routes.list_pdfs' else '' }}" href="{{ url_for('routes.list_pdfs') }}"><i class="bi bi-file-earmark-pdf"></i>  PDFs</a></li>
+                        {% if session['role'] != 'Operator'%}
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'routes.index' else '' }}" href="{{ url_for('routes.index') }}"><i class="bi bi-house-fill"></i> {{_('Home') }}</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'routes.attendances' else '' }}" href="{{ url_for('routes.attendances') }}"><i class="bi bi-journal-check"></i> {{ _('Attendances') }}</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'routes.list_pdfs' else '' }}" href="{{ url_for('routes.list_pdfs') }}"><i class="bi bi-file-earmark-pdf"></i>  PDFs</a></li>
 
-                        {% if session['role'] =='User' %}
-                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'routes.manual_attendance' else '' }}" href="{{ url_for('routes.manual_attendance') }}"><i class="fa fa-check-square-o" aria-hidden="true"></i>  {{ _('Add Attendance') }}</a></li>
+                            {% if session['role'] =='User' %}
+                                <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'routes.manual_attendance' else '' }}" href="{{ url_for('routes.manual_attendance') }}"><i class="fa fa-check-square-o" aria-hidden="true"></i>  {{ _('Add Attendance') }}</a></li>
+                            {% endif %}
+                            {% if session['role'] =='Owner' or session['role'] =='Admin' %}
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <i class="bi bi-gear"></i>  Admin
+                                    </a>
+                                    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                        <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.manual_attendance' else '' }}" href="{{ url_for('routes.manual_attendance') }}"><i class="bi bi-file-earmark-plus"></i>  {{ _('Add Attendance') }}</a>
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.users' else '' }}" href="{{ url_for('routes.users') }}"><i class="bi bi-person-circle"></i>  {{ _('Users') }}</a>
+                                        <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.classes' else '' }}" href="{{ url_for('routes.classes') }}"><i class="bi bi-mortarboard-fill"></i>  {{ _('Classes') }}</a>
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.organizations' else '' }}" href="{{ url_for('routes.organizations') }}"><i class="bi bi-diagram-3"></i>  {{ _('Organizations') }}</a>
+                                        {% if session['role'] =='Owner' %}
+                                            <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.meeting_centers' else '' }}" href="{{ url_for('routes.meeting_centers') }}"><i class="bi bi-buildings"></i>   {{ _('Chuch Units') }}</a>
+                                        {% endif %}
+                                    </div>
+                                </li>
+                            {% endif %}
                         {% endif %}
-                        {% if session['role'] =='Owner' or session['role'] =='Admin' %}
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="bi bi-gear"></i>  Admin
-                            </a>
-                            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.manual_attendance' else '' }}" href="{{ url_for('routes.manual_attendance') }}"><i class="bi bi-file-earmark-plus"></i>  {{ _('Add Attendance') }}</a>
-                                <div class="dropdown-divider"></div>
-                                <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.users' else '' }}" href="{{ url_for('routes.users') }}"><i class="bi bi-person-circle"></i>  {{ _('Users') }}</a>
-                                <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.classes' else '' }}" href="{{ url_for('routes.classes') }}"><i class="bi bi-mortarboard-fill"></i>  {{ _('Classes') }}</a>
-                                <div class="dropdown-divider"></div>
-                                <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.organizations' else '' }}" href="{{ url_for('routes.organizations') }}"><i class="bi bi-diagram-3"></i>  {{ _('Organizations') }}</a>
-                                {% if session['role'] =='Owner' %}
-                                    <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.meeting_centers' else '' }}" href="{{ url_for('routes.meeting_centers') }}"><i class="bi bi-buildings"></i>   {{ _('Chuch Units') }}</a>
-                                {% endif %}
-                            </div>
-                        </li>
-                    {% endif %}
                         <div class="circle">
                             <p style="font-size: 10px; display:block; padding-top: 15px;">{{ session['user_name'] }}</p>
                         </div>
@@ -47,13 +49,6 @@
                {% endif %}
                <!-- <li class="nav-item"><a class="nav-link"  id="themeSwitcher" href=""><i class="fa fa-sun-o" aria-hidden="true"></i></a></li>  -->
                <li class="nav-item"><a class="nav-link"  id="themeSwitcher" href=""><i class="bi bi-brightness-high"></i></a></li> 
-               <!-- <form class="d-flex">
-                    <select id="language-switcher" class="form-select form-select-sm" onchange="changeLanguage(this.value)">
-                        <option value="en" {% if get_locale() == 'en' %}selected{% endif %}>English</option>
-                        <option value="es" {% if get_locale() == 'es' %}selected{% endif %}>Español</option>
-                        <option value="pt" {% if get_locale() == 'pt' %}selected{% endif %}>Português</option>
-                    </select>
-                </form> -->
                 <div class="dropdown">
                     <button class="btn btn-dark dropdown-toggle" type="button" id="languageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                         <img src="{{ url_for('static', filename='img/flags/' + get_locale() + '.png') }}" alt="{{ get_locale() }}" class="flag-icon">
@@ -84,7 +79,3 @@
             </div>
         </div>
 </nav>
-
-<script>
-
-  </script>
