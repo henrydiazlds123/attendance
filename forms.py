@@ -27,8 +27,6 @@ class UserForm(FlaskForm):
         # Si hay un rol en la sesión, personalizamos las opciones del rol
         if 'role' in session:
             if session['role'] == 'Owner':
-                # Si el usuario es Owner, puede ver todos los roles
-                # self.role.choices = [('Owner', _('Owner')), ('Admin', _('Admin')), ('Pwr', _('Power user')), ('User', _('User'))]
                 self.role.choices = [('Admin', _('Admin')), ('Pwr', _('Power user')), ('User', _('User')), ('Operator', _('Operator'))]
             else:
                 # Si el usuario no es Owner, no se muestra 'Owner' en la lista
@@ -165,5 +163,5 @@ class ClassForm(FlaskForm):
 
 #==================================================================================================
 class OrganizationForm(FlaskForm):
-    name = StringField(_l('Organization Name'), validators=[DataRequired(), Length(max=50)])
+    name = StringField(_('Organization Name'), validators=[DataRequired(), Length(max=50)])
     

@@ -168,3 +168,7 @@ class Organization(db.Model):
         
         # If no users are associated, proceed to delete
         db.session.delete(self)
+        
+    @property
+    def translated_name(self):
+        return _(self.name)  # Devuelve el nombre traducido 

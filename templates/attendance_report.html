@@ -1,0 +1,116 @@
+{% extends "layout.html" %}
+{% block title %}{{ _('Attendance | Report') }}{% endblock %}
+
+{% block head %}
+<script>
+
+
+</script>
+
+{% endblock %}
+
+{% block content %}
+        <h2 class="text-2xl font-bold"><i class="bi bi-file-earmark-spreadsheet"></i>  {{ _('Attendance Report') }}</h2>
+        <p class="mb-4">{{ meeting_center_name}}</p>
+
+        <!-- Filtros -->
+        <div class="row mb-3" style="padding-right: 0;">
+            <div class="col-md-4 col-6 mb-2">
+                <label for="month-select" class="form-label">{{_('Choose a month:')}}</label>
+                <select id="month-select" class="form-select" {% if available_months|length==1 %}disabled{% endif %}>
+                    {% for month in available_months %}
+                    <option value="{{ month['num'] }}" {% if month['num']==selected_month %}selected{% endif %}>
+                        {{ month['name'] }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 col-6 mb-2">
+                <label for="year-select" class="form-label">{{_('Choose a year:')}}</label>
+                <select id="year-select" class="form-select">
+                    {% for year in available_years %}
+                    <option value="{{ year }}" {% if year==selected_year %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end mb-2">
+                <button id="clear-filters" class="btn btn-secondary w-100">{{_('Remove Filters')}}</button>
+            </div>
+        </div>
+
+        <!-- Tabla de asistencia -->
+        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+            <table class="table table-bordered table-striped table-sm">
+                <thead class="table-dark" style="position: sticky; top: 0; z-index: 1;">
+                    <tr>
+                        <th class="text-start">{{ _('Name') }}</th>
+                        {% for date in dates %}
+                        <th class="text-center">{{ _(date.strftime('%b')) }} {{ date.strftime('%d') }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student, attendance in students.items() %}
+                    <tr>
+                        <td>{{ student }}</td>
+                        {% for date in dates %}
+                        <td class="text-center">
+                            {% if attendance[date] %}
+                            <span class="text-success"><i class="bi bi-check-circle-fill"></i></span>
+                            {% else %}
+                            <span class="text-danger"><i class="bi bi-dash-circle"></i></span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            // Handle month and year selection change
+            $('#month-select, #year-select').change(function () {
+                var month = $('#month-select').val();
+                var year = $('#year-select').val();
+                $.ajax({
+                    url: '/attendance/report',
+                    method: 'GET',
+                    data: { month: month, year: year },
+                    success: function (response) {
+                        $('#attendance-table').html(response);
+                    }
+                });
+            });
+
+            // Clear Filters Button functionality
+            $('#clear-filters').click(function () {
+                // Reset the select elements to their default values
+                $('#month-select').val(null).trigger('change');  // Clear month selection
+                $('#year-select').val('{{ default_year }}').trigger('change');  // Reset to default year (use `{{ default_year }}` from the backend)
+
+                // Optionally, trigger a new AJAX request to reload the report with default values
+                $.ajax({
+                    url: '/attendance/report',
+                    method: 'GET',
+                    data: { month: null, year: '{{ default_year }}' },  // Pass null for month to reset it
+                    success: function (response) {
+                        $('#attendance-table').html(response);
+                    }
+                });
+            });
+        });
+
+        // Redirigir cuando se cambia el filtro
+        $('#year-select, #month-select').change(function () {
+            var year = $('#year-select').val();
+            var month = $('#month-select').val();
+            window.location.href = `/attendance/report?year=${year}&month=${month}`;
+        });
+    </script>
+
+
+    {% endblock %}

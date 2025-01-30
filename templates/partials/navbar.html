@@ -14,7 +14,7 @@
                     {% if session['user_id'] %}
                         {% if session['role'] != 'Operator'%}
                             <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'routes.index' else '' }}" href="{{ url_for('routes.index') }}"><i class="bi bi-house-fill"></i> {{_('Home') }}</a></li>
-                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'routes.attendances' else '' }}" href="{{ url_for('routes.attendances') }}"><i class="bi bi-journal-check"></i> {{ _('Attendances') }}</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'routes.attendance_report' else '' }}" href="{{ url_for('routes.attendance_report') }}"><i class="bi bi-file-earmark-spreadsheet"></i> {{ _('Report') }}</a></li>
                             <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'routes.list_pdfs' else '' }}" href="{{ url_for('routes.list_pdfs') }}"><i class="bi bi-file-earmark-pdf"></i>  PDFs</a></li>
 
                             {% if session['role'] =='User' %}
@@ -26,6 +26,7 @@
                                         <i class="bi bi-gear"></i>  Admin
                                     </a>
                                     <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                        <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.attendances' else '' }}" href="{{ url_for('routes.attendances') }}"><i class="bi bi-clipboard-data"></i>  {{ _('View Attendance') }}</a>
                                         <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.manual_attendance' else '' }}" href="{{ url_for('routes.manual_attendance') }}"><i class="bi bi-file-earmark-plus"></i>  {{ _('Add Attendance') }}</a>
                                         <div class="dropdown-divider"></div>
                                         <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.users' else '' }}" href="{{ url_for('routes.users') }}"><i class="bi bi-person-circle"></i>  {{ _('Users') }}</a>

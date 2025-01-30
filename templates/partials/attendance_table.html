@@ -1,0 +1,26 @@
+<table class="table table-bordered table-striped">
+  <thead class="table-light">
+      <tr>
+          <th class="text-start">Nombre</th>
+          {% for date in dates %}
+              <th class="text-center">{{ date.strftime('%b %d') }}</th>
+          {% endfor %}
+      </tr>
+  </thead>
+  <tbody>
+      {% for student, attendance in students.items() %}
+          <tr>
+              <td>{{ student }}</td>
+              {% for date in dates %}
+                  <td class="text-center">
+                      {% if attendance[date] %}
+                          <span class="text-success"><i class="bi bi-check-circle-fill"></i></span>
+                      {% else %}
+                          <span class="text-danger"><i class="bi bi-dash-circle"></i></span>
+                      {% endif %}
+                  </td>
+              {% endfor %}
+          </tr>
+      {% endfor %}
+  </tbody>
+</table>
