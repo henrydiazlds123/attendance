@@ -4,7 +4,6 @@ from flask_migrate import Migrate
 from config import Config
 from models import db
 from routes import bp as routes_blueprint
-from flask_bootstrap import Bootstrap
 
 
 def create_app():
@@ -12,7 +11,6 @@ def create_app():
     app.config.from_object(Config)
 
     # Configuración de Bootstrap
-    Bootstrap(app)
 
     # Configuración de la Base de Datos
     db.init_app(app)
@@ -49,8 +47,8 @@ def get_locale():
     # Como último recurso, usa el encabezado Accept-Language
     return request.accept_languages.best_match(Config.LANGUAGES)
 
+app = create_app()
 
 if __name__ == '__main__':
-    app = create_app()
     app.run(debug=True)
 
