@@ -1268,46 +1268,121 @@ def update_name_correction():
     
     
 # =============================================================================================
+# @bp.route('/attendance/report')
+# def attendance_report():
+#     # Obtener año y mes actuales
+#     current_year = datetime.now().year
+#     current_month = datetime.now().month
+
+#     if session['role'] == 'Owner':
+#         # Obtener años únicos de la base de datos
+#         available_years = db.session.query(func.extract('year', Attendance.sunday_date)).distinct().order_by(func.extract('year', Attendance.sunday_date)).all
+   
+#         # Obtener meses únicos de la base de datos
+#         available_months = db.session.query(func.extract('month', Attendance.sunday_date)).distinct().order_by(func.extract('month', Attendance.sunday_date)).all
+#     else:
+#         # Obtener años únicos de la base de datos
+#         available_years = db.session.query(func.extract('year', Attendance.sunday_date)).distinct().order_by(func.extract('year', Attendance.sunday_date)).filter(
+#             Attendance.meeting_center_id == session['meeting_center_id'])
+        
+
+#         # Obtener meses únicos de la base de datos
+#         available_months = db.session.query(func.extract('month', Attendance.sunday_date)).distinct().order_by(func.extract('month', Attendance.sunday_date)).filter(
+#             Attendance.meeting_center_id == session['meeting_center_id'])
+        
+        
+#     available_years  = [y[0] for y in available_years]
+#     available_months = [m[0] for m in available_months]
+#     # Convertir los meses a nombres abreviados y traducirlos
+#     month_names      = [{"num": m, "name": _(datetime(2000, m, 1).strftime('%b'))} for m in available_months] 
+
+#     # Obtener los valores de los filtros desde los parámetros de la URL
+#     selected_year    = request.args.get('year', type=int, default=current_year)
+#     selected_month   = request.args.get('month', type=int, default=current_month)
+
+#     # Consulta base con filtro de año obligatorio
+#     query = db.session.query(Attendance.sunday_date).filter(
+#         Attendance.meeting_center_id == session['meeting_center_id']
+#     )
+
+#     if selected_year:
+#         query = query.filter(extract('year', Attendance.sunday_date) == selected_year)
+
+#     if selected_month:
+#         query = query.filter(extract('month', Attendance.sunday_date) == selected_month)
+
+#     sundays = query.distinct().order_by(Attendance.sunday_date).all()
+#     sunday_dates = [s[0] for s in sundays]
+
+#     # Obtener registros de asistencia
+#     attendance_query = Attendance.query.filter(
+#         Attendance.meeting_center_id == session['meeting_center_id']
+#     )
+
+#     if selected_year:
+#         attendance_query = attendance_query.filter(extract('year', Attendance.sunday_date) == selected_year)
+
+#     if selected_month:
+#         attendance_query = attendance_query.filter(extract('month', Attendance.sunday_date) == selected_month)
+
+#     attendance_records = attendance_query.order_by(Attendance.student_name, Attendance.sunday_date).all()
+
+#     # Construcción del diccionario de asistencia
+#     students = {}
+#     for record in attendance_records:
+#         if record.student_name not in students:
+#             students[record.student_name] = {date: False for date in sunday_dates}
+#         students[record.student_name][record.sunday_date] = True
+
+#     return render_template(
+#         'attendance_report.html',
+#         students            = students ,
+#         dates               = sunday_dates ,
+#         available_years     = available_years ,
+#         available_months    = month_names ,
+#         selected_year       = selected_year ,
+#         selected_month      = selected_month ,
+#         meeting_center_name = session.get('meeting_center_name', '') ,
+#         disable_month       = len(available_months)== 1,
+#         disable_year        = len(available_years)== 1
+#     )
+
+
+
 @bp.route('/attendance/report')
 def attendance_report():
-    # Obtener año y mes actuales
+    meeting_center_id = session.get('meeting_center_id')
+    if not meeting_center_id:
+        return "Meeting center ID not found in session", 400
+    
     current_year = datetime.now().year
     current_month = datetime.now().month
 
     if session['role'] == 'Owner':
-        # Obtener años únicos de la base de datos
-        available_years = db.session.query(func.extract('year', Attendance.sunday_date)).distinct().order_by(func.extract('year', Attendance.sunday_date)).all
-   
-        # Obtener meses únicos de la base de datos
-        available_months = db.session.query(func.extract('month', Attendance.sunday_date)).distinct().order_by(func.extract('month', Attendance.sunday_date)).all
+        available_years = db.session.query(func.extract('year', Attendance.sunday_date)).distinct().order_by(func.extract('year', Attendance.sunday_date)).all()
+        available_months = db.session.query(func.extract('month', Attendance.sunday_date)).distinct().order_by(func.extract('month', Attendance.sunday_date)).all()
     else:
-        # Obtener años únicos de la base de datos
-        available_years = db.session.query(func.extract('year', Attendance.sunday_date)).distinct().order_by(func.extract('year', Attendance.sunday_date)).filter(
-            Attendance.meeting_center_id == session['meeting_center_id'])
-        
+        available_years = db.session.query(func.extract('year', Attendance.sunday_date)).filter(
+            Attendance.meeting_center_id == session['meeting_center_id']
+        ).distinct().order_by(func.extract('year', Attendance.sunday_date)).all()
+        available_months = db.session.query(func.extract('month', Attendance.sunday_date)).filter(
+            Attendance.meeting_center_id == session['meeting_center_id']
+        ).distinct().order_by(func.extract('month', Attendance.sunday_date)).all()
 
-        # Obtener meses únicos de la base de datos
-        available_months = db.session.query(func.extract('month', Attendance.sunday_date)).distinct().order_by(func.extract('month', Attendance.sunday_date)).filter(
-            Attendance.meeting_center_id == session['meeting_center_id'])
-        
-        
-    available_years  = [y[0] for y in available_years]
+    available_years = [y[0] for y in available_years]
     available_months = [m[0] for m in available_months]
-    # Convertir los meses a nombres abreviados y traducirlos
-    month_names      = [{"num": m, "name": _(datetime(2000, m, 1).strftime('%b'))} for m in available_months] 
+    month_names = [{"num": m, "name": datetime(2000, m, 1).strftime('%b')} for m in available_months]
 
-    # Obtener los valores de los filtros desde los parámetros de la URL
-    selected_year    = request.args.get('year', type=int, default=current_year)
-    selected_month   = request.args.get('month', type=int, default=current_month)
+    selected_year = request.args.get('year', type=int, default=current_year)
+    selected_month = request.args.get('month', type=int, default=current_month)
 
-    # Consulta base con filtro de año obligatorio
+    # Consulta los domingos de asistencia
     query = db.session.query(Attendance.sunday_date).filter(
         Attendance.meeting_center_id == session['meeting_center_id']
     )
 
     if selected_year:
         query = query.filter(extract('year', Attendance.sunday_date) == selected_year)
-
     if selected_month:
         query = query.filter(extract('month', Attendance.sunday_date) == selected_month)
 
@@ -1321,7 +1396,6 @@ def attendance_report():
 
     if selected_year:
         attendance_query = attendance_query.filter(extract('year', Attendance.sunday_date) == selected_year)
-
     if selected_month:
         attendance_query = attendance_query.filter(extract('month', Attendance.sunday_date) == selected_month)
 
@@ -1334,15 +1408,19 @@ def attendance_report():
             students[record.student_name] = {date: False for date in sunday_dates}
         students[record.student_name][record.sunday_date] = True
 
+    # Si la solicitud es AJAX, devolver solo la parte de la asistencia
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return render_template("partials/attendance_table.html", students=students, dates=sunday_dates)
+
     return render_template(
         'attendance_report.html',
-        students            = students ,
-        dates               = sunday_dates ,
-        available_years     = available_years ,
-        available_months    = month_names ,
-        selected_year       = selected_year ,
-        selected_month      = selected_month ,
-        meeting_center_name = session.get('meeting_center_name', '') ,
-        disable_month       = len(available_months)== 1,
-        disable_year        = len(available_years)== 1
+        students=students,
+        dates=sunday_dates,
+        available_years=available_years,
+        available_months=month_names,
+        selected_year=selected_year,
+        selected_month=selected_month,
+        meeting_center_name=session.get('meeting_center_name', ''),
+        disable_month=len(available_months) == 1,
+        disable_year=len(available_years) == 1
     )

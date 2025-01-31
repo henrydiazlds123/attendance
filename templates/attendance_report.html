@@ -1,14 +1,15 @@
 {% extends "layout.html" %}
 
-{% block title %} _('Attendance | Report') {% endblock %}
+{% block title %}{{ _('Attendance | Report') }}{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
-    <h2 class="mb-3">{{ _('Attendance Report') }} </h2>
+    <h2 class="mb-3">{{ _('Attendance Report') }}</h2>
     <p class="mb-3">{{ meeting_center_name }}</p>
 
     <!-- Filtros -->
     <div class="row mb-3">
-        <div class="col-md-4 d-flex flex-column">
+        <div class="col-md-4">
             <label for="month-select" class="form-label">{{ _('Choose a month:') }}</label>
             <select id="month-select" class="form-select" {% if disable_month %}disabled{% endif %}>
                 {% for month in available_months %}
@@ -18,70 +19,70 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-4 d-flex flex-column">
+        <div class="col-md-4">
             <label for="year-select" class="form-label">{{ _('Choose a year:') }}</label>
             <select id="year-select" class="form-select" {% if disable_year %}disabled{% endif %}>
                 {% for year in available_years %}
-                    <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-4 d-flex flex-column justify-content-between">
-            <label for="clear-filters" class="form-label mb-0"></label>
+        <div class="col-md-4 d-flex align-items-end">
             <button id="clear-filters" class="btn btn-secondary w-100">{{ _('Remove Filters') }}</button>
         </div>
     </div>
-    
-    
 
     <!-- Tabla de Asistencia -->
-    <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
-        <table class="table table-bordered table-striped table-sm">
-            <thead class="table-dark sticky-top">
-                <tr>
-                    <th class="text-start">{{ _('Name') }}</th>
-                    {% for date in dates %}
-                        <th class="text-center">{{ _(date.strftime('%b')) }} {{ date.strftime('%d') }}</th>
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for student, attendance in students.items() %}
-                    <tr>
-                        <td>{{ student }}</td>
-                        {% for date in dates %}
-                            <td class="text-center">
-                                {% if attendance[date] %}
-                                    <span class="text-success"><i class="bi bi-check-circle-fill"></i></span>
-                                {% else %}
-                                    <span class="text-danger"><i class="bi bi-dash-circle"></i></span>
-                                {% endif %}
-                            </td>
-                        {% endfor %}
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div id="report-container" class="table-responsive">
+        {% include "partials/attendance_table.html" %}
     </div>
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-    // Redireccionar cuando cambia el filtro
-    function applyFilters() {
-        const selectedMonth = document.getElementById("month-select").value;
-        const selectedYear = document.getElementById("year-select").value;
-        window.location.href = `/attendance/report?year=${selectedYear}&month=${selectedMonth}`;
-    }
+    document.addEventListener("DOMContentLoaded", function () {
+        const monthSelect = document.getElementById("month-select");
+        const yearSelect = document.getElementById("year-select");
+        const clearFilters = document.getElementById("clear-filters");
+        const reportContainer = document.getElementById("report-container");
 
-    document.getElementById("month-select").addEventListener("change", applyFilters);
-    document.getElementById("year-select").addEventListener("change", applyFilters);
+        function applyFilters() {
+            const selectedMonth = monthSelect.value;
+            const selectedYear = yearSelect.value;
 
-    // Limpiar filtros y recargar página
-    document.getElementById("clear-filters").addEventListener("click", function () {
-        window.location.href = "/attendance/report";
+            fetch(`/attendance/report?year=${selectedYear}&month=${selectedMonth}`, {
+                method: "GET",
+                headers: { "X-Requested-With": "XMLHttpRequest" }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error("Error en la respuesta del servidor");
+                return response.text();
+            })
+            .then(html => {
+                reportContainer.innerHTML = html;
+            })
+            .catch(error => console.error("Error al cargar los datos:", error));
+        }
+
+        monthSelect.addEventListener("change", applyFilters);
+        yearSelect.addEventListener("change", applyFilters);
+
+        clearFilters.addEventListener("click", function () {
+            fetch("/attendance/report", {
+                method: "GET",
+                headers: { "X-Requested-With": "XMLHttpRequest" }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error("Error en la respuesta del servidor");
+                return response.text();
+            })
+            .then(html => {
+                reportContainer.innerHTML = html;
+                monthSelect.value = "";
+                yearSelect.value = "";
+            })
+            .catch(error => console.error("Error al limpiar los filtros:", error));
+        });
     });
-});
 </script>
 
 {% endblock %}
