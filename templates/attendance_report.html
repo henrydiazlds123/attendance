@@ -20,7 +20,7 @@
         </div>
         <div class="col-md-4 d-flex flex-column">
             <label for="year-select" class="form-label">{{ _('Choose a year:') }}</label>
-            <select id="year-select" class="form-select">
+            <select id="year-select" class="form-select" {% if disable_year %}disabled{% endif %}>
                 {% for year in available_years %}
                     <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
                 {% endfor %}
