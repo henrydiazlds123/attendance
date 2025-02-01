@@ -22,7 +22,11 @@
         <div class="container">
             <div class="row">
                 <p class="my-3">{% block subtitle%}{% endblock%}</p>
+                <h2>{% block pageTitle %}{% endblock %}</h2>
+                <p class="mb-3">{{ session['meeting_center_name'] if request.endpoint != 'routes.admin' else ''}}</p>
+
                 {% block content %} {% endblock %}
+                
             </div>
             <div class="col">           
                 {% with messages = get_flashed_messages(with_categories=true) %}

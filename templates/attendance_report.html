@@ -2,11 +2,8 @@
 
 {% block title %}{{ _('Attendance | Report') }}{% endblock %}
 
+{% block pageTitle %}<i class="bi bi-file-earmark-spreadsheet"></i>  {{ _('Attendance Report') }}{% endblock %}
 {% block content %}
-
-    <h2 class="mb-3"><i class="bi bi-file-earmark-spreadsheet"></i>  {{ _('Attendance Report') }}</h2>
-    <p class="mb-3">{{ meeting_center_name }}</p>
-
     <!-- Filtros -->
     <div class="row mb-3 p-3">
         <p>{{ _('Total Members') }}: <b>{{ total_miembros }} </b></p>

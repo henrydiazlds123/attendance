@@ -19,10 +19,16 @@ from io                      import BytesIO
 bp = Blueprint('routes', __name__)
 
 
-@bp.route('/')
-def index():
-    return render_template('index.html')
 
+
+@bp.before_request
+def load_user():
+    # Verifica si hay un ID de usuario en la sesión y carga el usuario
+    user_id = session.get('user_id')
+    if user_id:
+        g.user = User.query.get(user_id)  # Asumiendo que tienes un modelo `User`
+    else:
+        g.user = None
 
 # =============================================================================================
 @bp.route('/login', methods=['GET', 'POST'])
@@ -47,7 +53,7 @@ def login():
             if session['role'] == 'Operator':
                 return redirect(url_for('routes.manual_attendance'))
             if session['role'] == 'Owner':
-                return redirect(url_for('routes.attendances'))
+                return redirect(url_for('routes.admin'))
 
             flash(_('Login successful!'), 'success')
             return redirect(url_for('routes.attendance_report'))
@@ -69,6 +75,12 @@ def logout():
 def reset_name():
     """Renderiza una página para mostrar el nombre almacenado y borrarlo con confirmación."""
     return render_template('reset_name.html')
+
+
+# =============================================================================================
+@bp.route('/')
+def index():
+    return render_template('index.html')
 
 
 # =============================================================================================
@@ -237,7 +249,6 @@ def promote_to_admin(id):
 
 
 # =============================================================================================
-# CRUD para Attendances
 @bp.route('/attendance', methods=['GET', 'POST'])
 def attendance():
     class_code  = request.args.get('class')
@@ -264,7 +275,7 @@ def attendance():
     
 
 # =============================================================================================
-@bp.route('/attendances', methods=['GET', 'POST'])
+@bp.route('/attendance/list', methods=['GET', 'POST'])
 @role_required('User', 'Admin', 'Owner')
 def attendances():
     # Get user role and meeting_center_id from session
@@ -288,13 +299,9 @@ def attendances():
     ]
 
     # Get filter parameters from URL query string
-    class_code    = request.args.get('class')
     class_name    = request.args.get('class_name')
     student_name  = request.args.get('student_name')
     sunday_date   = request.args.get('sunday_date')
-
-    # Get the configuration for code verification setting
-    code_verification_setting = Setup.query.filter_by(key='code_verification').first()
 
     query = db.session.query(
         Attendance.id,
@@ -351,7 +358,8 @@ def attendances():
         query = query.filter(func.strftime('%m', Attendance.sunday_date) == selected_month.zfill(2))
 
     # Execute the query and fetch results
-    attendances     = query.order_by(Attendance.student_name, Attendance.sunday_date, Attendance.class_id).all()
+    attendances     = query.order_by(Attendance.student_name, Attendance.sunday_date, Attendance.class_id) \
+        .filter(Attendance.meeting_center_id == session.get('meeting_center_id')).all()
     
     # Formatear las fechas con Flask-Babel
     attendances_formatted = [
@@ -365,46 +373,20 @@ def attendances():
     total_registros = len(attendances)
     has_records     = Attendance.query.count() > 0
 
-    # Handle POST requests for code verification and deleting records
-    if request.method == 'POST':
-        if 'code_verification' in request.form:
-            new_value = request.form.get('code_verification')
-            if code_verification_setting:
-                code_verification_setting.value = new_value
-            else:
-                code_verification_setting = Setup(key='code_verification', value=new_value)
-                db.session.add(code_verification_setting)
-            db.session.commit()
-
-        if 'delete_selected' in request.form:
-            ids_to_delete = request.form.getlist('delete')
-            for id in ids_to_delete:
-                attendance = Attendance.query.get(id)
-                if attendance:
-                    db.session.delete(attendance)
-            db.session.commit()
-
-        elif 'delete_all' in request.form:
-            db.session.query(Attendance).delete()
-            db.session.commit()
-
-        return redirect(url_for('routes.attendances'))
-
-    verification_enabled = code_verification_setting.value if code_verification_setting else 'true'
+    
     
     return render_template(
-        'attendances.html', 
-        attendances=attendances_formatted, 
-        verification_enabled=verification_enabled,
-        has_records=has_records, 
-        classes=classes, 
-        students=students, 
-        sundays=sundays_formatted,  # Usar las fechas formateadas
-        months=months,
-        years=years, 
-        total_registros=total_registros, 
-        months_abr=months_abr, 
-        corrected_names=corrected_names
+        'attendance_list.html', 
+        attendances     = attendances_formatted,
+        has_records     = has_records,
+        classes         = classes,
+        students        = students,
+        sundays         = sundays_formatted,     # Usar las fechas formateadas
+        months          = months,
+        years           = years,
+        total_registros = total_registros,
+        months_abr      = months_abr,
+        corrected_names = corrected_names
     )
 
 
@@ -516,6 +498,167 @@ def manual_attendance():
     return render_template('manual_attendance.html', class_links=class_links)
 
 
+# =============================================================================================
+@bp.route('/attendance/report')
+@login_required
+def attendance_report():
+    meeting_center_id = get_meeting_center_id()
+
+    # print(f"Meeting Center ID: {meeting_center_id}")  # Depuración
+
+    if meeting_center_id == 'all':
+        meeting_center_id = None  # No aplicar filtro
+
+    current_year  = datetime.now().year
+    current_month = datetime.now().month
+
+    # Obtener años y meses disponibles, manejando el caso donde `meeting_center_id` es `None`
+    year_query  = db.session.query(func.extract('year', Attendance.sunday_date)).distinct().order_by(func.extract('year', Attendance.sunday_date))
+    month_query = db.session.query(func.extract('month', Attendance.sunday_date)).distinct().order_by(func.extract('month', Attendance.sunday_date))
+
+    if meeting_center_id is not None:
+        year_query  = year_query.filter(Attendance.meeting_center_id == meeting_center_id)
+        month_query = month_query.filter(Attendance.meeting_center_id == meeting_center_id)
+
+    available_years  = [y[0] for y in year_query.all() if y[0] is not None]
+    available_months = [m[0] for m in month_query.all() if m[0] is not None]
+    month_names      = [{"num": m, "name": _(datetime(2000, m, 1).strftime('%b'))} for m in available_months]
+
+    # print(f"Años disponibles: {available_years}")  # Depuración
+    # print(f"Meses disponibles: {available_months}")  # Depuración
+
+    selected_year  = request.args.get('year', type=int, default=current_year)
+    selected_month = request.args.get('month', type=int, default=current_month)
+
+    # Consulta de domingos con verificación de `meeting_center_id`
+    query = db.session.query(Attendance.sunday_date).distinct().order_by(Attendance.sunday_date)
+
+    if meeting_center_id is not None:
+        query = query.filter(Attendance.meeting_center_id == meeting_center_id)
+
+    if selected_year:
+        query = query.filter(extract('year', Attendance.sunday_date) == selected_year)
+    if selected_month:
+        query = query.filter(extract('month', Attendance.sunday_date) == selected_month)
+
+    sundays = query.all()
+    sunday_dates = [s[0] for s in sundays]
+
+    # print(f"Domingos encontrados: {sunday_dates}")  # Depuración
+
+    # Formatear las fechas con Flask-Babel
+    sunday_dates_formatted = [
+        {"date": date, "formatted": format_date(date, format='MMM dd')}  # 'MMM dd' para "Mes día"
+        for date in sunday_dates
+    ]
+
+    # Obtener registros de asistencia
+    attendance_query = db.session.query(Attendance).order_by(Attendance.student_name, Attendance.sunday_date)
+
+    if meeting_center_id is not None:
+        attendance_query = attendance_query.filter(Attendance.meeting_center_id == meeting_center_id)
+
+    if selected_year:
+        attendance_query = attendance_query.filter(extract('year', Attendance.sunday_date) == selected_year)
+    if selected_month:
+        attendance_query = attendance_query.filter(extract('month', Attendance.sunday_date) == selected_month)
+
+    attendance_records = attendance_query.all()
+
+    # print(f"Registros de asistencia: {len(attendance_records)}")  # Depuración
+
+    # Construcción del diccionario de asistencia
+    students = {}
+    for record in attendance_records:
+        if record.student_name not in students:
+            students[record.student_name] = {date['date']: False for date in sunday_dates_formatted}
+        students[record.student_name][record.sunday_date] = True
+
+    total_miembros = len(students)
+
+    # Si la solicitud es AJAX, devolver solo la parte de la asistencia
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return render_template("partials/attendance_table.html", students=students, dates=sunday_dates_formatted)
+
+    return render_template(
+        'attendance_report.html',
+        students         = students ,
+        dates            = sunday_dates_formatted , # Usar las fechas formateadas
+        available_years  = available_years ,
+        available_months = month_names ,
+        selected_year    = selected_year ,
+        selected_month   = selected_month ,
+        total_miembros   = total_miembros ,
+        disable_month    = len(available_months)  == 1,
+        disable_year     = len(available_years)   == 1
+    )
+    
+
+# =============================================================================================
+@bp.route('/attendance/export', methods=['GET'])
+@role_required('Owner', 'Admin')
+def export_attendance():
+    # Obtener la fecha actual en formato YYYY-MM-DD para el nombre del archivo
+    current_date = datetime.now().strftime('%Y-%m-%d')
+    filename = f"attendance_{current_date}.csv"
+
+    # Obtener los parámetros de filtro de la solicitud (si existen)
+    filter_date = request.args.get('date')  # Fecha en formato YYYY-MM-DD
+    filter_meeting_center = request.args.get('meeting_center_id')  # ID de centro de reunión
+
+    # Convertir la fecha de filtro en un objeto datetime, si se proporcionó
+    if filter_date:
+        filter_date = datetime.strptime(filter_date, '%Y-%m-%d').date()
+
+    # Crear una consulta con filtros opcionales
+    query = Attendance.query
+
+    if filter_date:
+        query = query.filter(Attendance.sunday_date == filter_date)
+
+    if filter_meeting_center:
+        query = query.filter(Attendance.meeting_center_id == int(filter_meeting_center))
+
+    # Obtener los registros de la tabla con los filtros aplicados
+    records = query.all()
+
+    # Crear una respuesta Flask con el contenido CSV
+    def generate_csv():
+        # Usar StringIO como buffer para escribir el CSV
+        output = io.StringIO()
+        writer = csv.writer(output)
+
+        # Escribir los encabezados del archivo CSV
+        headers = ['ID', 'Student Name', 'Class ID', 'Class Code', 'Sunday Date', 'Sunday Code', 'Submit Date', 'Meeting Center ID']
+        writer.writerow(headers)
+
+        # Escribir los datos de los registros
+        for record in records:
+            writer.writerow([
+                record.id,
+                record.student_name,
+                record.class_id,
+                record.class_code,
+                record.sunday_date.strftime('%Y-%m-%d'),
+                record.sunday_code,
+                record.submit_date.strftime('%Y-%m-%d %H:%M:%S'),
+                record.meeting_center_id
+            ])
+
+        # Mover el cursor al inicio del archivo en memoria para enviarlo como respuesta
+        output.seek(0)
+        return output.getvalue()
+
+    # Crear la respuesta para el cliente
+    return Response(
+        generate_csv(),
+        mimetype='text/csv',
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}"
+        }
+    ) 
+
+    
 # =============================================================================================
 @bp.route('/registrar', methods=['POST'])
 def registrar():
@@ -637,7 +780,7 @@ def registrar():
         
         
 # =============================================================================================
-@bp.route('/list_pdfs', methods=['GET'])
+@bp.route('/pdf/list', methods=['GET'])
 @login_required
 def list_pdfs():
     OUTPUT_DIR = get_output_dir()
@@ -665,21 +808,21 @@ def list_pdfs():
 
 
 # =============================================================================================
-@bp.route('/generate_all_pdfs', methods=['GET', 'POST'])
+@bp.route('/pdf/generate_all', methods=['GET', 'POST'])
 @role_required('Admin', 'Owner')
 def generate_all_pdfs():
     return redirect(url_for('routes.generate_pdfs', type='todos'))  # redirige a la misma función con parámetro "todos"
 
 
 # =============================================================================================
-@bp.route('/generate_week_pdfs', methods=['GET', 'POST'])
+@bp.route('/pdf/generate_week', methods=['GET', 'POST'])
 @role_required('Admin', 'Owner')
 def generate_week_pdfs():
     return redirect(url_for('routes.generate_pdfs', type='semana_especifica'))  # redirige a la misma función para PDFs de la semana específica
 
 
 # =============================================================================================
-@bp.route('/generate_extra_pdfs', methods=['GET', 'POST'])
+@bp.route('/pdf/generate_extra', methods=['GET', 'POST'])
 @role_required('Admin', 'Owner')
 def generate_extra_pdfs():
     selected_date = request.form.get('date')  # Obtener la fecha desde el formulario
@@ -695,7 +838,7 @@ def generate_extra_pdfs():
 
 
 # =============================================================================================
-@bp.route('/generate_pdfs', methods=['GET', 'POST'])
+@bp.route('/pdf/generate', methods=['GET', 'POST'])
 @role_required('Admin', 'Owner')
 def generate_pdfs():
     user_date = request.args.get('selected_date')
@@ -809,7 +952,7 @@ def generate_pdfs():
 
 
 # =============================================================================================
-@bp.route('/download_pdf/<path:filename>', methods=['GET'])
+@bp.route('/pdf/download/<path:filename>', methods=['GET'])
 @role_required('User', 'Admin', 'Owner')
 def download_pdf(filename):
     OUTPUT_DIR = get_output_dir()
@@ -888,6 +1031,46 @@ def delete_meeting_center(id):
     db.session.commit()
     flash(_('Meeting Center successfully removed.'), 'success')
     return redirect(url_for('routes.meeting_centers'))
+
+# =============================================================================================
+@bp.route('/meeting_center/set', methods=['POST'])
+def set_meeting_center():
+    data = request.get_json()
+    meeting_center_id = data.get('meeting_center_id', 'all')
+
+    session['meeting_center_id'] = meeting_center_id
+
+    # Si el usuario seleccionó "all", no hay un centro de reuniones específico
+    if meeting_center_id == 'all':
+        session['meeting_center_name']   = _('All Meeting Centers')
+        session['meeting_center_number'] = 'N/A'  # Establecer el número como N/A
+    else:
+        # Buscar el centro de reuniones en la base de datos
+        meeting_center = MeetingCenter.query.get(meeting_center_id)
+        if meeting_center:
+            session['meeting_center_name']   = meeting_center.name
+            session['meeting_center_number'] = meeting_center.unit_number  # Obtener el número del centro de reuniones
+        else:
+            session['meeting_center_name']   = _('Unknown')
+            session['meeting_center_number'] = 'N/A'  # En caso de error, asignar N/A
+
+    return jsonify({
+        "meeting_center_id"    : session['meeting_center_id'],
+        "meeting_center_name"  : session['meeting_center_name'],
+        "meeting_center_number": session['meeting_center_number']  # Enviar el número también
+    })
+
+    
+# =============================================================================================
+@bp.route('/meeting_center/api')
+def get_meeting_centers():
+    meeting_centers = MeetingCenter.query.order_by(MeetingCenter.name).all()
+    return jsonify([
+        {"id": mc.id, "name": mc.name}
+        for mc in meeting_centers
+    ])
+
+
 
 
 # =============================================================================================
@@ -1026,7 +1209,6 @@ def create_organization():
 
 
 # =============================================================================================
-# Update
 @bp.route('/organizations/edit/<int:id>', methods=['GET', 'POST'])
 @role_required('Owner')
 def edit_organization(id):
@@ -1217,25 +1399,19 @@ def populate_classes(id):
 
 
 # =============================================================================================
-@bp.route('/export-attendance', methods=['GET'])
-@role_required('Owner', 'Admin')
-def export_attendance():
-    return export_attendance_to_csv()
-
-# =============================================================================================
 @bp.route('/update_name_correction', methods=['POST'])
 @role_required('Admin', 'Owner')
 def update_name_correction():
     data = request.get_json()
-    print("Datos recibidos:", data)  # Esto imprimirá los datos recibidos para depurar
+    # print("Datos recibidos:", data)  # Esto imprimirá los datos recibidos para depurar
     
-    wrong_name = data.get('wrong_name')
-    correct_name = data.get('correct_name')
+    wrong_name        = data.get('wrong_name')
+    correct_name      = data.get('correct_name')
     meeting_center_id = data.get('meeting_center_id')
-    admin_name = session.get('user_name')
+    admin_name        = session.get('user_name')
 
     if not wrong_name or not correct_name or not meeting_center_id:
-        return jsonify({'error': 'Missing required fields'}), 400
+        return jsonify({'error': _('Missing required fields')}), 400
 
     # Verifica si ya existe un registro con ese nombre incorrecto para el meeting center
     correction = NameCorrections.query.filter_by(wrong_name=wrong_name, meeting_center_id=meeting_center_id).first()
@@ -1243,10 +1419,10 @@ def update_name_correction():
         correction.correct_name = correct_name
     else:
         correction = NameCorrections(
-            wrong_name=wrong_name, 
-            correct_name=correct_name, 
-            meeting_center_id=meeting_center_id, 
-            added_by=admin_name
+            wrong_name        = wrong_name,
+            correct_name      = correct_name,
+            meeting_center_id = meeting_center_id,
+            added_by          = admin_name
         )
         db.session.add(correction)
 
@@ -1260,93 +1436,69 @@ def update_name_correction():
         return jsonify({'success': True})
     except Exception as e:
         db.session.rollback()
-        print(f"Error al guardar en la base de datos: {e}")
+        # print(f"Error al guardar en la base de datos: {e}")
         return jsonify({'error': 'Error al guardar la corrección'}), 500
+  
     
+# =============================================================================================    
+@bp.route('/admin', methods=['GET', 'POST'])
+def admin():
     
+    # Get the configuration for code verification setting
+    code_verification_setting = Setup.query.filter_by(key='code_verification').first()
+    
+    # Handle POST requests for code verification and deleting records
+    if request.method == 'POST':
+        if 'code_verification' in request.form:
+            new_value = request.form.get('code_verification')
+            if code_verification_setting:
+                code_verification_setting.value = new_value
+            else:
+                code_verification_setting = Setup(key='code_verification', value=new_value)
+                db.session.add(code_verification_setting)
+            db.session.commit()
+
+        if 'delete_selected' in request.form:
+            ids_to_delete = request.form.getlist('delete')
+            for id in ids_to_delete:
+                attendance = Attendance.query.get(id)
+                if attendance:
+                    db.session.delete(attendance)
+            db.session.commit()
+
+        elif 'delete_all' in request.form:
+            db.session.query(Attendance).delete()
+            db.session.commit()
+
+        return redirect(url_for('routes.admin'))
+
+    verification_enabled = code_verification_setting.value if code_verification_setting else 'true'
+    return render_template('admin.html', verification_enabled=verification_enabled,)
+
+
 # =============================================================================================
-@bp.route('/attendance/report')
-def attendance_report():
-    meeting_center_id = session.get('meeting_center_id')
-    if not meeting_center_id:
-        return _('Meeting center ID not found in session'), 400
+@bp.route('/api/admin_data')
+def admin_data():
+    meeting_center_id = request.args.get('meeting_center_id')
 
-    current_year = datetime.now().year
-    current_month = datetime.now().month
+    meeting_center = None
+    if meeting_center_id and meeting_center_id != 'all':
+        meeting_center = MeetingCenter.query.filter_by(id=meeting_center_id).first()
 
-    # Obtener años y meses disponibles
-    if session['role'] == 'Owner':
-        available_years = db.session.query(func.extract('year', Attendance.sunday_date)).distinct().order_by(func.extract('year', Attendance.sunday_date)).all()
-        available_months = db.session.query(func.extract('month', Attendance.sunday_date)).distinct().order_by(func.extract('month', Attendance.sunday_date)).all()
+    # Si no se encuentra el meeting center, devuelve uno por defecto
+    if not meeting_center:
+        meeting_center = {
+            "name": _('All Meeting Centers'),
+            "unit_number": _('All')
+        }
     else:
-        available_years = db.session.query(func.extract('year', Attendance.sunday_date)).filter(
-            Attendance.meeting_center_id == session['meeting_center_id']
-        ).distinct().order_by(func.extract('year', Attendance.sunday_date)).all()
-        available_months = db.session.query(func.extract('month', Attendance.sunday_date)).filter(
-            Attendance.meeting_center_id == session['meeting_center_id']
-        ).distinct().order_by(func.extract('month', Attendance.sunday_date)).all()
+        # Convertir el objeto MeetingCenter a un diccionario
+        meeting_center = {
+            "name": meeting_center.name,
+            "unit_number": meeting_center.unit_number
+        }
+    # Devolver los datos del meeting center como JSON
+    return jsonify(meeting_center)
 
-    available_years = [y[0] for y in available_years]
-    available_months = [m[0] for m in available_months]
-    month_names = [{"num": m, "name": _(datetime(2000, m, 1).strftime('%b'))} for m in available_months]
 
-    selected_year = request.args.get('year', type=int, default=current_year)
-    selected_month = request.args.get('month', type=int, default=current_month)
 
-    # Consulta los domingos de asistencia
-    query = db.session.query(Attendance.sunday_date).filter(
-        Attendance.meeting_center_id == session['meeting_center_id']
-    )
-
-    if selected_year:
-        query = query.filter(extract('year', Attendance.sunday_date) == selected_year)
-    if selected_month:
-        query = query.filter(extract('month', Attendance.sunday_date) == selected_month)
-
-    sundays = query.distinct().order_by(Attendance.sunday_date).all()
-    sunday_dates = [s[0] for s in sundays]
-
-    # Formatear las fechas con Flask-Babel
-    sunday_dates_formatted = [
-        {"date": date, "formatted": format_date(date, format='MMM dd')}  # 'MMM dd' para "Mes día"
-        for date in sunday_dates
-    ]
-
-    # Obtener registros de asistencia
-    attendance_query = Attendance.query.filter(
-        Attendance.meeting_center_id == session['meeting_center_id']
-    )
-
-    if selected_year:
-        attendance_query = attendance_query.filter(extract('year', Attendance.sunday_date) == selected_year)
-    if selected_month:
-        attendance_query = attendance_query.filter(extract('month', Attendance.sunday_date) == selected_month)
-
-    attendance_records = attendance_query.order_by(Attendance.student_name, Attendance.sunday_date).all()
-
-    # Construcción del diccionario de asistencia
-    students = {}
-    for record in attendance_records:
-        if record.student_name not in students:
-            students[record.student_name] = {date['date']: False for date in sunday_dates_formatted}
-        students[record.student_name][record.sunday_date] = True
-
-    # Si la solicitud es AJAX, devolver solo la parte de la asistencia
-    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-        return render_template("partials/attendance_table.html", students=students, dates=sunday_dates_formatted)
-    
-    total_miembros = len(students)
-
-    return render_template(
-        'attendance_report.html',
-        students=students,
-        dates=sunday_dates_formatted,  # Usar las fechas formateadas
-        available_years=available_years,
-        available_months=month_names,
-        selected_year=selected_year,
-        selected_month=selected_month,
-        total_miembros=total_miembros,
-        meeting_center_name=session.get('meeting_center_name', ''),
-        disable_month=len(available_months) == 1,
-        disable_year=len(available_years) == 1
-    )

@@ -30,11 +30,11 @@
   // Load the state when the page is loaded
   document.addEventListener('DOMContentLoaded', loadInactiveClassesPreference);
 </script>
-
 {% endblock %}
 
+{% block pageTitle %}<i class="bi bi-mortarboard-fill"></i>  {{ _('Classes Management') }}{% endblock %}
 {% block content %}
-<h2><i class="bi bi-mortarboard-fill"></i>  {{ _('Classes Management') }}</h2>
+<p class="mb-3">{{ meeting_center_name }}</p>
 <div class="col-xl-8">
   <p class="mb-3">
     {{ _("Something") }}
