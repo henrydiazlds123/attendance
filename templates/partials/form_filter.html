@@ -34,18 +34,6 @@
             {% endfor %}
         </select>
     </div>
-    <!-- <div class="input-group col-md">
-        <span class="input-group-text"><i class="fa fa-graduation-cap"></i></span>
-        <select name="class_code" id="class_code" onchange="submitForm()" class="form-select">
-            <option value="" disabled {% if not request.args.get('class_code') %}selected{% endif %}>Class</option>
-            {% for class in classes %}
-            <option value="{{ class[0] }}" {% if class[0]==request.args.get('class_code') %}selected{% endif %}>
-                {{ class[1] }} ({{ class[0] }})
-            </option>
-            {% endfor %}
-        </select>
-    </div>
-     -->
     <div class="input-group col-md">
         <span class="input-group-text"><i class="bi bi-calendar2-date"></i></span>
         <select name="sunday_date" id="sunday_date" onchange="submitForm()" class="form-select">

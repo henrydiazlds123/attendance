@@ -3,7 +3,7 @@
         <tr>
             <th class="text-start">{{ _('Name') }}</th>
             {% for date in dates %}
-            <th class="text-center">{{ date.strftime('%b') }} {{ date.strftime('%d') }}</th>
+            <th class="text-center">{{ date['formatted'] }}</th>
             {% endfor %}
         </tr>
     </thead>
@@ -13,7 +13,7 @@
             <td>{{ student }}</td>
             {% for date in dates %}
             <td class="text-center">
-                {% if attendance[date] %}
+                {% if attendance[date['date']] %}
                 <span class="text-success"><i class="bi bi-check-circle-fill"></i></span>
                 {% else %}
                 <span class="text-danger"><i class="bi bi-dash-circle"></i></span>

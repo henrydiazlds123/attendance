@@ -3,7 +3,7 @@ import io
 import csv
 from functools    import wraps
 from datetime     import datetime, timedelta
-from flask        import flash, redirect, session, url_for, request, Response
+from flask        import flash, redirect, session, url_for, request, Response, g
 from flask_babel  import format_date, gettext as _
 from config       import Config
 from itsdangerous import URLSafeTimedSerializer
@@ -18,11 +18,21 @@ def role_required(*roles):
         def decorated_function(*args, **kwargs):
             user_role = session.get('role')  # Suponiendo que el rol se almacena en la sesión
             if user_role not in roles:
-                flash('You do not have permission to perform this action.', 'danger')
+                flash(_('You do not have permission to perform this action.'), 'danger')
                 return redirect(url_for('routes.login'))  # Ajusta la ruta de redirección según sea necesario
             return f(*args, **kwargs)
         return decorated_function
     return decorator
+
+
+# ================================================================
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if g.user is None:
+            return redirect(url_for('login', next=request.url))
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 # ================================================================
