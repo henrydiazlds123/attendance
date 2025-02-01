@@ -98,7 +98,7 @@
             </td>
             <td style="text-transform:capitalize">{{attendance.student_name}}</td>
             <td>{{_(attendance.class_short_name)}}</td>
-            <td>{{ attendance.sunday_date.strftime('%b') }} {{ attendance.sunday_date.strftime('%d') }}</td>
+            <td>{{ attendance.sunday_date_formatted }}</td>
             {% if session['role'] == 'Owner' %}
             <td>{{_(attendance.meeting_short_name)}}</td>
             <td>{{_(attendance.sunday_code)}}</td>

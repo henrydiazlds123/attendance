@@ -79,31 +79,6 @@ def users():
     meeting_center_id = session.get('meeting_center_id')
     admin_count = User.query.filter_by(role='Admin').count()
 
-    # if role == 'Owner':
-    #     # Los Owners pueden ver todos los usuarios
-    #     query = db.session.query(
-    #         User.id,
-    #         User.username,
-    #         User.email,
-    #         User.role,
-    #         MeetingCenter.short_name.label('meeting_short_name'),
-    #         Organization.name.label('organization_name')
-    #     ).join(MeetingCenter, User.meeting_center_id == MeetingCenter.id).join(Organization, User.organization_id == Organization.id)
-
-    #     users = query.all()
-    # elif role == 'Admin':
-    #     # Los Admins solo pueden ver los usuarios de su Meeting Center, excluyendo a los Owners
-    #     users = db.session.query(
-    #        User.id,
-    #         User.username,
-    #         User.email,
-    #         User.role,
-    #         Organization.name.label('organization_name')
-    #     ).join(MeetingCenter, User.meeting_center_id == MeetingCenter.id).join(Organization, User.organization_id == Organization.id).filter(User.role != 'Owner').all()
-    # else:
-    #     # Los usuarios regulares solo pueden ver su propio usuario
-    #     users = User.query.filter_by(student_name=session.get('username')).all()
-    
     if role == 'Owner':
     # Owners can see all users
         query = db.session.query(
@@ -289,6 +264,141 @@ def attendance():
     
 
 # =============================================================================================
+# @bp.route('/attendances', methods=['GET', 'POST'])
+# @role_required('User', 'Admin', 'Owner')
+# def attendances():
+#     # Get user role and meeting_center_id from session
+#     role              = session.get('role')
+#     months_abr        = get_months()
+#     meeting_center_id = session.get('meeting_center_id')
+#     corrected_names   = [
+#         correction.correct_name 
+#         for correction in NameCorrections.query.filter_by(meeting_center_id=meeting_center_id).all()
+#     ]
+
+#     # Get distinct values for filters
+#     classes  = db.session.query(Classes.id, Classes.short_name).join(Attendance, Attendance.class_id == Classes.id).distinct().filter(Classes.meeting_center_id == session.get('meeting_center_id')).all()
+#     students = db.session.query(Attendance.student_name.distinct()).filter(Attendance.meeting_center_id == session.get('meeting_center_id')).all()
+#     # sundays  = db.session.query(Attendance.sunday_date.distinct()).all()
+#     # years    = db.session.query(func.strftime('%Y', Attendance.sunday_date).label('year')).distinct().all()
+#     # months   = db.session.query(func.strftime('%m', Attendance.sunday_date).label('month')).distinct().all()
+    
+#     sundays = db.session.query(Attendance.sunday_date.distinct()) \
+#     .filter(Attendance.meeting_center_id == session.get('meeting_center_id')).all()
+
+#     years = db.session.query(func.strftime('%Y', Attendance.sunday_date).label('year')) \
+#     .filter(Attendance.meeting_center_id == session.get('meeting_center_id')).distinct().all()
+
+#     months = db.session.query(func.strftime('%m', Attendance.sunday_date).label('month')) \
+#     .filter(Attendance.meeting_center_id == session.get('meeting_center_id')).distinct().all()
+  
+
+#     # Get filter parameters from URL query string
+#     class_code    = request.args.get('class')
+#     class_name    = request.args.get('class_name')
+#     student_name  = request.args.get('student_name')
+#     sunday_date   = request.args.get('sunday_date')
+    
+#     sundays_formatted = [
+#     {"date": sunday[0], "formatted": format_date(sunday[0], format='MMM dd')}  # 'MMM dd' para "Mes día"
+#     for sunday in sundays
+# ]
+
+#     # Get the configuration for code verification setting
+#     code_verification_setting = Setup.query.filter_by(key='code_verification').first()
+
+#     query = db.session.query(
+#     Attendance.id,
+#     Attendance.student_name,
+#     Classes.short_name.label('class_short_name'),
+#     Attendance.class_code,
+#     Attendance.sunday_date,
+#     Attendance.submit_date,
+#     Attendance.sunday_code,
+#     Attendance.meeting_center_id,
+#     MeetingCenter.short_name.label('meeting_short_name')
+# ).join(
+#     Classes, 
+#     (Attendance.class_code == Classes.class_code) & (Attendance.meeting_center_id == Classes.meeting_center_id)
+# ).join(
+#     MeetingCenter, 
+#     Attendance.meeting_center_id == MeetingCenter.id)
+ 
+
+#     # Filter based on role and meeting_center_id
+#     if role == 'Admin' or role == 'User':
+#         query = query.filter(Attendance.meeting_center_id == meeting_center_id)
+#     elif role == 'Owner':
+#         pass
+
+#     # Apply filters based on form inputs
+#     if class_name:
+#         query = query.filter(Classes.short_name.ilike(f'%{class_name}%'))
+#     if student_name:
+#         query = query.filter(Attendance.student_name.ilike(f'%{student_name}%'))
+#     if sunday_date:
+#         try:
+#             date_filter = datetime.strptime(sunday_date, '%Y-%m-%d').date()
+#             query = query.filter(Attendance.sunday_date == date_filter)
+#         except ValueError:
+#             pass
+
+#     selected_year = request.args.get('year')
+#     if selected_year:
+#         query = query.filter(func.strftime('%Y', Attendance.sunday_date) == selected_year)
+
+#     selected_month = request.args.get('month')
+#     if selected_month:
+#         query = query.filter(func.strftime('%m', Attendance.sunday_date) == selected_month.zfill(2))
+
+#     # Execute the query and fetch results
+#     attendances     = query.order_by(Attendance.student_name, Attendance.sunday_date, Attendance.class_id).all()
+#     total_registros = len(attendances)
+#     has_records     = Attendance.query.count() > 0
+
+#     # Handle POST requests for code verification and deleting records
+#     if request.method == 'POST':
+#         if 'code_verification' in request.form:
+#             new_value = request.form.get('code_verification')
+#             if code_verification_setting:
+#                 code_verification_setting.value = new_value
+#             else:
+#                 code_verification_setting = Setup(key='code_verification', value=new_value)
+#                 db.session.add(code_verification_setting)
+#             db.session.commit()
+
+#         if 'delete_selected' in request.form:
+#             ids_to_delete = request.form.getlist('delete')
+#             for id in ids_to_delete:
+#                 attendance = Attendance.query.get(id)
+#                 if attendance:
+#                     db.session.delete(attendance)
+#             db.session.commit()
+
+#         elif 'delete_all' in request.form:
+#             db.session.query(Attendance).delete()
+#             db.session.commit()
+
+#         return redirect(url_for('routes.attendances'))
+
+#     verification_enabled = code_verification_setting.value if code_verification_setting else 'true'
+    
+#     return render_template(
+#         'attendances.html', 
+#         attendances=attendances, 
+#         verification_enabled=verification_enabled,
+#         has_records=has_records, 
+#         classes=classes, 
+#         students=students, 
+#         sundays=sundays_formatted, 
+#         months=months,
+#         years=years, 
+#         total_registros=total_registros, 
+#         months_abr=months_abr, 
+#         corrected_names=corrected_names
+#         )
+
+
 @bp.route('/attendances', methods=['GET', 'POST'])
 @role_required('User', 'Admin', 'Owner')
 def attendances():
@@ -304,19 +414,13 @@ def attendances():
     # Get distinct values for filters
     classes  = db.session.query(Classes.id, Classes.short_name).join(Attendance, Attendance.class_id == Classes.id).distinct().filter(Classes.meeting_center_id == session.get('meeting_center_id')).all()
     students = db.session.query(Attendance.student_name.distinct()).filter(Attendance.meeting_center_id == session.get('meeting_center_id')).all()
-    # sundays  = db.session.query(Attendance.sunday_date.distinct()).all()
-    # years    = db.session.query(func.strftime('%Y', Attendance.sunday_date).label('year')).distinct().all()
-    # months   = db.session.query(func.strftime('%m', Attendance.sunday_date).label('month')).distinct().all()
-    
-    sundays = db.session.query(Attendance.sunday_date.distinct()) \
-    .filter(Attendance.meeting_center_id == session.get('meeting_center_id')).all()
+    sundays  = db.session.query(Attendance.sunday_date.distinct()).filter(Attendance.meeting_center_id == session.get('meeting_center_id')).all()
 
-    years = db.session.query(func.strftime('%Y', Attendance.sunday_date).label('year')) \
-    .filter(Attendance.meeting_center_id == session.get('meeting_center_id')).distinct().all()
-
-    months = db.session.query(func.strftime('%m', Attendance.sunday_date).label('month')) \
-    .filter(Attendance.meeting_center_id == session.get('meeting_center_id')).distinct().all()
-  
+    # Formatear las fechas con Flask-Babel
+    sundays_formatted = [
+        {"date": sunday[0], "formatted": format_date(sunday[0], format='MMM dd')}  # 'MMM dd' para "Mes día"
+        for sunday in sundays
+    ]
 
     # Get filter parameters from URL query string
     class_code    = request.args.get('class')
@@ -328,22 +432,32 @@ def attendances():
     code_verification_setting = Setup.query.filter_by(key='code_verification').first()
 
     query = db.session.query(
-    Attendance.id,
-    Attendance.student_name,
-    Classes.short_name.label('class_short_name'),
-    Attendance.class_code,
-    Attendance.sunday_date,
-    Attendance.submit_date,
-    Attendance.sunday_code,
-    Attendance.meeting_center_id,
-    MeetingCenter.short_name.label('meeting_short_name')
-).join(
-    Classes, 
-    (Attendance.class_code == Classes.class_code) & (Attendance.meeting_center_id == Classes.meeting_center_id)
-).join(
-    MeetingCenter, 
-    Attendance.meeting_center_id == MeetingCenter.id)
- 
+        Attendance.id,
+        Attendance.student_name,
+        Classes.short_name.label('class_short_name'),
+        Attendance.class_code,
+        Attendance.sunday_date,
+        Attendance.submit_date,
+        Attendance.sunday_code,
+        Attendance.meeting_center_id,
+        MeetingCenter.short_name.label('meeting_short_name')
+    ).join(
+        Classes, 
+        (Attendance.class_code == Classes.class_code) & (Attendance.meeting_center_id == Classes.meeting_center_id)
+    ).join(
+        MeetingCenter, 
+        Attendance.meeting_center_id == MeetingCenter.id
+    )
+    
+    sundays = db.session.query(Attendance.sunday_date.distinct()) \
+    .filter(Attendance.meeting_center_id == session.get('meeting_center_id')).all()
+
+    years = db.session.query(func.strftime('%Y', Attendance.sunday_date).label('year')) \
+    .filter(Attendance.meeting_center_id == session.get('meeting_center_id')).distinct().all()
+
+    months = db.session.query(func.strftime('%m', Attendance.sunday_date).label('month')) \
+    .filter(Attendance.meeting_center_id == session.get('meeting_center_id')).distinct().all()
+
 
     # Filter based on role and meeting_center_id
     if role == 'Admin' or role == 'User':
@@ -373,6 +487,16 @@ def attendances():
 
     # Execute the query and fetch results
     attendances     = query.order_by(Attendance.student_name, Attendance.sunday_date, Attendance.class_id).all()
+    
+    # Formatear las fechas con Flask-Babel
+    attendances_formatted = [
+        {
+            **attendance._asdict(),  # Convertir el objeto SQLAlchemy a un diccionario
+            "sunday_date_formatted": format_date(attendance.sunday_date, format='MMM dd')  # Formatear la fecha
+        }
+        for attendance in attendances
+    ]
+
     total_registros = len(attendances)
     has_records     = Attendance.query.count() > 0
 
@@ -403,9 +527,23 @@ def attendances():
 
     verification_enabled = code_verification_setting.value if code_verification_setting else 'true'
     
-    return render_template('attendances.html', attendances=attendances, verification_enabled=verification_enabled,
-                           has_records=has_records, classes=classes, students=students, sundays=sundays, months=months,
-                           years=years, total_registros=total_registros, months_abr=months_abr, corrected_names=corrected_names)
+    return render_template(
+        'attendances.html', 
+        attendances=attendances_formatted, 
+        verification_enabled=verification_enabled,
+        has_records=has_records, 
+        classes=classes, 
+        students=students, 
+        sundays=sundays_formatted,  # Usar las fechas formateadas
+        months=months,
+        years=years, 
+        total_registros=total_registros, 
+        months_abr=months_abr, 
+        corrected_names=corrected_names
+    )
+
+
+
 
 
 # =============================================================================================

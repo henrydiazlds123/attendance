@@ -39,9 +39,8 @@
         <select name="sunday_date" id="sunday_date" onchange="submitForm()" class="form-select">
             <option value="" disabled {% if not request.args.get('sunday_date') %}selected{% endif %}>{{ _('Date') }}</option>
             {% for sunday in sundays %}
-            <option value="{{ sunday[0].strftime('%Y-%m-%d') }}" {% if sunday[0]|string==request.args.get('sunday_date')
-                %}selected{% endif %}>
-                {{ sunday[0].strftime("%b %d") }}
+            <option value="{{ sunday['date'].strftime('%Y-%m-%d') }}" {% if sunday['date']|string==request.args.get('sunday_date') %}selected{% endif %}>
+                {{ sunday['formatted'] }}  <!-- Usar la fecha formateada -->
             </option>
             {% endfor %}
         </select>
