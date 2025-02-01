@@ -4,7 +4,7 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<div class="container"  style="overflow-y: auto; max-height: calc(100vh - 200px);">
+<div class="container" style="overflow-y: auto; max-height: calc(100vh - 200px);">
     <h2 class="mb-4 text-center">{{ title }}</h2>
     <div class="row justify-content-center">
         <div class="col-lg-6">
@@ -15,8 +15,8 @@
                 {% endfor %}
                 <div class="row mb-3">
                     <div class="col-md-9 offset-md-3 d-flex justify-content-end gap-3">
-                        <button type="submit" class="btn btn-{{ clas }}  w-50">{{ submit_button_text }}</button>
-                        <button type="cancel" class="btn btn-secondary  w-50">{{ _('Cancel') }}</button>
+                        <button type="submit" class="btn btn-{{ clas }} w-50">{{ submit_button_text }}</button>
+                        <button type="cancel" class="btn btn-secondary w-50">{{ _('Cancel') }}</button>
                     </div>
                 </div>
             </form>

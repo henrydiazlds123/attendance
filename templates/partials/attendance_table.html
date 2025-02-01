@@ -1,6 +1,7 @@
 <table class="table table-bordered table-striped table-sm">
-    <thead class="table-dark sticky-top">
+    <thead class="table-dark sticky-top" >
         <tr>
+            <th scope="col">#</th>
             <th class="text-start">{{ _('Name') }}</th>
             {% for date in dates %}
             <th class="text-center">{{ date['formatted'] }}</th>
@@ -10,6 +11,7 @@
     <tbody>
         {% for student, attendance in students.items() %}
         <tr>
+            <td scope="row">{{ loop.index }}</td>
             <td>{{ student }}</td>
             {% for date in dates %}
             <td class="text-center">
