@@ -131,7 +131,7 @@ class ClassForm(FlaskForm):
     class_name  = StringField(_l('Class Name'), validators=[DataRequired(), Length(max=50)])
     short_name  = StringField(_l('Short Name'), validators=[DataRequired(), Length(max=20)])
     class_code  = StringField(_l('Class Code'), validators=[DataRequired(), Length(max=10)])
-    class_type  = SelectField(_l('Class Type'), choices=[('Main', _('Main')), ('Extra', _('Extra'))], default='Extra')
+    class_type  = SelectField(_l('Class Type'), choices=[('Main', _l('Main')), ('Extra', _l('Extra'))], default=_l('Extra'))
     schedule    = StringField(_l('Schedule'), validators=[Length(max=10)])
     is_active   = BooleanField(_l('Is Active?'), default=True)
     class_color = StringField(

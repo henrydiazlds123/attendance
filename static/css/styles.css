@@ -65,12 +65,9 @@ main {
 
 }
 
-
 div > label[for="csrf_token"] {
   display: none;
 }
-
-
 
 .theme-toggle {
     position: fixed;
@@ -78,9 +75,6 @@ div > label[for="csrf_token"] {
     right: 1rem;
     cursor: pointer;
 }
-
-
-
 
 /* Personalización de etiquetas */
 .custom-label {
@@ -187,4 +181,9 @@ table td {
 
 table th {
   font-weight: 600; /* Mantiene los encabezados resaltados */
+}
+
+
+.table-hover tbody tr:hover td, .table-hover tbody tr:hover th {
+  background-color: #b5b5ac;
 }

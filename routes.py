@@ -493,7 +493,7 @@ def manual_attendance():
             'url': f"{Config.BASE_URL}/attendance/manual?class_name={class_entry.translated_name}&class={class_entry.class_code}&code={next_sunday_code}&unit={unit}",
             'name': class_entry.class_name
         }
-        for class_entry in Classes.query.all() if str(sunday_week) in class_entry.schedule.split(',')
+        for class_entry in Classes.query.filter_by(is_active=True).all() if str(sunday_week) in class_entry.schedule.split(',')
     }
     return render_template('manual_attendance.html', class_links=class_links)
 
@@ -503,8 +503,6 @@ def manual_attendance():
 @login_required
 def attendance_report():
     meeting_center_id = get_meeting_center_id()
-
-    # print(f"Meeting Center ID: {meeting_center_id}")  # Depuración
 
     if meeting_center_id == 'all':
         meeting_center_id = None  # No aplicar filtro
@@ -524,27 +522,38 @@ def attendance_report():
     available_months = [m[0] for m in month_query.all() if m[0] is not None]
     month_names      = [{"num": m, "name": _(datetime(2000, m, 1).strftime('%b'))} for m in available_months]
 
-    # print(f"Años disponibles: {available_years}")  # Depuración
-    # print(f"Meses disponibles: {available_months}")  # Depuración
-
     selected_year  = request.args.get('year', type=int, default=current_year)
     selected_month = request.args.get('month', type=int, default=current_month)
 
-    # Consulta de domingos con verificación de `meeting_center_id`
+    # Verificar si hay datos en el mes actual
     query = db.session.query(Attendance.sunday_date).distinct().order_by(Attendance.sunday_date)
-
     if meeting_center_id is not None:
         query = query.filter(Attendance.meeting_center_id == meeting_center_id)
-
-    if selected_year:
-        query = query.filter(extract('year', Attendance.sunday_date) == selected_year)
-    if selected_month:
-        query = query.filter(extract('month', Attendance.sunday_date) == selected_month)
+    query = query.filter(extract('year', Attendance.sunday_date) == selected_year)
+    query = query.filter(extract('month', Attendance.sunday_date) == selected_month)
 
     sundays = query.all()
     sunday_dates = [s[0] for s in sundays]
 
-    # print(f"Domingos encontrados: {sunday_dates}")  # Depuración
+    # Si no hay datos en el mes actual, cambiar al mes anterior
+    if not sunday_dates:
+        selected_month -= 1
+        if selected_month < 1:
+            selected_month = 12
+            selected_year -= 1
+
+        # Rehacer la consulta con el nuevo mes
+        query = db.session.query(Attendance.sunday_date).distinct().order_by(Attendance.sunday_date)
+        if meeting_center_id is not None:
+            query = query.filter(Attendance.meeting_center_id == meeting_center_id)
+        query = query.filter(extract('year', Attendance.sunday_date) == selected_year)
+        query = query.filter(extract('month', Attendance.sunday_date) == selected_month)
+
+        sundays = query.all()
+        sunday_dates = [s[0] for s in sundays]
+
+    # Limitar los datos a 5 semanas
+    sunday_dates = sunday_dates[-5:]
 
     # Formatear las fechas con Flask-Babel
     sunday_dates_formatted = [
@@ -558,14 +567,10 @@ def attendance_report():
     if meeting_center_id is not None:
         attendance_query = attendance_query.filter(Attendance.meeting_center_id == meeting_center_id)
 
-    if selected_year:
-        attendance_query = attendance_query.filter(extract('year', Attendance.sunday_date) == selected_year)
-    if selected_month:
-        attendance_query = attendance_query.filter(extract('month', Attendance.sunday_date) == selected_month)
+    attendance_query = attendance_query.filter(extract('year', Attendance.sunday_date) == selected_year)
+    attendance_query = attendance_query.filter(extract('month', Attendance.sunday_date) == selected_month)
 
     attendance_records = attendance_query.all()
-
-    # print(f"Registros de asistencia: {len(attendance_records)}")  # Depuración
 
     # Construcción del diccionario de asistencia
     students = {}
@@ -593,7 +598,7 @@ def attendance_report():
         disable_year     = len(available_years)   == 1
     )
     
-
+    
 # =============================================================================================
 @bp.route('/attendance/export', methods=['GET'])
 @role_required('Owner', 'Admin')
@@ -705,9 +710,9 @@ def registrar():
                 if isinstance(start_time, str):
                     start_time = datetime.strptime(start_time, "%H:%M").time()
                 if isinstance(end_time, str):
-                    end_time = datetime.strptime(end_time, "%H:%M").time()
+                    end_time   = datetime.strptime(end_time, "%H:%M").time()
 
-                today = datetime.today()
+                today         = datetime.today()
                 start_time_dt = datetime.combine(today, start_time)
                 end_time_dt   = datetime.combine(today, end_time)
 
@@ -1286,6 +1291,7 @@ def get_swal_texts():
         'cancelledMessage'      : _('No correction has been made.'),
         'incorrectPatternLabel' : _('Incorrect format'),
         'incorrectPatternText'  : _('The name must be in the format "Last Name, First Name", separated by a comma.'),
+        'chooseClass'           : _('Choose a Class'),
     }
     
     
@@ -1499,6 +1505,3 @@ def admin_data():
         }
     # Devolver los datos del meeting center como JSON
     return jsonify(meeting_center)
-
-
-

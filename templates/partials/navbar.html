@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-lg bg-dark border-bottom border-body sticky-top" data-bs-theme="dark">
+<nav class="navbar navbar-expand-lg bg-dark border-bottom border-body sticky-top z-3" data-bs-theme="dark">
     <div class="container">
         <a class="navbar-brand" href="#">
             <img src="{{ url_for('static', filename='/img/favicon/android-chrome-512x512.png') }}" alt="Logo" width="30" height="30"
@@ -23,7 +23,7 @@
 
                             {% if session['role'] =='Owner' or session['role'] =='Admin' %}
                                 <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="bi bi-gear"></i>  {{ _('Admin') }}</a>
+                                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="bi bi-gear"></i>  {{ 'Admin' }}</a>
                                     <div class="dropdown-menu" aria-labelledby="navbarDropdown">
                                         <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.attendances' else '' }}" href="{{ url_for('routes.attendances') }}"><i class="bi bi-clipboard-data"></i>  {{ _('View Attendance') }}</a>
                                         <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.manual_attendance' else '' }}" href="{{ url_for('routes.manual_attendance') }}"><i class="bi bi-file-earmark-plus"></i>  {{ _('Add Attendance') }}</a>
@@ -35,6 +35,8 @@
 
                                         {% if session['role'] =='Owner' %}
                                             <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.meeting_centers' else '' }}" href="{{ url_for('routes.meeting_centers') }}"><i class="bi bi-buildings"></i>   {{ _('Chuch Units') }}</a>
+                                            <div class="dropdown-divider"></div>
+                                            <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.admin' else '' }}" href="{{ url_for('routes.admin') }}"><i class="bi bi-gear"></i>  {{ 'Admin Panel' }}</a>
                                         {% endif %}
 
                                     </div>
@@ -48,7 +50,9 @@
                         </div>                        
                         <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.logout') }}"></i>{{ _('Logout') }}  <i class="bi bi-box-arrow-right"></i></a></i></li>
                     {% else %}
-                        <li class="nav-item {{ 'active' if request.endpoint == 'routes.login' else '' }}"><a class="nav-link" href="{{ url_for('routes.login') }}"><i class="bi bi-box-arrow-in-right"></i> {{ _('Login') }}</a></li>
+                    {% if request.endpoint != 'routes.login' %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.login') }}"><i class="bi bi-box-arrow-in-right"></i> {{ _('Login') }}</a></li>
+                    {% endif %}
                     {% endif %}
 
                     <li class="nav-item"><a class="nav-link"  id="themeSwitcher" href=""><i class="bi bi-brightness-high"></i></a></li>
