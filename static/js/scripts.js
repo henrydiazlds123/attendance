@@ -37,6 +37,7 @@ function handleFlashMessages() {
   }
 }
 
+
 // ----------- Rellenar nombre del estudiante automáticamente -----------
 function autoFillStudentName() {
   const studentNameInput = document.getElementById("studentName");
@@ -73,8 +74,6 @@ async function initAttendanceForm() {
   });
 }
 
-
-
 async function sendAttendanceForm(formData) {
   try {
     const response = await fetch("/registrar", { method: "POST", body: formData });
@@ -82,19 +81,49 @@ async function sendAttendanceForm(formData) {
     const texts    = await fetch('/get_swal_texts').then(response => response.json());
 
     if (response.ok && data.success) {
-      Swal.fire(
-        texts.great, texts.attendanceRecorded.replace("{student_name}", data.student_name), "success").then(() => {
-        document.getElementById("studentName").value = "";
+      Swal.fire({
+        title            : texts.great,
+        text             : texts.attendanceRecorded.replace("{student_name}", data.student_name),
+        icon             : "success",
+        confirmButtonText: "OK"
+      }).then((result) => { 
+        if (result.isConfirmed) {
+          const isLoggedIn = document.body.classList.contains("logged-in");
+          if (!isLoggedIn) { // Usuario NO logueado
+            let savedName = localStorage.getItem("studentName");
+            if (!savedName) {
+              localStorage.setItem("studentName", data.student_name);
+            }
+            window.location.href = "https://www.churchofjesuschrist.org";
+          } else { // Usuario logueado
+            document.getElementById("studentName").value = "";
+          }
+        }
       });
     } else {
-      // Obtener el mensaje de error desde el servidor o un mensaje genérico
       const errorMsg = data.message || (data.error_type === "main_class_restriction"
-        ? texts.sundayClassRestriction
-        : texts.alreadyRegistered.replace("{sunday_date}", data.sunday_date || "unknown"));
-    
-      Swal.fire(texts.errorTitle, errorMsg, "error");
+          ? texts.sundayClassRestriction
+          : texts.alreadyRegistered.replace("{sunday_date}", data.sunday_date || "unknown"));
+  
+      Swal.fire({
+          title: texts.errorTitle,
+          text: errorMsg,
+          icon: "error",
+          confirmButtonText: "OK"
+      }).then((result) => {
+          if (result.isConfirmed) {
+              const isLoggedIn = document.body.classList.contains("logged-in");
+  
+              if (!isLoggedIn && localStorage.getItem("studentName")) {
+                  // Si el usuario NO está logueado y tiene un nombre guardado, redirigirlo
+                  window.location.href = "https://www.churchofjesuschrist.org/";
+              } else {
+                  // Si el usuario está logueado, limpiar el campo de nombre
+                  document.getElementById("studentName").value = "";
+              }
+          }
+      });
     }
-
   } catch (error) {
     const texts = await fetch('/get_swal_texts').then(response => response.json());
     Swal.fire(texts.errorTitle, texts.connectionError, "error");

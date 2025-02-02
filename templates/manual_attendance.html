@@ -4,7 +4,7 @@
 {% block content %}
     <div class="col-md">
         <div class="col-xl-8">
-            <p class="mt-3">{{ _('Use this page to add the attendance to the classes listed below. You will be able to record attendance for those people who do not have the means to do so themselves.') }}</p>
+            <p class="mt-1">{{ _('Use this page to add the attendance to the classes listed below. You will be able to record attendance for those people who do not have the means to do so themselves.') }}</p>
             <p>{{ _('To be able register your attendance, first you will need to choose a class.') }}</p>
         </div>
         
@@ -19,7 +19,7 @@
         <form id="attendanceForm" method="POST" action="{{ url_for('routes.registrar') }}">
             <div class="input-group mt-4">
                 <input type="text" class="form-control" id="studentName" name="studentName" aria-label="{{ _('Enter your Name and Last name') }}" aria-describedby="button-addon2"  placeholder="{{ _('Name & Lastname') }}">
-                <button class="btn btn-primary" type="submit" id="button-addon2"><i class="fa fa-share-square-o" aria-hidden="true"></i> {{ _('Send') }}</button>               
+                <button class="btn btn-primary btn-lg" type="submit" id="button-addon2"><i class="fa fa-share-square-o" aria-hidden="true"></i> {{ _('Send') }}</button>               
             </div>
             <input type="hidden" id="className" name="className">
             <input type="hidden" id="date" name="date">

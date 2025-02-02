@@ -34,6 +34,50 @@
             </form>
         </div>
     </div>
+    <script>
+        async function initializePage() {
+            // ----------- Configuración de parámetros de clase desde URL ----------- 
+            const urlParams  = new URLSearchParams(window.location.search);
+            const className  = urlParams.get("class_name");
+            const classCode  = urlParams.get("class");
+            const sundayCode = urlParams.get("code");
+            const unitNumber = urlParams.get("unit");
+
+            try {
+                const response = await fetch('/get_swal_texts');
+                const texts = await response.json();
+
+                if (className) {
+                    document.getElementById("classNameDisplay").textContent = className;
+                    document.getElementById("className").value = decodeURIComponent(className);
+                    document.getElementById("classCode").value = classCode;
+                    document.getElementById("sundayCode").value = sundayCode;
+                    document.getElementById("unitNumber").value = unitNumber;
+
+                    const listGroupItems = document.querySelectorAll('.list-group-item');
+                    listGroupItems.forEach(item => {
+                        if (item.textContent.trim() === decodeURIComponent(className)) {
+                            item.classList.add('active');
+                        } else {
+                            item.classList.remove('active');
+                        }
+                    });             
+                } else {
+                    document.getElementById("classNameDisplay").textContent = texts.chooseClass;
+                    document.getElementById("button-addon2").disabled = true;
+                    document.getElementById("studentName").disabled = true;
+                }         
+
+                // ----------- Establecer la fecha actual -----------
+                document.getElementById("date").value = new Date().toISOString().split("T")[0]; 
+            } catch (error) {
+                console.error("Error al obtener los textos:", error);
+            }
+        }
+
+        // Llamar a la función async
+        initializePage();
+    </script>
 
 
     

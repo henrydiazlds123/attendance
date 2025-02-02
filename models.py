@@ -81,9 +81,16 @@ class NameCorrections(db.Model):
 class Setup(db.Model):
     __tablename__ = 'setup'
 
-    id    = db.Column(db.Integer, primary_key=True)
-    key   = db.Column(db.String(50), unique=True, nullable=False)
-    value = db.Column(db.String(50), nullable=False)
+    id                = db.Column(db.Integer, primary_key=True)
+    key               = db.Column(db.String(50), nullable=False)
+    value             = db.Column(db.String(50), nullable=False)
+    meeting_center_id = db.Column(db.Integer, db.ForeignKey('meeting_center.id'), nullable=False, index=True)
+
+    meeting_center = db.relationship('MeetingCenter', backref=db.backref('setup', lazy=True))
+
+    __table_args__ = (
+        db.UniqueConstraint('key', 'meeting_center_id', name='_key_meeting_center_uc'),
+    )
 
 
 #=======================================================================

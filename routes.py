@@ -81,6 +81,7 @@ def reset_name():
 @bp.route('/')
 def index():
     return render_template('index.html')
+    # return redirect('/login', code=302)
 
 
 # =============================================================================================
@@ -259,7 +260,7 @@ def attendance():
 
     # if not class_code or not sunday_code or class_code not in CLASES:
     if not class_code or not sunday_code or not unit_number:
-        return render_template('4xx.html', page_title=_('400 Bad Request'), error_number='404', error_title=_(_('Check what you wrote')), error_messages=_('The address you entered is incomplete!')), 400
+        return render_template('4xx.html', page_title=_('400 Invalid URL'), error_number='400', error_title=_(_('Check what you wrote!')), error_message=_('The address you entered is incomplete!')), 400
 
     code_verification_setting = Setup.query.filter_by(key='code_verification').first()
     code_verification_enabled = code_verification_setting.value if code_verification_setting else 'true'
@@ -271,7 +272,7 @@ def attendance():
     if int(sunday_code) == expected_code:
         return render_template('attendance.html', class_code=class_code, sunday_code=sunday_code, sunday=get_next_sunday(),unit_number=unit_number)
     else:
-        return render_template('4xx.html', page_title='403 Forbidden', error_number='403', error_title=_('It seems that you are lost'), error_messages=_("Incorrect QR for this week's classes!")), 403
+        return render_template('4xx.html', page_title='403 Incorrect QR', error_number='403', error_title=_('It seems that you are lost!'), error_message=_("Wrong QR for this week's classes!")), 403
     
 
 # =============================================================================================
@@ -480,7 +481,7 @@ def delete_attendance(id):
 
 # =============================================================================================
 @bp.route('/attendance/manual')
-@role_required('User', 'Admin', 'Owner', 'Operator')
+# @role_required('User', 'Admin', 'Owner', 'Operator')
 def manual_attendance():
     """Genera enlaces solo para las clases correspondientes al próximo domingo."""
     next_sunday_code = get_next_sunday_code(get_next_sunday())
@@ -676,6 +677,7 @@ def registrar():
 
         nombre, apellido = student_name.split(" ", 1)
         formatted_name = f"{apellido}, {nombre}"
+        print(f"class_code {class_code})")
 
         # Verificar si la clase es válida
         class_entry = Classes.query.filter_by(class_code=class_code).first()
@@ -971,11 +973,13 @@ def download_pdf(filename):
         if not os.path.exists(full_path):
             print("File not found:", full_path)  # More detailed log
             abort(404, description=f"File not found: {filename}")
+                       
 
         return send_from_directory(directory, filename, as_attachment=True)
     except Exception as e:
         print(f"Error: {e}")  # Log the actual error for debugging
         abort(500, description=str(e))
+        
         
         
 # =============================================================================================
