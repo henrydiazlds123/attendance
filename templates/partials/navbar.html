@@ -30,11 +30,11 @@
                                         <div class="dropdown-divider"></div>
                                         <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.users' else '' }}" href="{{ url_for('routes.users') }}"><i class="bi bi-person-circle"></i>  {{ _('Users') }}</a>
                                         <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.classes' else '' }}" href="{{ url_for('routes.classes') }}"><i class="bi bi-mortarboard-fill"></i>  {{ _('Classes') }}</a>
+                                        
+                                        {% if session['role'] =='Owner' %}
                                         <div class="dropdown-divider"></div>
                                         <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.organizations' else '' }}" href="{{ url_for('routes.organizations') }}"><i class="bi bi-diagram-3"></i>  {{ _('Organizations') }}</a>
-
-                                        {% if session['role'] =='Owner' %}
-                                            <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.meeting_centers' else '' }}" href="{{ url_for('routes.meeting_centers') }}"><i class="bi bi-buildings"></i>   {{ _('Chuch Units') }}</a>
+                                            <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.meeting_centers' else '' }}" href="{{ url_for('routes.meeting_centers') }}"><i class="bi bi-buildings"></i>  {{ _('Chuch Units') }}</a>
                                             <div class="dropdown-divider"></div>
                                             <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.admin' else '' }}" href="{{ url_for('routes.admin') }}"><i class="bi bi-gear"></i>  {{ 'Admin Panel' }}</a>
                                         {% endif %}

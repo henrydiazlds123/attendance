@@ -20,12 +20,12 @@
             <td>
               <form  id="deleteForm-correction-{{ correction.id }}" method="POST" action="{{ url_for('routes.delete_name_correction', id=correction.id) }}" style="display:inline;">
                   <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete('correction', {{ correction.id }})">
-                      Delete
+                    <i class="bi bi-trash"></i>
                   </button>
               </form>
               <form method="POST" action="{{ url_for('routes.revert_name_correction', id=correction.id) }}" style="display:inline;" id="revert-form-{{ correction.id }}">
                   <button type="button" class="btn btn-warning btn-sm" onclick="confirmRevert({{ correction.id }})">
-                      Revert
+                    <i class="bi bi-recycle"></i>
                   </button>
               </form>
           </td>

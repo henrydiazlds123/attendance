@@ -7,8 +7,8 @@
 
 {% if session['role'] == 'Owner' %}
     <div class="form-group col-auto">
-        <label class="my-2 mr-2 col-auto" for="meetingCenterSelector">{{ _('Choose a Meeting Center') }}</label>
-        <select class="form-select  my-1 mr-sm-2" id="meetingCenterSelector">
+        <label class="my-2 mr-2 col-auto" for="meetingCenterSelector">{{ _('Choose a Meeting Center') }}:</label>
+        <select class="form-select" id="meetingCenterSelector">
             <option value="all">{{ _('All Meeting Centers') }}</option>
         </select>
     </div>
@@ -16,7 +16,7 @@
     <form class="col-auto" id="bypassForm" method="POST" action="/admin/bypass">
         <div class="form-inline mb-3">
             <label class="my-2 mr-2 col-auto" for="bypass_restriction">{{ _('Allow attendance any day?') }} </label>
-            <select class="form-select my-1 mr-sm-2" name="bypass_restriction" id="bypass_restriction" data-toggle="tooltip"
+            <select class="form-select" name="bypass_restriction" id="bypass_restriction" data-toggle="tooltip"
                 title="Activar esto permitirá registrar asistencia cualquier día de la semana en la unidad de prueba (ID = 2)."
                 onchange="submitBypassForm()">
                 <option value="true" {% if bypass_enabled=='true' %}selected{% endif %}>{{ _('Yes') }}</option>
@@ -29,7 +29,7 @@
     <form class="col-auto" id="verificationForm" method="POST" action="/admin">
         <div class="form-inline mb-3">
             <label class="my-2 mr-2 col-auto" for="code_verification">{{ _('Lock QR code?') }} </label>
-            <select class="form-select my-1 mr-sm-2" name="code_verification" id="code_verification" data-toggle="tooltip"
+            <select class="form-select" name="code_verification" id="code_verification" data-toggle="tooltip"
                 title="Al activar la Verificación de Domingo, solo se podrá usar la imagen de QR Code impresa para esa semana."
                 onchange="submitVerificationForm()">
                 <option value="true" {% if verification_enabled=='true' %}selected{% endif %}>{{ _('Yes') }}</option>
@@ -37,16 +37,30 @@
             </select>
         </div>
     </form>
+    {% if session['role'] == 'Owner' %}
+    <div class="form-group col-auto">
+        <div class="form-inline mb-3">
+        <button type="button" class="btn btn-primary"
+                href="{{ url_for('routes.export_attendance', **request.args.to_dict()) }}"><i class="bi bi-filetype-csv"></i></button>
+    </div>
+    {% endif %}
+</div>
+<div class="col-12 mb-3">
+    <div class="col-md-3">
+        <ol class="list-group list-group-flush">
+            <li class="list-group-item"><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{{ url_for('routes.attendances') }}"><i class="bi bi-clipboard-data"></i>  {{ _('Attendance Management') }}</a></li>
+            <li class="list-group-item"><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{{ url_for('routes.users') }}"><i class="bi bi-person-circle"></i>  {{ _('Users Management') }}</a></li>
+            <li class="list-group-item"><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{{ url_for('routes.classes') }}"><i class="bi bi-mortarboard-fill"></i>  {{ _('Classes Management') }}</a></li>
+            {% if session['role'] == 'Owner' %}
+            <li class="list-group-item"><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{{ url_for('routes.organizations') }}"><i class="bi bi-diagram-3"></i>  {{ _('Organizations Management') }}</a></li>
+            <li class="list-group-item"><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{{ url_for('routes.meeting_centers') }}"><i class="bi bi-buildings"></i> {{ _('Church Units Management') }}</a></li>
+            {% endif %}
+        </ol>
+    </div>
+</div>
 
-    <ul>
-        <li><a href="{{ url_for('routes.users') }}">{{ _('Users Management') }}</a></li>
-        <li><a href="{{ url_for('routes.attendances') }}">{{ _('Attendance Management') }}</a></li>
-        <li><a href="{{ url_for('routes.classes') }}">{{ _('Classes Management') }}</a></li>
-        {% if session['role'] == 'Owner' %}
-        <li><a href="{{ url_for('routes.organizations') }}">{{ _('Organizations Management') }}</a></li>
-        <li><a href="{{ url_for('routes.meeting_centers') }}">{{ _('Church Units Management') }}</a></li>
-        {% endif %}
-    </ul>
+
+
 
     <div class="container my-4">
         <h3>Name Corrections</h3>

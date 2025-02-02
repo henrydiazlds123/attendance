@@ -601,7 +601,7 @@ def attendance_report():
     
 # =============================================================================================
 @bp.route('/attendance/export', methods=['GET'])
-@role_required('Owner', 'Admin')
+@role_required('Owner')
 def export_attendance():
     # Obtener la fecha actual en formato YYYY-MM-DD para el nombre del archivo
     current_date = datetime.now().strftime('%Y-%m-%d')
@@ -665,124 +665,6 @@ def export_attendance():
 
     
 # =============================================================================================
-# @bp.route('/registrar', methods=['POST'])
-# def registrar():
-#     try:
-#         student_name        = request.form.get('studentName').title()
-#         class_code          = request.form.get('classCode')  # Usar código de clase en lugar del nombre
-#         sunday_date         = get_next_sunday()
-#         sunday_code         = request.form.get('sundayCode')
-#         unit_number         = request.form.get('unitNumber')
-        
-#         # correction = NameCorrections.query.filter_by(wrong_name=student_name).first()
-#         # if correction:
-#         #     student_name = correction.correct_name  # Usa el nombre corregido.
-            
-#         nombre, apellido    = student_name.split(" ", 1)
-#         formatted_name      = f"{apellido}, {nombre}"
-
-#         # Verificar si la clase es válida
-#         class_entry = Classes.query.filter_by(class_code=class_code).first()
-#         if not class_entry:
-#             return jsonify({
-#                 "success": False,
-#                 "message": _('The selected class is not valid.'),
-#             }), 400
-
-#         # Verificar si el MeetingCenter tiene restricción mediante el campo is_restricted
-#         meeting_center = MeetingCenter.query.filter_by(unit_number=unit_number).first()
-#         if not meeting_center:
-#             return jsonify({
-#                 "success": False,
-#                 "message": _('The church unit is invalid.'),
-#             }), 400
-
-#         if class_entry.class_type == "Main":
-#             # Verificar restricciones de tiempo solo si el Meeting Center está restringido
-#             if meeting_center.is_restricted:
-#                 grace_period_hours = int(meeting_center.grace_period_hours) if meeting_center.grace_period_hours else 0
-#                 time_now = datetime.now()
-
-#                 # Asegurarse de que start_time y end_time están en formato datetime
-#                 start_time = meeting_center.start_time
-#                 end_time   = meeting_center.end_time
-
-#                 if isinstance(start_time, str):
-#                     start_time = datetime.strptime(start_time, "%H:%M").time()
-#                 if isinstance(end_time, str):
-#                     end_time   = datetime.strptime(end_time, "%H:%M").time()
-
-#                 today         = datetime.today()
-#                 start_time_dt = datetime.combine(today, start_time)
-#                 end_time_dt   = datetime.combine(today, end_time)
-
-#                 grace_start_time = start_time_dt - timedelta(hours=grace_period_hours)
-#                 grace_end_time   = end_time_dt + timedelta(hours=grace_period_hours)
-
-#                 if not (grace_start_time <= time_now <= grace_end_time):
-#                     return jsonify({
-#                         "success": False,
-#                         "message": _('Attendance can only be recorded during the grace period or meeting time.'),
-#                     }), 400
-
-#             # Verificar si ya existe un registro para este estudiante en una clase `Main` en el mismo domingo
-#             existing_main_attendance = Attendance.query.filter_by(
-#                 student_name      = formatted_name,
-#                 sunday_date       = sunday_date,
-#                 meeting_center_id = meeting_center.id,
-#             ).join(Classes).filter(Classes.class_type == "Main").first()
-
-#             if existing_main_attendance:
-#                 return jsonify({
-#                     "success": False,
-#                     "error_type": "main_class_restriction",
-#                     "message": _("%(name)s! You have already registered for a Sunday class today!") % {'name': formatted_name}
-#                 }), 400
-
-#         elif class_entry.class_type == "Extra":
-#             # Verificar si ya existe un registro para este estudiante y la misma clase `Extra` en el mismo domingo
-#             existing_extra_attendance = Attendance.query.filter_by(
-#                 student_name      = formatted_name,
-#                 class_id          = class_entry.id,
-#                 sunday_date       = sunday_date,
-#                 meeting_center_id = meeting_center.id
-#             ).first()
-
-#             if existing_extra_attendance:
-#                 return jsonify({
-#                     "success": False,
-#                     "message": _("%(name)s! You already have an attendance registered for this class on Sunday %(date)s!") % {
-#                         'name': formatted_name, 
-#                         'date': sunday_date.strftime('%b %d, %Y')
-#                     }
-#                 }), 400
-
-#         # Registrar la asistencia
-#         new_attendance = Attendance(
-#             student_name        = formatted_name,
-#             class_id            = class_entry.id,
-#             class_code          = class_code,
-#             sunday_date         = sunday_date,
-#             sunday_code         = sunday_code,
-#             meeting_center_id   = meeting_center.id
-#         )
-#         db.session.add(new_attendance)
-#         db.session.commit()
-
-#         return jsonify({
-#             "success"     : True,
-#             "message"     : _('Attendance recorded successfully.'),
-#             "student_name": student_name,
-#             "class_name"  : class_entry.class_name,
-#             "sunday_date" : sunday_date.strftime("%b %d, %Y")
-#         }), 200
-
-#     except Exception as e:
-#         return jsonify({
-#             "success": False,
-#             "message": _('There was an error recording attendance: %(error)s') % {'error': str(e)}
-#         }), 500
-
 @bp.route('/registrar', methods=['POST'])
 def registrar():
     try:
@@ -901,8 +783,6 @@ def registrar():
             "message": _('There was an error recording attendance: %(error)s') % {'error': str(e)}
         }), 500
 
-
-        
         
 # =============================================================================================
 @bp.route('/pdf/list', methods=['GET'])
@@ -934,7 +814,7 @@ def list_pdfs():
 
 # =============================================================================================
 @bp.route('/pdf/generate_all', methods=['GET', 'POST'])
-@role_required('Admin', 'Owner')
+@login_required
 def generate_all_pdfs():
     return redirect(url_for('routes.generate_pdfs', type='todos'))  # redirige a la misma función con parámetro "todos"
 
@@ -948,7 +828,7 @@ def generate_week_pdfs():
 
 # =============================================================================================
 @bp.route('/pdf/generate_extra', methods=['GET', 'POST'])
-@role_required('Admin', 'Owner')
+@login_required
 def generate_extra_pdfs():
     selected_date = request.form.get('date')  # Obtener la fecha desde el formulario
     print(f'Date: {selected_date}')
@@ -964,7 +844,7 @@ def generate_extra_pdfs():
 
 # =============================================================================================
 @bp.route('/pdf/generate', methods=['GET', 'POST'])
-@role_required('Admin', 'Owner')
+@login_required
 def generate_pdfs():
     user_date = request.args.get('selected_date')
     print(f"User-provided date: {user_date}")  # Debugging
@@ -1159,6 +1039,7 @@ def delete_meeting_center(id):
 
 # =============================================================================================
 @bp.route('/meeting_center/set', methods=['POST'])
+@login_required
 def set_meeting_center():
     data = request.get_json()
     meeting_center_id = data.get('meeting_center_id', 'all')
@@ -1188,6 +1069,7 @@ def set_meeting_center():
     
 # =============================================================================================
 @bp.route('/meeting_center/api')
+@role_required('Owner')
 def get_meeting_centers():
     meeting_centers = MeetingCenter.query.order_by(MeetingCenter.name).all()
     return jsonify([
@@ -1369,8 +1251,7 @@ def delete_organization(id):
 # =============================================================================================
 @bp.route('/get_swal_texts', methods=['GET'])
 def get_swal_texts():
-    return {
-        
+    return {    
         'alreadyRegistered'     : _('You already have registered assistance on {sunday_date}.'),
         'actionCanceled'        : _('Action canceled'),
         'attendanceRecorded'    : _('¡{student_name}, your attendance was recorded!'),
@@ -1570,8 +1451,8 @@ def update_name_correction():
     
 # =============================================================================================    
 @bp.route('/admin', methods=['GET', 'POST'])
+@role_required('Admin', 'Owner')
 def admin():
-    
     meeting_center_id = get_meeting_center_id()
     
     if meeting_center_id == 'all':
@@ -1610,8 +1491,7 @@ def admin():
             db.session.commit()
 
         return redirect(url_for('routes.admin'))
-    
-    
+   
     verification_enabled = code_verification_setting.value if code_verification_setting else 'true'
     
     return render_template('admin.html', 
@@ -1715,6 +1595,3 @@ def admin_data():
         }
     # Devolver los datos del meeting center como JSON
     return jsonify(meeting_center)
-
-
-

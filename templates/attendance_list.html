@@ -13,7 +13,6 @@
     window.location.href = "{{ url_for('routes.attendances') }}";
   }
 
-
 </script>
 
 {% endblock %}
@@ -31,12 +30,9 @@
   {% endif %}
   {% if session['role'] == 'Admin' or session['role'] == 'Owner' %}
 
-
     <div class="col-auto mb-2">
       <a class="btn btn-primary col-auto" href="{{ url_for('routes.create_attendance') }}"><i class="bi bi-plus-circle-fill"></i> {{ _('New Attendance') }}</a>
     </div>
-
-
 
   {% endif %}
   <div class="mb-5">
