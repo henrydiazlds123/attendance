@@ -1,0 +1,41 @@
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>{{_('Wrong Name')}}</th>
+            <th>{{_('Correct Name')}}</th>
+            <th>{{_('Added By')}}</th>
+            <th>{{_('Created At')}}</th>
+            <th>{{_('Actions')}}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for correction in name_corrections %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ correction.wrong_name }}</td>
+            <td>{{ correction.correct_name }}</td>
+            <td>{{ correction.added_by }}</td>
+            <td>{{ correction.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+            <td>
+              <form  id="deleteForm-correction-{{ correction.id }}" method="POST" action="{{ url_for('routes.delete_name_correction', id=correction.id) }}" style="display:inline;">
+                  <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete('correction', {{ correction.id }})">
+                      Delete
+                  </button>
+              </form>
+              <form method="POST" action="{{ url_for('routes.revert_name_correction', id=correction.id) }}" style="display:inline;" id="revert-form-{{ correction.id }}">
+                  <button type="button" class="btn btn-warning btn-sm" onclick="confirmRevert({{ correction.id }})">
+                      Revert
+                  </button>
+              </form>
+          </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+  </table>
+  
+  <script>
+        
+
+  </script>
+  

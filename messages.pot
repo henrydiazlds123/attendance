@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-02-01 16:32-0700\n"
+"POT-Creation-Date: 2025-02-01 21:11-0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -176,8 +176,8 @@ msgstr ""
 msgid "Class Type"
 msgstr ""
 
-#: forms.py:134 routes.py:1310 routes.py:1319 routes.py:1328 routes.py:1337
-#: routes.py:1346 routes.py:1355 routes.py:1364
+#: forms.py:134 routes.py:1432 routes.py:1441 routes.py:1450 routes.py:1459
+#: routes.py:1468 routes.py:1477 routes.py:1486
 msgid "Main"
 msgstr ""
 
@@ -225,8 +225,8 @@ msgstr ""
 msgid "New User"
 msgstr ""
 
-#: routes.py:150 routes.py:416 routes.py:426 routes.py:441 routes.py:1009
-#: routes.py:1137 routes.py:1213
+#: routes.py:150 routes.py:416 routes.py:426 routes.py:441 routes.py:1129
+#: routes.py:1257 routes.py:1333
 msgid "Create"
 msgstr ""
 
@@ -238,7 +238,7 @@ msgstr ""
 msgid "Edit User"
 msgstr ""
 
-#: routes.py:174 routes.py:466 routes.py:1023 routes.py:1164 routes.py:1231
+#: routes.py:174 routes.py:466 routes.py:1143 routes.py:1284 routes.py:1351
 msgid "Update"
 msgstr ""
 
@@ -327,399 +327,409 @@ msgstr ""
 msgid "Attendance record deleted successfully."
 msgstr ""
 
-#: routes.py:689
+#: routes.py:803
 msgid "The selected class is not valid."
 msgstr ""
 
-#: routes.py:697
+#: routes.py:811
 msgid "The church unit is invalid."
 msgstr ""
 
-#: routes.py:725
+#: routes.py:843
 msgid "Attendance can only be recorded during the grace period or meeting time."
 msgstr ""
 
-#: routes.py:739
+#: routes.py:857
 #, python-format
 msgid "%(name)s! You have already registered for a Sunday class today!"
 msgstr ""
 
-#: routes.py:754
+#: routes.py:872
 #, python-format
 msgid ""
 "%(name)s! You already have an attendance registered for this class on "
 "Sunday %(date)s!"
 msgstr ""
 
-#: routes.py:774
+#: routes.py:892
 msgid "Attendance recorded successfully."
 msgstr ""
 
-#: routes.py:783
+#: routes.py:901
 #, python-format
 msgid "There was an error recording attendance: %(error)s"
 msgstr ""
 
-#: routes.py:838
+#: routes.py:958
 msgid "You must provide a date for this class."
 msgstr ""
 
-#: routes.py:866
+#: routes.py:986
 msgid "The date must be today or in the future."
 msgstr ""
 
-#: routes.py:872
+#: routes.py:992
 msgid "Invalid date for extra class."
 msgstr ""
 
-#: routes.py:935
+#: routes.py:1055
 msgid "Attendance Sheet"
 msgstr ""
 
-#: routes.py:955
+#: routes.py:1075
 msgid "QR Codes generated successfully."
 msgstr ""
 
-#: routes.py:1007
+#: routes.py:1127
 msgid "Meeting center created successfully!"
 msgstr ""
 
-#: routes.py:1009
+#: routes.py:1129
 msgid "Create new Meeting center"
 msgstr ""
 
-#: routes.py:1021
+#: routes.py:1141
 msgid "Meeting Center updated successfully."
 msgstr ""
 
-#: routes.py:1023
+#: routes.py:1143
 msgid "Edit Meeting Center"
 msgstr ""
 
-#: routes.py:1032
+#: routes.py:1152
 msgid "The meeting center cannot be deleted because it has registered attendance."
 msgstr ""
 
-#: routes.py:1037
+#: routes.py:1157
 msgid "Meeting Center successfully removed."
 msgstr ""
 
-#: routes.py:1050 routes.py:1497 templates/admin.html:10
+#: routes.py:1170 routes.py:1707 templates/admin.html:12
+#: templates/admin.html:120
 msgid "All Meeting Centers"
 msgstr ""
 
-#: routes.py:1059
+#: routes.py:1179
 msgid "Unknown"
 msgstr ""
 
-#: routes.py:1132
+#: routes.py:1252
 msgid "Class created successfully!"
 msgstr ""
 
-#: routes.py:1136 routes.py:1163
+#: routes.py:1256 routes.py:1283
 msgid ""
 "A class with this name, short name, or code already exists in the same "
 "church unit."
 msgstr ""
 
-#: routes.py:1137 templates/classes.html:46
+#: routes.py:1257 templates/classes.html:46
 msgid "Create New Class"
 msgstr ""
 
-#: routes.py:1159
+#: routes.py:1279
 msgid "Class updated successfully!"
 msgstr ""
 
-#: routes.py:1164
+#: routes.py:1284
 msgid "Edit Class"
 msgstr ""
 
-#: routes.py:1173
+#: routes.py:1293
 msgid "The class cannot be deleted because it has attendance recorded."
 msgstr ""
 
-#: routes.py:1176
+#: routes.py:1296
 msgid "Cannot delete a main class."
 msgstr ""
 
-#: routes.py:1181
+#: routes.py:1301
 msgid "Class deleted successfully!"
 msgstr ""
 
-#: routes.py:1184
+#: routes.py:1304
 #, python-format
 msgid "Error deleting class: %(error)s"
 msgstr ""
 
-#: routes.py:1207
+#: routes.py:1327
 msgid "Organization created successfully!"
 msgstr ""
 
-#: routes.py:1211 routes.py:1230
+#: routes.py:1331 routes.py:1350
 msgid "Error: Organization name must be unique."
 msgstr ""
 
-#: routes.py:1213
+#: routes.py:1333
 msgid "Create new Organization"
 msgstr ""
 
-#: routes.py:1226
+#: routes.py:1346
 msgid "Organization updated successfully!"
 msgstr ""
 
-#: routes.py:1231 templates/organizations.html:20
+#: routes.py:1351 templates/organizations.html:20
 msgid "Edit Organization"
 msgstr ""
 
-#: routes.py:1242
+#: routes.py:1362
 msgid "Organization deleted successfully!"
 msgstr ""
 
-#: routes.py:1245
+#: routes.py:1365
 msgid "Error: Could not delete organization."
 msgstr ""
 
-#: routes.py:1254
+#: routes.py:1374
 msgid "You already have registered assistance on {sunday_date}."
 msgstr ""
 
-#: routes.py:1255
+#: routes.py:1375
 msgid "Action canceled"
 msgstr ""
 
-#: routes.py:1256
+#: routes.py:1376
 msgid "¡{student_name}, your attendance was recorded!"
 msgstr ""
 
-#: routes.py:1257 templates/form.html:19
+#: routes.py:1377 templates/form.html:19
 msgid "Cancel"
 msgstr ""
 
-#: routes.py:1258
+#: routes.py:1378
 msgid "Cancelled"
 msgstr ""
 
-#: routes.py:1259
-msgid "Cleared!"
-msgstr ""
-
-#: routes.py:1260 routes.py:1287
-msgid "Confirm"
-msgstr ""
-
-#: routes.py:1261
-msgid "You 're sure?"
-msgstr ""
-
-#: routes.py:1262
-msgid "There was a problem connecting to the server."
-msgstr ""
-
-#: routes.py:1263
-msgid "This action will delete all records and cannot be undone."
-msgstr ""
-
-#: routes.py:1264
-msgid "This record will be deleted."
-msgstr ""
-
-#: routes.py:1265
-msgid "Error"
-msgstr ""
-
-#: routes.py:1266
-msgid "Great!"
-msgstr ""
-
-#: routes.py:1267
-msgid "You must select a date!"
-msgstr ""
-
-#: routes.py:1268
-msgid "Please enter your name in 'First Name Last Name' format."
-msgstr ""
-
-#: routes.py:1269
-msgid "Your name was not removed."
-msgstr ""
-
-#: routes.py:1270
-msgid "The name has been removed."
-msgstr ""
-
-#: routes.py:1271
-msgid "No Name Found"
-msgstr ""
-
-#: routes.py:1272
-msgid "No name is currently saved."
-msgstr ""
-
-#: routes.py:1273
-msgid "QR codes were not generated"
-msgstr ""
-
-#: routes.py:1274
-msgid "Reset Student Name"
-msgstr ""
-
-#: routes.py:1275
-msgid "The saved name is: '{name}'. Do you want to clear it?"
-msgstr ""
-
-#: routes.py:1276
-msgid "Select a date for Extra classes"
-msgstr ""
-
-#: routes.py:1277
-msgid "You cannot register a 'Sunday Class' outside of Sunday."
-msgstr ""
-
-#: routes.py:1278 templates/admin.html:29 templates/classes.html:53
-msgid "Yes"
-msgstr ""
-
-#: routes.py:1279
-msgid "Yes, delete everything"
-msgstr ""
-
-#: routes.py:1280
-msgid "Yes, clear it!"
-msgstr ""
-
-#: routes.py:1281
-msgid "Yes, Delete it!"
-msgstr ""
-
-#: routes.py:1282
-msgid "warning"
-msgstr ""
-
-#: routes.py:1283
-msgid "Please enter the correct name"
-msgstr ""
-
-#: routes.py:1284
-msgid "Please enter the correct name for "
-msgstr ""
-
-#: routes.py:1285
-msgid "Correct Format: Last Name, First Name"
-msgstr ""
-
-#: routes.py:1286
-msgid "Enter the new name"
-msgstr ""
-
-#: routes.py:1288
-msgid "¡Success"
-msgstr ""
-
-#: routes.py:1289
-msgid "The name has been corrected"
-msgstr ""
-
-#: routes.py:1290
-msgid "There was a problem saving the correction"
-msgstr ""
-
-#: routes.py:1291
+#: routes.py:1379
 msgid "No correction has been made."
 msgstr ""
 
-#: routes.py:1292
+#: routes.py:1380
+msgid "Choose a Class"
+msgstr ""
+
+#: routes.py:1381
+msgid "Cleared!"
+msgstr ""
+
+#: routes.py:1382 routes.py:1414
+msgid "Confirm"
+msgstr ""
+
+#: routes.py:1383
+msgid "You 're sure?"
+msgstr ""
+
+#: routes.py:1384
+msgid "There was a problem connecting to the server."
+msgstr ""
+
+#: routes.py:1385
+msgid "This action will delete all records and cannot be undone."
+msgstr ""
+
+#: routes.py:1386
+msgid "This record will be deleted."
+msgstr ""
+
+#: routes.py:1387
+msgid "Error"
+msgstr ""
+
+#: routes.py:1388
+msgid "There was a problem saving the correction"
+msgstr ""
+
+#: routes.py:1389
+msgid "Great!"
+msgstr ""
+
+#: routes.py:1390
 msgid "Incorrect format"
 msgstr ""
 
-#: routes.py:1293
+#: routes.py:1391
 msgid ""
 "The name must be in the format \"Last Name, First Name\", separated by a "
 "comma."
 msgstr ""
 
-#: routes.py:1294
-msgid "Choose a Class"
+#: routes.py:1392
+msgid "You must select a date!"
 msgstr ""
 
-#: routes.py:1307
-msgid "Elders Quorum"
-msgstr ""
-
-#: routes.py:1308
-msgid "Elders_Q"
-msgstr ""
-
-#: routes.py:1316
-msgid "Aaronic Priesthood"
-msgstr ""
-
-#: routes.py:1317
-msgid "Aaronic_P"
-msgstr ""
-
-#: routes.py:1325
-msgid "Relief Society"
-msgstr ""
-
-#: routes.py:1326
-msgid "Relief_S"
-msgstr ""
-
-#: routes.py:1334
-msgid "Young Woman"
-msgstr ""
-
-#: routes.py:1335
-msgid "Young_W"
-msgstr ""
-
-#: routes.py:1343
-msgid "Sunday School Adults"
-msgstr ""
-
-#: routes.py:1344
-msgid "S_S_Adults"
-msgstr ""
-
-#: routes.py:1352
-msgid "Sunday School Youth"
-msgstr ""
-
-#: routes.py:1353
-msgid "S_S_Youth"
-msgstr ""
-
-#: routes.py:1361
-msgid "Fifth Sunday"
-msgstr ""
-
-#: routes.py:1362
-msgid "F_Sunday"
-msgstr ""
-
-#: routes.py:1375
-msgid "Classes already exist for this meeting center"
+#: routes.py:1393
+msgid "Please enter your name in 'First Name Last Name' format."
 msgstr ""
 
 #: routes.py:1394
-msgid "Main classes successfully populated."
+msgid "Your name was not removed."
+msgstr ""
+
+#: routes.py:1395
+msgid "The name has been removed."
+msgstr ""
+
+#: routes.py:1396
+msgid "No Name Found"
+msgstr ""
+
+#: routes.py:1397
+msgid "No name is currently saved."
+msgstr ""
+
+#: routes.py:1398
+msgid "QR codes were not generated"
 msgstr ""
 
 #: routes.py:1399
+msgid "Reset Student Name"
+msgstr ""
+
+#: routes.py:1400
+msgid "The saved name is: '{name}'. Do you want to clear it?"
+msgstr ""
+
+#: routes.py:1401
+msgid "Are you sure you want to revert this correction?"
+msgstr ""
+
+#: routes.py:1402
+msgid "Revert"
+msgstr ""
+
+#: routes.py:1403
+msgid "Select a date for Extra classes"
+msgstr ""
+
+#: routes.py:1404
+msgid "You cannot register a 'Sunday Class' outside of Sunday."
+msgstr ""
+
+#: routes.py:1405 templates/admin.html:22 templates/admin.html:35
+#: templates/classes.html:53
+msgid "Yes"
+msgstr ""
+
+#: routes.py:1406
+msgid "Yes, delete everything"
+msgstr ""
+
+#: routes.py:1407
+msgid "Yes, clear it!"
+msgstr ""
+
+#: routes.py:1408
+msgid "Yes, Delete it!"
+msgstr ""
+
+#: routes.py:1409
+msgid "warning"
+msgstr ""
+
+#: routes.py:1410
+msgid "Please enter the correct name"
+msgstr ""
+
+#: routes.py:1411
+msgid "Please enter the correct name for "
+msgstr ""
+
+#: routes.py:1412
+msgid "Correct Format: Last Name, First Name"
+msgstr ""
+
+#: routes.py:1413
+msgid "Enter the new name"
+msgstr ""
+
+#: routes.py:1415
+msgid "¡Success"
+msgstr ""
+
+#: routes.py:1416
+msgid "The name has been corrected"
+msgstr ""
+
+#: routes.py:1429
+msgid "Elders Quorum"
+msgstr ""
+
+#: routes.py:1430
+msgid "Elders_Q"
+msgstr ""
+
+#: routes.py:1438
+msgid "Aaronic Priesthood"
+msgstr ""
+
+#: routes.py:1439
+msgid "Aaronic_P"
+msgstr ""
+
+#: routes.py:1447
+msgid "Relief Society"
+msgstr ""
+
+#: routes.py:1448
+msgid "Relief_S"
+msgstr ""
+
+#: routes.py:1456
+msgid "Young Woman"
+msgstr ""
+
+#: routes.py:1457
+msgid "Young_W"
+msgstr ""
+
+#: routes.py:1465
+msgid "Sunday School Adults"
+msgstr ""
+
+#: routes.py:1466
+msgid "S_S_Adults"
+msgstr ""
+
+#: routes.py:1474
+msgid "Sunday School Youth"
+msgstr ""
+
+#: routes.py:1475
+msgid "S_S_Youth"
+msgstr ""
+
+#: routes.py:1483
+msgid "Fifth Sunday"
+msgstr ""
+
+#: routes.py:1484
+msgid "F_Sunday"
+msgstr ""
+
+#: routes.py:1497
+msgid "Classes already exist for this meeting center"
+msgstr ""
+
+#: routes.py:1516
+msgid "Main classes successfully populated."
+msgstr ""
+
+#: routes.py:1521
 #, python-format
 msgid "Unique constraint error:  %(error)s"
 msgstr ""
 
-#: routes.py:1402
+#: routes.py:1524
 #, python-format
 msgid "Error duplicating main classes for new meeting center: %(error)s"
 msgstr ""
 
-#: routes.py:1420
+#: routes.py:1542
 msgid "Missing required fields"
 msgstr ""
 
-#: routes.py:1498
+#: routes.py:1708
 msgid "All"
 msgstr ""
 
@@ -783,28 +793,36 @@ msgstr ""
 msgid "Welcome to the Attendance Management System"
 msgstr ""
 
-#: templates/admin.html:16 templates/users.html:5
+#: templates/admin.html:10
+msgid "Choose a Meeting Center"
+msgstr ""
+
+#: templates/admin.html:18
+msgid "Allow attendance any day?"
+msgstr ""
+
+#: templates/admin.html:31
+msgid "Lock QR code?"
+msgstr ""
+
+#: templates/admin.html:42 templates/users.html:5
 msgid "Users Management"
 msgstr ""
 
-#: templates/admin.html:17
+#: templates/admin.html:43
 msgid "Attendance Management"
 msgstr ""
 
-#: templates/admin.html:18 templates/classes.html:35
+#: templates/admin.html:44 templates/classes.html:35
 msgid "Classes Management"
 msgstr ""
 
-#: templates/admin.html:19
-msgid "Chuch Units Management"
-msgstr ""
-
-#: templates/admin.html:20 templates/organizations.html:7
+#: templates/admin.html:46 templates/organizations.html:7
 msgid "Organizations Management"
 msgstr ""
 
-#: templates/admin.html:25
-msgid "Lock QR code?"
+#: templates/admin.html:47
+msgid "Church Units Management"
 msgstr ""
 
 #: templates/attendance.html:2
@@ -893,7 +911,8 @@ msgid "Submited"
 msgstr ""
 
 #: templates/attendance_list.html:66 templates/classes.html:69
-#: templates/meeting_centers.html:21 templates/users.html:26
+#: templates/meeting_centers.html:21
+#: templates/partials/name_correction_table.html:9 templates/users.html:26
 msgid "Actions"
 msgstr ""
 
@@ -1096,6 +1115,22 @@ msgstr ""
 
 #: templates/partials/form_filter.html:64
 msgid "Month"
+msgstr ""
+
+#: templates/partials/name_correction_table.html:5
+msgid "Wrong Name"
+msgstr ""
+
+#: templates/partials/name_correction_table.html:6
+msgid "Correct Name"
+msgstr ""
+
+#: templates/partials/name_correction_table.html:7
+msgid "Added By"
+msgstr ""
+
+#: templates/partials/name_correction_table.html:8
+msgid "Created At"
 msgstr ""
 
 #: templates/partials/navbar.html:16

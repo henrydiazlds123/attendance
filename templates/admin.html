@@ -5,110 +5,145 @@
 {% block pageTitle %}{{ _('Welcome to the Attendance Management System') }}{% endblock %}
 {% block content %}
 
-    <form action="">
-        <select id="meetingCenterSelector">
+{% if session['role'] == 'Owner' %}
+    <div class="form-group col-auto">
+        <label class="my-2 mr-2 col-auto" for="meetingCenterSelector">{{ _('Choose a Meeting Center') }}</label>
+        <select class="form-select  my-1 mr-sm-2" id="meetingCenterSelector">
             <option value="all">{{ _('All Meeting Centers') }}</option>
-            <!-- Agrega más opciones según sea necesario -->
         </select>
+    </div>
+
+    <form class="col-auto" id="bypassForm" method="POST" action="/admin/bypass">
+        <div class="form-inline mb-3">
+            <label class="my-2 mr-2 col-auto" for="bypass_restriction">{{ _('Allow attendance any day?') }} </label>
+            <select class="form-select my-1 mr-sm-2" name="bypass_restriction" id="bypass_restriction" data-toggle="tooltip"
+                title="Activar esto permitirá registrar asistencia cualquier día de la semana en la unidad de prueba (ID = 2)."
+                onchange="submitBypassForm()">
+                <option value="true" {% if bypass_enabled=='true' %}selected{% endif %}>{{ _('Yes') }}</option>
+                <option value="false" {% if bypass_enabled=='false' %}selected{% endif %}>No</option>
+            </select>
+        </div>
+    </form>
+{% endif %}
+    <!-- Configuración de Bloqueo de Código QR -->
+    <form class="col-auto" id="verificationForm" method="POST" action="/admin">
+        <div class="form-inline mb-3">
+            <label class="my-2 mr-2 col-auto" for="code_verification">{{ _('Lock QR code?') }} </label>
+            <select class="form-select my-1 mr-sm-2" name="code_verification" id="code_verification" data-toggle="tooltip"
+                title="Al activar la Verificación de Domingo, solo se podrá usar la imagen de QR Code impresa para esa semana."
+                onchange="submitVerificationForm()">
+                <option value="true" {% if verification_enabled=='true' %}selected{% endif %}>{{ _('Yes') }}</option>
+                <option value="false" {% if verification_enabled=='false' %}selected{% endif %}>No</option>
+            </select>
+        </div>
     </form>
 
     <ul>
         <li><a href="{{ url_for('routes.users') }}">{{ _('Users Management') }}</a></li>
         <li><a href="{{ url_for('routes.attendances') }}">{{ _('Attendance Management') }}</a></li>
         <li><a href="{{ url_for('routes.classes') }}">{{ _('Classes Management') }}</a></li>
-        <li><a href="{{ url_for('routes.meeting_centers') }}">{{ _('Chuch Units Management') }}</a></li>
+        {% if session['role'] == 'Owner' %}
         <li><a href="{{ url_for('routes.organizations') }}">{{ _('Organizations Management') }}</a></li>
+        <li><a href="{{ url_for('routes.meeting_centers') }}">{{ _('Church Units Management') }}</a></li>
+        {% endif %}
     </ul>
 
-    <form class="col-auto" id="verificationForm" method="POST" action="/admin">
-        <div class="form-inline mb-3">
-          <label class="my-2 mr-2 col-auto" for="code_verification">{{ _('Lock QR code?') }} </label>
-          <select class="custom-select my-1 mr-sm-2" name="code_verification" id="code_verification" data-toggle="tooltip"
-            title="Al activar la Verificacion de Domingo, solo se podrá usar la imagen de QR Code impresa para esa semana."
-            onchange="submitVerificationForm()">
-            <option value="true" {% if verification_enabled=='true' %}selected{% endif %}>{{ _('Yes') }}</option>
-            <option value="false" {% if verification_enabled=='false' %}selected{% endif %}>No</option>
-          </select>
+    <div class="container my-4">
+        <h3>Name Corrections</h3>
+        <div id="name-corrections-container">
+            {% include 'partials/name_correction_table.html' %}
         </div>
-  
-      </form>
+    </div>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const meetingCenterSelector = document.getElementById('meetingCenterSelector');
-
-            // Llamada a la API para obtener todos los meeting centers
-            fetch("/meeting_center/api")
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const meetingCenterSelector = document.getElementById('meetingCenterSelector');
+        const nameCorrectionsContainer = document.getElementById('name-corrections-container');
+    
+        // Función para actualizar la tabla de correcciones de nombres
+        function updateNameCorrectionsTable(meetingCenterId) {
+            fetch(`/admin/name_corrections/filter?meeting_center_id=${meetingCenterId}`, {
+                method: "GET",
+                headers: { "X-Requested-With": "XMLHttpRequest" }
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error("Error en la respuesta del servidor");
+                    return response.text();
+                })
+                .then(html => {
+                    nameCorrectionsContainer.innerHTML = html;
+                })
+                .catch(error => console.error("Error al cargar los datos:", error));
+        }
+    
+        // Escuchar cambios en el selector de meeting centers
+        meetingCenterSelector.addEventListener('change', function () {
+            const selectedMeetingCenterId = this.value;
+            localStorage.setItem('selectedMeetingCenterId', selectedMeetingCenterId);
+            updateNameCorrectionsTable(selectedMeetingCenterId);
+            sendMeetingCenterToServer(selectedMeetingCenterId);
+            updateFooter();
+        });
+    
+        // Función para enviar el meeting center seleccionado al servidor
+        function sendMeetingCenterToServer(meetingCenterId) {
+            fetch("/meeting_center/set", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ meeting_center_id: meetingCenterId })
+            });
+        }
+    
+        // Función para actualizar el footer
+        function updateFooter() {
+            const meetingCenterId = localStorage.getItem('selectedMeetingCenterId') || 'all';
+            const year = new Date().getFullYear();
+            const month = new Date().getMonth() + 1;
+    
+            fetch(`/api/admin_data?meeting_center_id=${meetingCenterId}&year=${year}&month=${month}`, {
+                headers: { "X-Requested-With": "XMLHttpRequest" }
+            })
                 .then(response => response.json())
                 .then(data => {
-                    // Añadir la opción "Todos los Meeting Centers"
-                    meetingCenterSelector.innerHTML = '<option value="all">Todos los Meeting Centers</option>';
-
-                    // Agregar las opciones de los meeting centers
-                    data.forEach(meetingCenter => {
-                        const option = document.createElement('option');
-                        option.value = meetingCenter.id;
-                        option.textContent = meetingCenter.name;
-                        meetingCenterSelector.appendChild(option);
-                    });
-
-                    // Cargar selección desde localStorage
-                    const selectedMeetingCenterId = localStorage.getItem('selectedMeetingCenterId') || 'all';
-                    meetingCenterSelector.value = selectedMeetingCenterId;
-
-                    // Enviar al servidor para almacenar en sesión
-                    sendMeetingCenterToServer(selectedMeetingCenterId);
-
-                    meetingCenterSelector.addEventListener('change', function () {
-                        const selectedMeetingCenterId = this.value;
-                        localStorage.setItem('selectedMeetingCenterId', selectedMeetingCenterId);
-
-                        // Enviar el nuevo valor al servidor
-                        sendMeetingCenterToServer(selectedMeetingCenterId);
-                        updateFooter(); // Actualizar el footer automáticamente al cambiar el select
-                    });
-
-                    function sendMeetingCenterToServer(meetingCenterId) {
-                        fetch("/meeting_center/set", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ meeting_center_id: meetingCenterId })
-                        });
+                    const footerContainer = document.getElementById('meetingCenterInfo');
+                    if (footerContainer) {
+                        footerContainer.innerHTML = data.name ? `${data.name} (${data.unit_number})` : "Please select a valid meeting center.";
                     }
-
-                    function updateFooter() {
-                        const meetingCenterId = localStorage.getItem('selectedMeetingCenterId') || 'all';
-                        const year = new Date().getFullYear();
-                        const month = new Date().getMonth() + 1;
-
-                        fetch(`/api/admin_data?meeting_center_id=${meetingCenterId}&year=${year}&month=${month}`, {
-                            headers: { "X-Requested-With": "XMLHttpRequest" }
-                        })
-                            .then(response => response.json())
-                            .then(data => {
-                                const footerContainer = document.getElementById('meetingCenterInfo');
-                                if (footerContainer) {
-                                    if (data.name && data.unit_number) {
-                                        footerContainer.innerHTML = `${data.name} (${data.unit_number})`;
-                                    } else {
-                                        footerContainer.innerHTML = "Please select a valid meeting center.";
-                                    }
-                                }
-                            })
-                            .catch(error => console.error("Error al cargar el footer:", error));
-                    }
-
-                    updateFooter(); // Cargar la información del footer inicialmente
                 })
-                .catch(error => console.error('Error fetching meeting centers:', error));
-
-                
-        });
-        function submitVerificationForm() {
-            document.getElementById('verificationForm').submit();
-          }
-    </script>
-
-
+                .catch(error => console.error("Error al cargar el footer:", error));
+        }
+    
+        // Llamada a la API para obtener todos los meeting centers
+        fetch("/meeting_center/api")
+            .then(response => response.json())
+            .then(data => {
+                meetingCenterSelector.innerHTML = '<option value="all">{{ _("All Meeting Centers") }}</option>';
+    
+                data.forEach(meetingCenter => {
+                    const option = document.createElement('option');
+                    option.value = meetingCenter.id;
+                    option.textContent = meetingCenter.name;
+                    meetingCenterSelector.appendChild(option);
+                });
+    
+                // Establecer el meeting center seleccionado desde localStorage
+                const selectedMeetingCenterId = localStorage.getItem('selectedMeetingCenterId') || 'all';
+                meetingCenterSelector.value = selectedMeetingCenterId;
+    
+                // Actualizar la tabla y el footer al cargar la página
+                updateNameCorrectionsTable(selectedMeetingCenterId);
+                updateFooter();
+            })
+            .catch(error => console.error('Error fetching meeting centers:', error));
+    });
+    
+    function submitVerificationForm() {
+        document.getElementById('verificationForm').submit();
+    }
+    
+    function submitBypassForm() {
+        document.getElementById('bypassForm').submit();
+    }
+</script>
 
 {% endblock %}

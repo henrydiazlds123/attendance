@@ -82,7 +82,8 @@ async function sendAttendanceForm(formData) {
     const texts    = await fetch('/get_swal_texts').then(response => response.json());
 
     if (response.ok && data.success) {
-      Swal.fire(texts.great, texts.attendanceRecorded.replace("{student_name}", data.student_name), "success").then(() => {
+      Swal.fire(
+        texts.great, texts.attendanceRecorded.replace("{student_name}", data.student_name), "success").then(() => {
         document.getElementById("studentName").value = "";
       });
     } else {
@@ -254,3 +255,23 @@ async function correctName(checkbox) {
       }
   });
 }
+
+async function confirmRevert(id) {
+  // Obtiene las traducciones de los textos desde el servidor
+  const texts = await fetch('/get_swal_texts').then(response => response.json());
+
+  // Muestra el SweetAlert con los textos traducidos
+  const result = await Swal.fire({
+      title: texts.revertTitle,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: texts.revertConfirmButton,
+      cancelButtonText: texts.cancel,
+  });
+
+  // Si el usuario confirma, envía el formulario
+  if (result.isConfirmed) {
+      document.getElementById('revert-form-' + id).submit();
+  }
+}
+
