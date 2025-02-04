@@ -6,7 +6,7 @@
 {% block content %}
 
 <div class="row">
-    <p>{{ _('Total Members') }}: <b>{{ total_miembros }} </b></p>
+    <p>{{ _('Total Members') }}: <b id="total-members">{{ total_miembros }}</b> </p>
     <div class="col-6 col-md-4 mb-3">
         <div class="input-group">
             <span class="input-group-text"><i class="bi bi-calendar-month"></i></span>
@@ -50,11 +50,12 @@
         const yearSelect = document.getElementById("year-select");
         const clearFilters = document.getElementById("clear-filters");
         const reportContainer = document.getElementById("report-container");
-
+        const totalMembersElement = document.getElementById("total-members"); // Suponiendo que tienes un elemento con este ID en tu HTML.
+    
         function applyFilters() {
             const selectedMonth = monthSelect.value;
             const selectedYear = yearSelect.value;
-
+    
             fetch(`/attendance/report?year=${selectedYear}&month=${selectedMonth}`, {
                 method: "GET",
                 headers: { "X-Requested-With": "XMLHttpRequest" }
@@ -64,14 +65,19 @@
                     return response.text();
                 })
                 .then(html => {
+                    // Actualizar la tabla
                     reportContainer.innerHTML = html;
+    
+                    // Actualizar el total de miembros
+                    const totalMiembros = document.getElementById("total-members-count").textContent;  // Asegúrate de que el total se pase como parte de la respuesta
+                    totalMembersElement.textContent = totalMiembros; // Actualiza el total de miembros en la página
                 })
                 .catch(error => console.error("Error al cargar los datos:", error));
         }
-
+    
         monthSelect.addEventListener("change", applyFilters);
         yearSelect.addEventListener("change", applyFilters);
-
+    
         clearFilters.addEventListener("click", function () {
             fetch("/attendance/report", {
                 method: "GET",
@@ -89,6 +95,7 @@
                 .catch(error => console.error("Error al limpiar los filtros:", error));
         });
     });
+    
 </script>
 
 {% endblock %}

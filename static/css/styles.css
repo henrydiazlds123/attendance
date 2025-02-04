@@ -187,3 +187,11 @@ table th {
 .table-hover tbody tr:hover td, .table-hover tbody tr:hover th {
   background-color: #b5b5ac;
 }
+
+/* Establecer un tamaño máximo y centrado para los gráficos */
+.chart-container {
+  width: 80%;      /* Ajusta el ancho a lo que necesites */
+  max-width: 600px; /* Ajuste del tamaño máximo */
+  margin: 0 auto;   /* Centrado en la página */
+  padding: 20px;    /* Espaciado alrededor del gráfico */
+}

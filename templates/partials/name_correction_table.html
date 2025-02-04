@@ -24,7 +24,7 @@
                   </button>
               </form>
               <form method="POST" action="{{ url_for('routes.revert_name_correction', id=correction.id) }}" style="display:inline;" id="revert-form-{{ correction.id }}">
-                  <button type="button" class="btn btn-warning btn-sm" onclick="confirmRevert({{ correction.id }})">
+                  <button type="button" class="btn btn-success btn-sm" onclick="confirmRevert({{ correction.id }})">
                     <i class="bi bi-recycle"></i>
                   </button>
               </form>

@@ -6,37 +6,39 @@
 {% block content %}
 
 {% if session['role'] == 'Owner' %}
-    <div class="form-group col-auto">
-        <label class="my-2 mr-2 col-auto" for="meetingCenterSelector">{{ _('Choose a Meeting Center') }}:</label>
-        <select class="form-select" id="meetingCenterSelector">
-            <option value="all">{{ _('All Meeting Centers') }}</option>
+<div class="form-group col-auto">
+    <label class="my-2 mr-2 col-auto" for="meetingCenterSelector">{{ _('Choose a Meeting Center') }}:</label>
+    <select class="form-select" id="meetingCenterSelector">
+        <option value="all">{{ _('All Meeting Centers') }}</option>
+        <!-- Otras opciones de meeting centers -->
+    </select>
+</div>
+
+<form class="col-auto" id="bypassForm" method="POST" action="/admin/bypass">
+    <input type="hidden" name="meeting_center_id" value="{{ meeting_center_id }}">
+    <div class="form-inline mb-3">
+        <label class="my-2 mr-2 col-auto" for="bypass_restriction">{{ _('Allow attendance any day?') }} </label>
+        <select class="form-select" name="bypass_restriction" id="bypass_restriction" data-toggle="tooltip"
+            title="Activar esto permitirá registrar asistencia cualquier día de la semana en la unidad de prueba (ID = 2)."
+            onchange="submitBypassForm()">
+            <option value="true" {% if bypass_enabled=='true' %}selected{% endif %}>{{ _('Yes') }}</option>
+            <option value="false" {% if bypass_enabled=='false' %}selected{% endif %}>No</option>
         </select>
     </div>
-
-    <form class="col-auto" id="bypassForm" method="POST" action="/admin/bypass">
-        <div class="form-inline mb-3">
-            <label class="my-2 mr-2 col-auto" for="bypass_restriction">{{ _('Allow attendance any day?') }} </label>
-            <select class="form-select" name="bypass_restriction" id="bypass_restriction" data-toggle="tooltip"
-                title="Activar esto permitirá registrar asistencia cualquier día de la semana en la unidad de prueba (ID = 2)."
-                onchange="submitBypassForm()">
-                <option value="true" {% if bypass_enabled=='true' %}selected{% endif %}>{{ _('Yes') }}</option>
-                <option value="false" {% if bypass_enabled=='false' %}selected{% endif %}>No</option>
-            </select>
-        </div>
-    </form>
+</form>
 {% endif %}
-    <!-- Configuración de Bloqueo de Código QR -->
-    <form class="col-auto" id="verificationForm" method="POST" action="/admin">
-        <div class="form-inline mb-3">
-            <label class="my-2 mr-2 col-auto" for="code_verification">{{ _('Lock QR code?') }} </label>
-            <select class="form-select" name="code_verification" id="code_verification" data-toggle="tooltip"
-                title="Al activar la Verificación de Domingo, solo se podrá usar la imagen de QR Code impresa para esa semana."
-                onchange="submitVerificationForm()">
-                <option value="true" {% if verification_enabled=='true' %}selected{% endif %}>{{ _('Yes') }}</option>
-                <option value="false" {% if verification_enabled=='false' %}selected{% endif %}>No</option>
-            </select>
-        </div>
-    </form>
+<form class="col-auto" id="verificationForm" method="POST" action="/admin">
+    <input type="hidden" name="meeting_center_id" value="{{ meeting_center_id }}">
+    <div class="form-inline mb-3">
+        <label class="my-2 mr-2 col-auto" for="code_verification">{{ _('Lock QR code?') }} </label>
+        <select class="form-select" name="code_verification" id="code_verification" data-toggle="tooltip"
+            title="Al activar la Verificación de Domingo, solo se podrá usar la imagen de QR Code impresa para esa semana."
+            onchange="submitVerificationForm()">
+            <option value="true" {% if verification_enabled=='true' %}selected{% endif %}>{{ _('Yes') }}</option>
+            <option value="false" {% if verification_enabled=='false' %}selected{% endif %}>No</option>
+        </select>
+    </div>
+</form>
     {% if session['role'] == 'Owner' %}
     <div class="form-group col-auto">
         <div class="form-inline mb-3">
@@ -45,23 +47,6 @@
     </div>
     {% endif %}
 </div>
-<div class="col-12 mb-3">
-    <div class="col-md-3 col-sm-12">
-        <ol class="list-group list-group-flush">
-            <li class="list-group-item"><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{{ url_for('routes.attendances') }}"><i class="bi bi-clipboard-data"></i>  {{ _('Attendance Management') }}</a></li>
-            <li class="list-group-item"><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{{ url_for('routes.users') }}"><i class="bi bi-person-circle"></i>  {{ _('Users Management') }}</a></li>
-            <li class="list-group-item"><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{{ url_for('routes.classes') }}"><i class="bi bi-mortarboard-fill"></i>  {{ _('Classes Management') }}</a></li>
-            {% if session['role'] == 'Owner' %}
-            <li class="list-group-item"><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{{ url_for('routes.organizations') }}"><i class="bi bi-diagram-3"></i>  {{ _('Organizations Management') }}</a></li>
-            <li class="list-group-item"><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{{ url_for('routes.meeting_centers') }}"><i class="bi bi-buildings"></i> {{ _('Church Units Management') }}</a></li>
-            {% endif %}
-        </ol>
-    </div>
-</div>
-
-
-
-
     <div class="container my-4">
         <h3>Name Corrections</h3>
         <div id="name-corrections-container">
@@ -73,6 +58,8 @@
     document.addEventListener("DOMContentLoaded", function () {
         const meetingCenterSelector = document.getElementById('meetingCenterSelector');
         const nameCorrectionsContainer = document.getElementById('name-corrections-container');
+        const bypassRestriction = document.getElementById('bypass_restriction');
+        const codeVerification = document.getElementById('code_verification');
     
         // Función para actualizar la tabla de correcciones de nombres
         function updateNameCorrectionsTable(meetingCenterId) {
@@ -89,8 +76,19 @@
                 })
                 .catch(error => console.error("Error al cargar los datos:", error));
         }
+        // Función para habilitar o deshabilitar los selects
+        function toggleSelects() {
+            if (meetingCenterSelector.value === 'all') {
+                bypassRestriction.disabled = true;
+                codeVerification.disabled = true;
+            } else {
+                bypassRestriction.disabled = false;
+                codeVerification.disabled = false;
+            }
+        }
     
         // Escuchar cambios en el selector de meeting centers
+        meetingCenterSelector.addEventListener('change', toggleSelects);
         meetingCenterSelector.addEventListener('change', function () {
             const selectedMeetingCenterId = this.value;
             localStorage.setItem('selectedMeetingCenterId', selectedMeetingCenterId);
@@ -158,6 +156,8 @@
     function submitBypassForm() {
         document.getElementById('bypassForm').submit();
     }
+    // Ejecutar la función al cargar la página
+        toggleSelects();
 </script>
 
 {% endblock %}

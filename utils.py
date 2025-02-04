@@ -6,8 +6,9 @@ from datetime     import datetime, timedelta
 from flask        import flash, redirect, session, url_for, request, Response, g
 from flask_babel  import format_date, gettext as _
 from config       import Config
-from itsdangerous import URLSafeTimedSerializer
-from models       import Attendance
+from models import Attendance, Classes, db
+from sqlalchemy import func
+
 
 
 # ================================================================
@@ -147,3 +148,32 @@ def get_meeting_center_id():
     if session.get('role') == 'Owner':
         return session.get('meeting_center_id', 'all')  # 'all' si no está definido
     return session.get('meeting_center_id')  # Para otros roles
+
+
+
+# GRFICOS
+def get_attendance_by_class_data():
+    # Obtener los datos de asistencia agrupados por clase
+    attendance_by_class = db.session.query(
+        Attendance.class_id,
+        func.count(Attendance.student_name.distinct()).label('attendance_count')
+    ).join(Classes).filter(Classes.class_type == 'Main').group_by(Attendance.class_id).all()
+
+    # Aquí puedes agregar la lógica para obtener el nombre de la clase a partir de class_id
+    # Por ejemplo, con una consulta adicional o utilizando la relación con la tabla Classes
+    return attendance_by_class
+
+
+import plotly.express as px
+
+def plot_attendance_by_class(attendance_data):
+    classes = [f"Clase {class_id}" for class_id, _ in attendance_data]  # Puedes mejorar esto con nombres reales de clases
+    attendance_counts = [attendance_count for _, attendance_count in attendance_data]
+
+    fig = px.bar(
+        x=classes, 
+        y=attendance_counts, 
+        labels={'x': 'Clase', 'y': 'Estudiantes Asistentes'}, 
+        title="Asistencia por Clase"
+    )
+    return fig.to_html(full_html=False)

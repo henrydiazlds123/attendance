@@ -37,10 +37,15 @@
     <script>
         async function initializePage() {
             // ----------- Configuración de parámetros de clase desde URL ----------- 
+            //const urlParams  = new URLSearchParams(window.location.search);
+            //const className  = urlParams.get("class_name");
+            //const classCode  = urlParams.get("class");
+            //const sundayCode = urlParams.get("code");
+            //const unitNumber = urlParams.get("unit");
             const urlParams  = new URLSearchParams(window.location.search);
-            const className  = urlParams.get("class_name");
-            const classCode  = urlParams.get("class");
-            const sundayCode = urlParams.get("code");
+            const className  = urlParams.get("className");
+            const classCode  = urlParams.get("classCode");
+            const sundayCode = urlParams.get("sundayCode");
             const unitNumber = urlParams.get("unit");
 
             try {

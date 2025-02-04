@@ -58,8 +58,8 @@ async function initAttendanceForm() {
   attendanceForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    const studentName = document.getElementById("studentName").value.trim();
-    const regex       = /^[^\s]+ [^\s]+$/;
+    const studentName = document.getElementById("studentName").value;
+    const regex = /^[^\s]+(?:\s+[^\s]+)\s*$/;
     if (!regex.test(studentName)) {
       const texts = await fetch('/get_swal_texts').then(response => response.json());
       Swal.fire(texts.warningTitle, texts.nameFormatText, "warning");
@@ -74,6 +74,7 @@ async function initAttendanceForm() {
   });
 }
 
+//----------------------------------------------------------------------------------
 async function sendAttendanceForm(formData) {
   try {
     const response = await fetch("/registrar", { method: "POST", body: formData });
@@ -189,7 +190,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-
+//----------------------------------------------------------------------------------
 async function confirmDelete(entityType, entityId) {
   const formId = `deleteForm-${entityType}-${entityId}`;
   console.log(`Attempting to delete form with ID: ${formId}`);
@@ -222,11 +223,13 @@ async function confirmDelete(entityType, entityId) {
   });
 }
 
+//----------------------------------------------------------------------------------
 function changeLanguage(lang) {
   const currentUrl = window.location.href.split('?')[0];
   window.location.href = `${currentUrl}?lang=${lang}`;
 }
 
+//----------------------------------------------------------------------------------
 // Definir la función correctName
 async function correctName(checkbox) {
   // Obtener el nombre incorrecto y el ID del centro de reunión + textos para sweetalert
@@ -285,6 +288,7 @@ async function correctName(checkbox) {
   });
 }
 
+//----------------------------------------------------------------------------------
 async function confirmRevert(id) {
   // Obtiene las traducciones de los textos desde el servidor
   const texts = await fetch('/get_swal_texts').then(response => response.json());
@@ -304,3 +308,34 @@ async function confirmRevert(id) {
   }
 }
 
+//----------------------------------------------------------------------------------
+async function prevalidateAttendance(classCode, sundayCode, unitNumber) {
+  try {
+      const response = await fetch(`/prevalidar?classCode=${classCode}&sundayCode=${sundayCode}&unitNumber=${unitNumber}`);
+      const data = await response.json();
+
+      if (!data.success) {
+          Swal.fire("Atención", data.message, "warning");
+          return false;
+      }
+      return true;
+  } catch (error) {
+      Swal.fire("Error", "Hubo un problema al validar la asistencia.", "error");
+      return false;
+  }
+}
+
+// Llamar esta función cuando el usuario escanee el código QR o acceda a la página
+document.addEventListener("DOMContentLoaded", async function() {
+  const classCode = getParameterByName("classCode");
+  const sundayCode = getParameterByName("sundayCode");
+  const unitNumber = getParameterByName("unitNumber");
+
+  if (classCode && sundayCode && unitNumber) {
+      const isValid = await prevalidateAttendance(classCode, sundayCode, unitNumber);
+      if (!isValid) {
+          // Redirigir a otra página si la validación falla
+          window.location.href = "/";
+      }
+  }
+});

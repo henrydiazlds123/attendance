@@ -85,42 +85,72 @@ def index():
 
 
 # =============================================================================================
+# @bp.route('/users')
+# @role_required('Admin', 'Owner')
+# def users():
+#     role = session.get('role')
+#     meeting_center_id = get_meeting_center_id()
+#     admin_count = User.query.filter_by(role='Admin').count()
+
+#     if role == 'Owner':
+#     # Owners can see all users
+#         query = db.session.query(
+#             User.id,
+#             User.username,
+#             User.email,
+#             User.role,
+#             MeetingCenter.short_name.label('meeting_short_name'),
+#             Organization.name.label('organization_name')
+#         ).join(MeetingCenter, User.meeting_center_id == MeetingCenter.id) \
+#             .join(Organization, User.organization_id == Organization.id)
+
+#         users = query.all()
+#     elif role == 'Admin':
+#         # Admins can only see users in their organization, excluding Owners
+#         users = db.session.query(
+#             User.id,
+#             User.username,
+#             User.email,
+#             User.role,
+#             Organization.name.label('organization_name')
+#         ).join(MeetingCenter, User.meeting_center_id == MeetingCenter.id) \
+#         .join(Organization, User.organization_id == Organization.id) \
+#         .filter(User.role != 'Owner') \
+#         .filter(User.organization_id == session.get('organization_id')).all()
+#     else:
+#         # Regular users can only see their own user
+#         users = User.query.filter_by(student_name=session.get('username')).all()
+
+#     return render_template('users.html', users=users, admin_count=admin_count)
 @bp.route('/users')
 @role_required('Admin', 'Owner')
 def users():
     role = session.get('role')
-    meeting_center_id = session.get('meeting_center_id')
+    meeting_center_id = get_meeting_center_id()
     admin_count = User.query.filter_by(role='Admin').count()
 
+    query = db.session.query(
+        User.id,
+        User.username,
+        User.email,
+        User.role,
+        MeetingCenter.short_name.label('meeting_short_name'),
+        Organization.name.label('organization_name')
+    ).join(MeetingCenter, User.meeting_center_id == MeetingCenter.id) \
+     .join(Organization, User.organization_id == Organization.id)
+
     if role == 'Owner':
-    # Owners can see all users
-        query = db.session.query(
-            User.id,
-            User.username,
-            User.email,
-            User.role,
-            MeetingCenter.short_name.label('meeting_short_name'),
-            Organization.name.label('organization_name')
-        ).join(MeetingCenter, User.meeting_center_id == MeetingCenter.id) \
-            .join(Organization, User.organization_id == Organization.id)
-
-        users = query.all()
+        if meeting_center_id != 'all':  # Filtra solo si hay un meeting_center_id seleccionado
+            query = query.filter(User.meeting_center_id == meeting_center_id)
     elif role == 'Admin':
-        # Admins can only see users in their organization, excluding Owners
-        users = db.session.query(
-            User.id,
-            User.username,
-            User.email,
-            User.role,
-            Organization.name.label('organization_name')
-        ).join(MeetingCenter, User.meeting_center_id == MeetingCenter.id) \
-        .join(Organization, User.organization_id == Organization.id) \
-        .filter(User.role != 'Owner') \
-        .filter(User.organization_id == session.get('organization_id')).all()
+        query = query.filter(User.role != 'Owner') \
+                     .filter(User.organization_id == session.get('organization_id'))
     else:
-        # Regular users can only see their own user
-        users = User.query.filter_by(student_name=session.get('username')).all()
+         # Regular users can only see their own user
+         users = User.query.filter_by(student_name=session.get('username')).all()
 
+    users = query.all()
+    
     return render_template('users.html', users=users, admin_count=admin_count)
 
 
@@ -282,16 +312,21 @@ def attendances():
     # Get user role and meeting_center_id from session
     role              = session.get('role')
     months_abr        = get_months()
-    meeting_center_id = session.get('meeting_center_id')
+    meeting_center_id = get_meeting_center_id()
     corrected_names   = [
         correction.correct_name 
         for correction in NameCorrections.query.filter_by(meeting_center_id=meeting_center_id).all()
     ]
 
     # Get distinct values for filters
-    classes  = db.session.query(Classes.id, Classes.short_name).join(Attendance, Attendance.class_id == Classes.id).distinct().filter(Classes.meeting_center_id == session.get('meeting_center_id')).all()
-    students = db.session.query(Attendance.student_name.distinct()).filter(Attendance.meeting_center_id == session.get('meeting_center_id')).all()
-    sundays  = db.session.query(Attendance.sunday_date.distinct()).filter(Attendance.meeting_center_id == session.get('meeting_center_id')).all()
+    if meeting_center_id == 'all':
+        classes = db.session.query(db.func.min(Classes.id).label("id"),Classes.short_name).join(Attendance, Attendance.class_id == Classes.id).group_by(Classes.short_name).all()
+        students = db.session.query(Attendance.student_name.distinct()).all()
+        sundays  = db.session.query(Attendance.sunday_date.distinct()).order_by(Attendance.sunday_date.desc()).all()
+    else:    
+        classes  = db.session.query(Classes.id, Classes.short_name).join(Attendance, Attendance.class_id == Classes.id).distinct().filter(Classes.meeting_center_id == meeting_center_id).all()
+        students = db.session.query(Attendance.student_name.distinct()).filter(Attendance.meeting_center_id == meeting_center_id).all()
+        sundays  = db.session.query(Attendance.sunday_date.distinct()).filter(Attendance.meeting_center_id == meeting_center_id).order_by(Attendance.sunday_date.desc()).all()
 
     # Formatear las fechas con Flask-Babel
     sundays_formatted = [
@@ -359,7 +394,10 @@ def attendances():
         query = query.filter(func.strftime('%m', Attendance.sunday_date) == selected_month.zfill(2))
 
     # Execute the query and fetch results
-    attendances     = query.order_by(Attendance.student_name, Attendance.sunday_date, Attendance.class_id) \
+    if meeting_center_id == 'all':
+        attendances     = query.order_by(Attendance.student_name, Attendance.sunday_date, Attendance.class_id).all()
+    else:
+        attendances     = query.order_by(Attendance.student_name, Attendance.sunday_date, Attendance.class_id) \
         .filter(Attendance.meeting_center_id == session.get('meeting_center_id')).all()
     
     # Formatear las fechas con Flask-Babel
@@ -391,12 +429,14 @@ def attendances():
     )
 
 
+
 # =============================================================================================
 @bp.route('/attendance/new', methods=['GET', 'POST'])
 @role_required('Admin', 'Owner')
 def create_attendance():
+    meeting_center_id = get_meeting_center_id()
     form                           = AttendanceForm()
-    form.class_id.choices          = [(c.id, c.translated_name) for c in Classes.query.filter_by(meeting_center_id=session.get('meeting_center_id')).all()]
+    form.class_id.choices          = [(c.id, c.translated_name) for c in Classes.query.filter_by(meeting_center_id=meeting_center_id).all()]
     form.meeting_center_id.choices = [(mc.id, mc.name) for mc in MeetingCenter.query.all()]
 
     if request.method == 'GET':
@@ -447,10 +487,10 @@ def create_attendance():
 @role_required('Admin', 'Owner')
 def update_attendance(id):
     attendance = Attendance.query.get_or_404(id)
-    form = AttendanceEditForm(obj=attendance)
+    form       = AttendanceEditForm(obj=attendance)
     
     # Obtener el meeting_center_id relacionado con la asistencia (puede ser del usuario o de otra fuente)
-    meeting_center_id = attendance.meeting_center_id  # O de donde sea necesario
+    meeting_center_id = get_meeting_center_id() # O de donde sea necesario
 
     # Filtrar las clases por el meeting_center_id
     form.class_id.choices = [(c.id, c.translated_name) for c in Classes.query.filter_by(meeting_center_id=meeting_center_id).all()]
@@ -491,12 +531,12 @@ def manual_attendance():
     # Generar enlaces solo para las clases correspondientes
     class_links = {
         class_entry.class_code: {
-            'url': f"{Config.BASE_URL}/attendance/manual?class_name={class_entry.translated_name}&class={class_entry.class_code}&code={next_sunday_code}&unit={unit}",
+            'url': f"{Config.BASE_URL}/attendance/manual?className={class_entry.translated_name}&classCode={class_entry.class_code}&sundayCode={next_sunday_code}&unit={unit}",
             'name': class_entry.class_name
         }
         for class_entry in Classes.query.filter_by(is_active=True).all() if str(sunday_week) in class_entry.schedule.split(',')
     }
-    return render_template('manual_attendance.html', class_links=class_links)
+    return render_template('attendance_manual.html', class_links=class_links)
 
 
 # =============================================================================================
@@ -562,7 +602,7 @@ def attendance_report():
         for date in sunday_dates
     ]
 
-    # Obtener registros de asistencia
+    # Obtener registros de asistencia filtrados
     attendance_query = db.session.query(Attendance).order_by(Attendance.student_name, Attendance.sunday_date)
 
     if meeting_center_id is not None:
@@ -573,32 +613,38 @@ def attendance_report():
 
     attendance_records = attendance_query.all()
 
-    # Construcción del diccionario de asistencia
+    # Recalcular el total de miembros, basado en los registros de asistencia
     students = {}
     for record in attendance_records:
         if record.student_name not in students:
             students[record.student_name] = {date['date']: False for date in sunday_dates_formatted}
         students[record.student_name][record.sunday_date] = True
 
+    # Contar los miembros únicos basados en los registros filtrados
     total_miembros = len(students)
 
     # Si la solicitud es AJAX, devolver solo la parte de la asistencia
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-        return render_template("partials/attendance_table.html", students=students, dates=sunday_dates_formatted)
+        return render_template(
+            "partials/attendance_table.html", 
+            students=students, 
+            dates=sunday_dates_formatted,
+            total_miembros=total_miembros  # Incluir total_miembros en la respuesta AJAX
+        )
 
     return render_template(
         'attendance_report.html',
-        students         = students ,
-        dates            = sunday_dates_formatted , # Usar las fechas formateadas
-        available_years  = available_years ,
-        available_months = month_names ,
-        selected_year    = selected_year ,
-        selected_month   = selected_month ,
-        total_miembros   = total_miembros ,
-        disable_month    = len(available_months)  == 1,
-        disable_year     = len(available_years)   == 1
+        students         = students,
+        dates            = sunday_dates_formatted,
+        available_years  = available_years,
+        available_months = month_names,
+        selected_year    = selected_year,
+        selected_month   = selected_month,
+        total_miembros   = total_miembros,
+        disable_month    = len(available_months) == 1,
+        disable_year     = len(available_years) == 1
     )
-    
+
     
 # =============================================================================================
 @bp.route('/attendance/export', methods=['GET'])
@@ -669,15 +715,18 @@ def export_attendance():
 @bp.route('/registrar', methods=['POST'])
 def registrar():
     try:
-        student_name   = request.form.get('studentName').title()
         class_code     = request.form.get('classCode')
         sunday_date    = get_next_sunday()
         sunday_code    = request.form.get('sundayCode')
         unit_number    = request.form.get('unitNumber')
+        student_name   = request.form.get('studentName')  
+        
+        # Limpiar el nombre recibido
+        student_name     = ' '.join(student_name.strip().split()) # Elimina espacios antes y después
+        student_name     = student_name.title() # Convertir a título (primera letra en mayúscula)  
+        nombre, apellido = student_name.split(" ", 1) # Dividir el nombre y apellido, asumiendo que solo hay un nombre y un apellido        
+        formatted_name   = f"{apellido}, {nombre}" # Formatear el nombre como "apellido, nombre"
 
-        nombre, apellido = student_name.split(" ", 1)
-        formatted_name = f"{apellido}, {nombre}"
-        print(f"class_code {class_code})")
 
         # Verificar si la clase es válida
         class_entry = Classes.query.filter_by(class_code=class_code).first()
@@ -792,7 +841,7 @@ def registrar():
 def list_pdfs():
     OUTPUT_DIR = get_output_dir()
     
-    meeting_center_id = session.get('meeting_center_id')
+    meeting_center_id = get_meeting_center_id()
     # Verificar si hay clases asociadas al meeting center
     has_classes       = Classes.query.filter_by(meeting_center_id=meeting_center_id, is_active=True).first() is not None
     print(f"Has Classes (Meeting Center {meeting_center_id}): {has_classes}")
@@ -916,7 +965,7 @@ def generate_pdfs():
         class_code  = class_entry.class_code
         class_color = class_entry.class_color or "black"
 
-        qr_url = f"{Config.BASE_URL}/attendance?class_name={class_name.replace(' ', '+')}&code={next_sunday_code}&date={class_date.strftime('%Y-%m-%d')}&unit={unit}&class={class_code}"
+        qr_url = f"{Config.BASE_URL}/attendance?className={class_name.replace(' ', '+')}&sundayCode={next_sunday_code}&date={class_date.strftime('%Y-%m-%d')}&unit={unit}&classCode={class_code}"
         print(f"QR URL for {class_name}: {qr_url}")
 
         qr = qrcode.QRCode(version=1, box_size=10, border=4)
@@ -1090,7 +1139,7 @@ def get_meeting_centers():
 def classes():
     # Get user role and meeting_center_id from session
     role = session.get('role')
-    meeting_center_id = session.get('meeting_center_id')
+    meeting_center_id = get_meeting_center_id()
     
     query = db.session.query(
         Classes.id,
@@ -1464,10 +1513,11 @@ def admin():
         name_corrections = NameCorrections.query.all()
         
     if meeting_center_id is not None:
-        name_corrections = NameCorrections.query.filter(NameCorrections.meeting_center_id == meeting_center_id).all()  # Obtener todos los registros de NameCorrect
+        name_corrections = NameCorrections.query.filter(NameCorrections.meeting_center_id == meeting_center_id).all()
+
+    # Get the configuration for code verification setting, filtering by meeting_center_id
+    code_verification_setting = Setup.query.filter_by(key='code_verification', meeting_center_id=meeting_center_id).first()
     
-    # Get the configuration for code verification setting
-    code_verification_setting = Setup.query.filter_by(key='code_verification').first()
     bypass_enabled = request.args.get('bypass_enabled', 'false')  # Default "false"
     
     # Handle POST requests for code verification and deleting records
@@ -1477,7 +1527,8 @@ def admin():
             if code_verification_setting:
                 code_verification_setting.value = new_value
             else:
-                code_verification_setting = Setup(key='code_verification', value=new_value)
+                # Crear un nuevo registro para el meeting_center_id
+                code_verification_setting = Setup(key='code_verification', value=new_value, meeting_center_id=meeting_center_id)
                 db.session.add(code_verification_setting)
                 
             db.session.commit()
@@ -1503,21 +1554,24 @@ def admin():
                            bypass_enabled=bypass_enabled, 
                            name_corrections=name_corrections
                            )
+    
 
-
-# =============================================================================================
+# =============================================================================================  
 @bp.route('/admin/bypass', methods=['POST'])
 def update_bypass_restriction():
     new_value = request.form.get('bypass_restriction', 'false')  # Default "false"
+    meeting_center_id = get_meeting_center_id()  # Obtener el ID del centro de reunión actual
 
-    # Buscar el registro en la base de datos
-    bypass_entry = Setup.query.filter_by(key='bypass_restriction').first()
+    # Buscar el registro en la base de datos para el centro de reunión y la clave
+    bypass_entry = Setup.query.filter_by(key='bypass_restriction', meeting_center_id=meeting_center_id).first()
 
     if bypass_entry:
-        bypass_entry.value = new_value  # Actualiza el valor
+        # Si ya existe, actualiza el valor
+        bypass_entry.value = new_value
     else:
-        bypass_entry = Setup(key='bypass_restriction', value=new_value)
-        db.session.add(bypass_entry)  # Crea un nuevo registro si no existe
+        # Si no existe, crea un nuevo registro
+        bypass_entry = Setup(key='bypass_restriction', value=new_value, meeting_center_id=meeting_center_id)
+        db.session.add(bypass_entry)
 
     db.session.commit()  # Guarda los cambios
 
@@ -1599,3 +1653,71 @@ def admin_data():
         }
     # Devolver los datos del meeting center como JSON
     return jsonify(meeting_center)
+
+
+# =============================================================================================
+@bp.route('/prevalidar', methods=['GET'])
+def prevalidar():
+    try:
+        class_code  = request.args.get('classCode')
+        sunday_date = get_next_sunday()
+        sunday_code = request.args.get('sundayCode')
+        unit_number = request.args.get('unitNumber')
+
+        # Verificar si la clase es válida
+        class_entry = Classes.query.filter_by(class_code=class_code).first()
+        if not class_entry:
+            return jsonify({
+                "success": False,
+                "message": _('The selected class is not valid.'),
+            }), 400
+
+        # Verificar si el Meeting Center es válido
+        meeting_center = MeetingCenter.query.filter_by(unit_number=unit_number).first()
+        if not meeting_center:
+            return jsonify({
+                "success": False,
+                "message": _('The church unit is invalid.'),
+            }), 400
+
+        # Obtener el estado del bypass desde la tabla Setup
+        bypass_entry  = Setup.query.filter_by(key='allow_weekday_attendance').first()
+        bypass_active = bypass_entry and bypass_entry.value.lower() == 'yes'
+
+        # Si la clase es Main y hay restricciones de día
+        if class_entry.class_type == "Main":
+            if not (bypass_active and meeting_center.id == 2):
+                if meeting_center.is_restricted:
+                    grace_period_hours = int(meeting_center.grace_period_hours) if meeting_center.grace_period_hours else 0
+                    time_now           = datetime.now()
+
+                    start_time = meeting_center.start_time
+                    end_time   = meeting_center.end_time
+
+                    if isinstance(start_time, str):
+                        start_time = datetime.strptime(start_time, "%H:%M").time()
+                    if isinstance(end_time, str):
+                        end_time   = datetime.strptime(end_time, "%H:%M").time()
+
+                    today            = datetime.today()
+                    start_time_dt    = datetime.combine(today, start_time)
+                    end_time_dt      = datetime.combine(today, end_time)
+                    grace_start_time = start_time_dt - timedelta(hours=grace_period_hours)
+                    grace_end_time   = end_time_dt + timedelta(hours=grace_period_hours)
+
+                    if not (grace_start_time <= time_now <= grace_end_time):
+                        return jsonify({
+                            "success": False,
+                            "message": _('Attendance can only be recorded during the grace period or meeting time.'),
+                        }), 400
+
+        return jsonify({
+            "success": True,
+            "message": _('You may proceed with attendance registration.'),
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "message": _('There was an error validating attendance: %(error)s') % {'error': str(e)}
+        }), 500

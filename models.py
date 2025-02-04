@@ -89,7 +89,7 @@ class Setup(db.Model):
     meeting_center = db.relationship('MeetingCenter', backref=db.backref('setup', lazy=True))
 
     __table_args__ = (
-        db.UniqueConstraint('key', 'meeting_center_id', name='_key_meeting_center_uc'),
+        db.UniqueConstraint('key', 'meeting_center_id', name='unique_key_meeting_center'),
     )
 
 
