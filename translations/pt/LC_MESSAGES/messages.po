@@ -35,7 +35,7 @@ msgstr "Senha"
 msgid "Confirm Password"
 msgstr "Confirme sua senha"
 
-#: forms.py:17 forms.py:52 templates/partials/attendance_table.html:5
+#: forms.py:17 forms.py:52 templates/partials/attendance_table.html:6
 msgid "Name"
 msgstr "Nome"
 
@@ -177,8 +177,8 @@ msgstr "Código de Aula"
 msgid "Class Type"
 msgstr "Tipo de aula"
 
-#: forms.py:134 routes.py:1311 routes.py:1320 routes.py:1329 routes.py:1338
-#: routes.py:1347 routes.py:1356 routes.py:1365
+#: forms.py:134 routes.py:1366 routes.py:1375 routes.py:1384 routes.py:1393
+#: routes.py:1402 routes.py:1411 routes.py:1420
 msgid "Main"
 msgstr "Principal"
 
@@ -276,39 +276,39 @@ msgstr "O usuário já é um administrador."
 msgid "User %(username)s has been promoted to administrator."
 msgstr "O usuário %(username)s foi promovido a administrador."
 
-#: routes.py:262
-msgid "400 Bad Request"
+#: routes.py:293
+msgid "400 Invalid URL"
 msgstr "400 Pedido ruim"
 
-#: routes.py:262
-msgid "Check what you wrote"
+#: routes.py:293
+msgid "Check what you wrote!"
 msgstr "Verifique o que você escreveu"
 
-#: routes.py:262
+#: routes.py:293
 msgid "The address you entered is incomplete!"
 msgstr "O endereço que você digitou está incompleto!"
 
-#: routes.py:274
-msgid "It seems that you are lost"
+#: routes.py:305
+msgid "It seems that you are lost!"
 msgstr "Parece que você está perdido!"
 
-#: routes.py:274
-msgid "Incorrect QR for this week's classes!"
+#: routes.py:305
+msgid "Wrong QR for this week's classes!"
 msgstr "QR incorreto para as aulas desta semana!"
 
-#: routes.py:415
+#: routes.py:456
 msgid "Please select an existing student or provide a new name."
 msgstr "Selecione um aluno existente ou forneça um novo nome."
 
-#: routes.py:416 routes.py:441
+#: routes.py:457 routes.py:482
 msgid "Create manual attendance"
 msgstr "Criar atendimento manual"
 
-#: routes.py:425
+#: routes.py:466
 msgid "The selected class is invalid."
 msgstr "A classe selecionada é inválida."
 
-#: routes.py:426
+#: routes.py:467
 msgid "Create attendance"
 msgstr "Criar atendimento"
 
@@ -553,9 +553,9 @@ msgstr "Formato incorrecto"
 
 #: routes.py:1270
 msgid ""
-"The name must be in the format \"Last Name, First Name\", separated by a "
+"The name must be in the format 'Last Name, First Name', separated by a "
 "comma."
-msgstr "O nome deve estar no formato \"Sobrenome, Nome\"\\, separado por vírgula."
+msgstr "O nome deve estar no formato 'Sobrenome, Nome', separado por vírgula."
 
 #: routes.py:1271
 msgid "You must select a date!"
@@ -563,7 +563,7 @@ msgstr "Você deve selecionar uma data!"
 
 #: routes.py:1272
 msgid "Please enter your name in 'First Name Last Name' format."
-msgstr "Por favor, digite seu nome no formato '\\Nome Sobrenome\\'."
+msgstr "Por favor, digite seu nome no formato 'Nome Sobrenome'."
 
 #: routes.py:1273
 msgid "Your name was not removed."
@@ -595,7 +595,7 @@ msgstr "O nome salvo é: '{name}'. Você quer limpar isso?"
 
 #: routes.py:1280
 msgid "Are you sure you want to revert this correction?"
-msgstr ""
+msgstr "Tem certeza de que deseja reverter esta correção?"
 
 #: routes.py:1281
 msgid "Revert"
@@ -738,6 +738,15 @@ msgstr "Campos obrigatórios ausentes"
 msgid "All"
 msgstr "Todas"
 
+#: routes.py:1716
+msgid "You may proceed with attendance registration."
+msgstr "Poderá prosseguir com a inscrição de presença."
+
+#: routes.py:1722
+#, python-format
+msgid "There was an error validating attendance: %(error)s"
+msgstr "Ocorreu um erro ao validar a presença: %(error)s"
+
 #: utils.py:21
 msgid "You do not have permission to perform this action."
 msgstr "Você não tem permissão para executar esta ação."
@@ -809,6 +818,10 @@ msgstr "Permitir atendimento em qualquer dia?"
 #: templates/admin.html:31
 msgid "Lock QR code?"
 msgstr "Bloquear código QR?"
+
+#: templates/admin.html:53
+msgid "Attendance Management"
+msgstr "Gestão de Presença"
 
 #: templates/admin.html:42 templates/users.html:5
 msgid "Users Management"
@@ -1179,7 +1192,7 @@ msgstr "Usuário"
 msgid "Classes"
 msgstr "Aulas"
 
-#: templates/partials/navbar.html:34
+#: templates/partials/navbar.html:36
 msgid "Organizations"
 msgstr "Organizações"
 

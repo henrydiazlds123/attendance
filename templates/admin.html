@@ -56,11 +56,53 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        const meetingCenterSelector = document.getElementById('meetingCenterSelector');
+        const meetingCenterSelector    = document.getElementById('meetingCenterSelector');
         const nameCorrectionsContainer = document.getElementById('name-corrections-container');
-        const bypassRestriction = document.getElementById('bypass_restriction');
-        const codeVerification = document.getElementById('code_verification');
-    
+        const bypassRestriction        = document.getElementById('bypass_restriction');
+        const codeVerification         = document.getElementById('code_verification');
+
+
+        // Escuchar cambios en el selector de meeting centers
+        meetingCenterSelector.addEventListener('change', toggleSelects);
+        meetingCenterSelector.addEventListener('change', function () {
+            const selectedMeetingCenterId = this.value;
+            localStorage.setItem('selectedMeetingCenterId', selectedMeetingCenterId);
+            
+            // Actualizar la tabla de correcciones de nombres
+            updateNameCorrectionsTable(selectedMeetingCenterId);
+
+            // Actualizar los selects de code_verification y bypass_restriction
+            updateSettings(selectedMeetingCenterId);
+
+            // Actualizar el footer
+            updateFooter();
+
+            sendMeetingCenterToServer(selectedMeetingCenterId);
+
+        });
+            
+
+        // ----------------------------------------------------------------
+        // Función para actualizar los selects de code_verification y bypass_restriction
+        function updateSettings(meetingCenterId) {
+            fetch(`/admin/get_settings?meeting_center_id=${meetingCenterId}`, {
+                method: "GET",
+                headers: { "X-Requested-With": "XMLHttpRequest" }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    // Actualizar el select de code_verification
+                    codeVerification.value = data.code_verification;
+
+                    // Actualizar el select de bypass_restriction
+                    bypassRestriction.value = data.bypass_restriction;
+                })
+                .catch(error => console.error("Error al cargar los ajustes:", error));
+        }
+
+
+        
+        // ----------------------------------------------------------------
         // Función para actualizar la tabla de correcciones de nombres
         function updateNameCorrectionsTable(meetingCenterId) {
             fetch(`/admin/name_corrections/filter?meeting_center_id=${meetingCenterId}`, {
@@ -76,6 +118,8 @@
                 })
                 .catch(error => console.error("Error al cargar los datos:", error));
         }
+
+        // ----------------------------------------------------------------
         // Función para habilitar o deshabilitar los selects
         function toggleSelects() {
             if (meetingCenterSelector.value === 'all') {
@@ -87,16 +131,8 @@
             }
         }
     
-        // Escuchar cambios en el selector de meeting centers
-        meetingCenterSelector.addEventListener('change', toggleSelects);
-        meetingCenterSelector.addEventListener('change', function () {
-            const selectedMeetingCenterId = this.value;
-            localStorage.setItem('selectedMeetingCenterId', selectedMeetingCenterId);
-            updateNameCorrectionsTable(selectedMeetingCenterId);
-            sendMeetingCenterToServer(selectedMeetingCenterId);
-            updateFooter();
-        });
-    
+
+        // ----------------------------------------------------------------
         // Función para enviar el meeting center seleccionado al servidor
         function sendMeetingCenterToServer(meetingCenterId) {
             fetch("/meeting_center/set", {
@@ -105,7 +141,8 @@
                 body: JSON.stringify({ meeting_center_id: meetingCenterId })
             });
         }
-    
+
+        // ----------------------------------------------------------------   
         // Función para actualizar el footer
         function updateFooter() {
             const meetingCenterId = localStorage.getItem('selectedMeetingCenterId') || 'all';

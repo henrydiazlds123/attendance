@@ -1305,49 +1305,49 @@ def delete_organization(id):
 @bp.route('/get_swal_texts', methods=['GET'])
 def get_swal_texts():
     return {    
-        'alreadyRegistered'     : _('You already have registered assistance on {sunday_date}.'),
-        'actionCanceled'        : _('Action canceled'),
-        'attendanceRecorded'    : _('¡{student_name}, your attendance was recorded!'),
-        'cancel'                : _('Cancel'),
-        'cancelled'             : _('Cancelled'),
-        'cancelledMessage'      : _('No correction has been made.'),
-        'chooseClass'           : _('Choose a Class'),
-        'cleared'               : _('Cleared!'),
-        'confirm'               : _('Confirm'),
-        'confirmDelete'         : _('You \'re sure?'),
-        'connectionError'       : _('There was a problem connecting to the server.'),
-        'deleteConfirmationText': _('This action will delete all records and cannot be undone.'),
-        'deleteOneRecordText   ': _('This record will be deleted.'),
-        'errorTitle'            : _('Error'),
-        'errorMessage'          : _('There was a problem saving the correction'),
-        'great'                 : _('Great!'),
-        'incorrectPatternLabel' : _('Incorrect format'),
-        'incorrectPatternText'  : _('The name must be in the format "Last Name, First Name", separated by a comma.'),
-        'mustSelectDate'        : _('You must select a date!'),
-        'nameFormatText'        : _('Please enter your name in \'First Name Last Name\' format.'),
-        'nameNotRemoved'        : _('Your name was not removed.'),
-        'nameRemoved'           : _('The name has been removed.'),
-        'noNameFound'           : _('No Name Found'),
-        'noNameSaved'           : _('No name is currently saved.'),
-        'noQrGenerated'         : _('QR codes were not generated'),
-        'resetStudentName'      : _('Reset Student Name'),
-        'savedNameText'         : _('The saved name is: \'{name}\'. Do you want to clear it?'),
-        'revertTitle'           : _('Are you sure you want to revert this correction?'),
-        'revertConfirmButton'   : _('Revert'),
-        'selectDateExtraClasses': _('Select a date for Extra classes'),
-        'sundayClassRestriction': _('You cannot register a \'Sunday Class\' outside of Sunday.'),
-        'yes'                   : _('Yes'),
-        'yesDeleteEverything'   : _('Yes, delete everything'),
-        'yesClearIt'            : _('Yes, clear it!'),
-        'yesDeleteIt'           : _('Yes, Delete it!'),
-        'warningTitle'          : _('warning'),
-        'wrongNameTitle'        : _('Please enter the correct name'),
-        'wrongNameText'         : _('Please enter the correct name for '),
-        'wrongNameLabel'        : _('Correct Format: Last Name, First Name'),
-        'wrongNamePlaceholder'  : _('Enter the new name'),
-        'confirmSave'           : _('Confirm'),
-        'successTitle'          : _('¡Success'),
-        'successMessage'        : _('The name has been corrected'),
+        'alreadyRegistered'     : _("You already have registered assistance on {sunday_date}."),
+        'actionCanceled'        : _("Action canceled"),
+        'attendanceRecorded'    : _("¡{student_name}, your attendance was recorded!"),
+        'cancel'                : _("Cancel"),
+        'cancelled'             : _("Cancelled"),
+        'cancelledMessage'      : _("No correction has been made."),
+        'chooseClass'           : _("Choose a Class"),
+        'cleared'               : _("Cleared!"),
+        'confirm'               : _("Confirm"),
+        'confirmDelete'         : _("You \'re sure?"),
+        'connectionError'       : _("There was a problem connecting to the server."),
+        'deleteConfirmationText': _("This action will delete all records and cannot be undone."),
+        'deleteOneRecordText   ': _("This record will be deleted."),
+        'errorTitle'            : _("Error"),
+        'errorMessage'          : _("There was a problem saving the correction"),
+        'great'                 : _("Great!"),
+        'incorrectPatternLabel' : _("Incorrect format"),
+        'incorrectPatternText'  : _("The name must be in the format 'Last Name, First Name', separated by a comma."),
+        'mustSelectDate'        : _("You must select a date!"),
+        'nameFormatText'        : _("Please enter your name in \'First Name Last Name\' format."),
+        'nameNotRemoved'        : _("Your name was not removed."),
+        'nameRemoved'           : _("The name has been removed."),
+        'noNameFound'           : _("No Name Found"),
+        'noNameSaved'           : _("No name is currently saved."),
+        'noQrGenerated'         : _("QR codes were not generated"),
+        'resetStudentName'      : _("Reset Student Name"),
+        'savedNameText'         : _("The saved name is: \'{name}\'. Do you want to clear it?"),
+        'revertTitle'           : _("Are you sure you want to revert this correction?"),
+        'revertConfirmButton'   : _("Revert"),
+        'selectDateExtraClasses': _("Select a date for Extra classes"),
+        'sundayClassRestriction': _("You cannot register a \'Sunday Class\' outside of Sunday."),
+        'yes'                   : _("Yes"),
+        'yesDeleteEverything'   : _("Yes, delete everything"),
+        'yesClearIt'            : _("Yes, clear it!"),
+        'yesDeleteIt'           : _("Yes, Delete it!"),
+        'warningTitle'          : _("warning"),
+        'wrongNameTitle'        : _("Please enter the correct name"),
+        'wrongNameText'         : _("Please enter the correct name for "),
+        'wrongNameLabel'        : _("Correct Format: Last Name, First Name"),
+        'wrongNamePlaceholder'  : _("Enter the new name"),
+        'confirmSave'           : _("Confirm"),
+        'successTitle'          : _("¡Success"),
+        'successMessage'        : _("The name has been corrected"),
     }
     
     
@@ -1503,58 +1503,119 @@ def update_name_correction():
   
     
 # =============================================================================================    
+# @bp.route('/admin', methods=['GET', 'POST'])
+# @role_required('Admin', 'Owner')
+# def admin():
+#     meeting_center_id = get_meeting_center_id()
+    
+#     if meeting_center_id == 'all':
+#         meeting_center_id = None  # No aplicar filtro
+#         name_corrections = NameCorrections.query.all()
+        
+#     if meeting_center_id is not None:
+#         name_corrections = NameCorrections.query.filter(NameCorrections.meeting_center_id == meeting_center_id).all()
+
+#     # Get the configuration for code verification setting, filtering by meeting_center_id
+#     code_verification_setting = Setup.query.filter_by(key='code_verification', meeting_center_id=meeting_center_id).first()
+    
+#     bypass_enabled = request.args.get('bypass_enabled', 'false')  # Default "false"
+    
+#     # Handle POST requests for code verification and deleting records
+#     if request.method == 'POST':
+#         if 'code_verification' in request.form:
+#             new_value = request.form.get('code_verification')
+#             if code_verification_setting:
+#                 code_verification_setting.value = new_value
+#             else:
+#                 # Crear un nuevo registro para el meeting_center_id
+#                 code_verification_setting = Setup(key='code_verification', value=new_value, meeting_center_id=meeting_center_id)
+#                 db.session.add(code_verification_setting)
+                
+#             db.session.commit()
+
+#         if 'delete_selected' in request.form:
+#             ids_to_delete = request.form.getlist('delete')
+#             for id in ids_to_delete:
+#                 attendance = Attendance.query.get(id)
+#                 if attendance:
+#                     db.session.delete(attendance)
+#             db.session.commit()
+
+#         elif 'delete_all' in request.form:
+#             db.session.query(Attendance).delete()
+#             db.session.commit()
+
+#         return redirect(url_for('routes.admin'))
+   
+#     verification_enabled = code_verification_setting.value if code_verification_setting else 'true'
+    
+#     return render_template('admin.html', 
+#                            verification_enabled=verification_enabled, 
+#                            bypass_enabled=bypass_enabled, 
+#                            name_corrections=name_corrections
+#                            )
+    
 @bp.route('/admin', methods=['GET', 'POST'])
 @role_required('Admin', 'Owner')
 def admin():
     meeting_center_id = get_meeting_center_id()
     
-    if meeting_center_id == 'all':
-        meeting_center_id = None  # No aplicar filtro
-        name_corrections = NameCorrections.query.all()
-        
-    if meeting_center_id is not None:
-        name_corrections = NameCorrections.query.filter(NameCorrections.meeting_center_id == meeting_center_id).all()
+    name_corrections_query = NameCorrections.query
+    if meeting_center_id != 'all':
+        name_corrections_query = name_corrections_query.filter_by(meeting_center_id=meeting_center_id)
 
-    # Get the configuration for code verification setting, filtering by meeting_center_id
-    code_verification_setting = Setup.query.filter_by(key='code_verification', meeting_center_id=meeting_center_id).first()
-    
-    bypass_enabled = request.args.get('bypass_enabled', 'false')  # Default "false"
-    
-    # Handle POST requests for code verification and deleting records
+    name_corrections = name_corrections_query.all()
+
+    code_verification_setting = Setup.query.filter_by(
+        key='code_verification', meeting_center_id=meeting_center_id if meeting_center_id != 'all' else None
+    ).first()
+
+    bypass_enabled = request.args.get('bypass_enabled', 'false')
+
     if request.method == 'POST':
         if 'code_verification' in request.form:
             new_value = request.form.get('code_verification')
             if code_verification_setting:
                 code_verification_setting.value = new_value
             else:
-                # Crear un nuevo registro para el meeting_center_id
-                code_verification_setting = Setup(key='code_verification', value=new_value, meeting_center_id=meeting_center_id)
-                db.session.add(code_verification_setting)
-                
+                db.session.add(Setup(key='code_verification', value=new_value, meeting_center_id=meeting_center_id))
             db.session.commit()
 
         if 'delete_selected' in request.form:
             ids_to_delete = request.form.getlist('delete')
-            for id in ids_to_delete:
-                attendance = Attendance.query.get(id)
-                if attendance:
-                    db.session.delete(attendance)
+            Attendance.query.filter(Attendance.id.in_(ids_to_delete)).delete(synchronize_session=False)
             db.session.commit()
 
         elif 'delete_all' in request.form:
             db.session.query(Attendance).delete()
             db.session.commit()
 
-        return redirect(url_for('routes.admin'))
-   
-    verification_enabled = code_verification_setting.value if code_verification_setting else 'true'
+        return redirect(url_for('routes.admin', meeting_center_id=meeting_center_id))
     
+    verification_enabled = code_verification_setting.value if code_verification_setting else 'true'
+
     return render_template('admin.html', 
                            verification_enabled=verification_enabled, 
                            bypass_enabled=bypass_enabled, 
-                           name_corrections=name_corrections
-                           )
+                           name_corrections=name_corrections,
+                           meeting_center_id=meeting_center_id)
+
+
+# ============================================================================================= 
+@bp.route('/admin/get_settings', methods=['GET'])
+def get_settings():
+    meeting_center_id = request.args.get('meeting_center_id')
     
+    # Obtener los valores de code_verification y bypass_restriction
+    code_verification_setting  = Setup.query.filter_by(key='code_verification', meeting_center_id=meeting_center_id).first()
+    bypass_restriction_setting = Setup.query.filter_by(key='bypass_restriction', meeting_center_id=meeting_center_id).first()
+    
+    # Devolver los valores en formato JSON
+    return jsonify({
+        'code_verification': code_verification_setting.value if code_verification_setting else 'null',
+        'bypass_restriction': bypass_restriction_setting.value if bypass_restriction_setting else 'null'
+    })
+
 
 # =============================================================================================  
 @bp.route('/admin/bypass', methods=['POST'])
@@ -1575,7 +1636,7 @@ def update_bypass_restriction():
 
     db.session.commit()  # Guarda los cambios
 
-    flash("Bypass restriction updated successfully!", "success")
+    flash(_('Bypass restriction updated successfully!'), "success")
     return redirect(url_for('routes.admin', bypass_enabled=new_value))
 
 
@@ -1585,7 +1646,7 @@ def delete_name_correction(id):
     correction = NameCorrections.query.get_or_404(id)  # Buscar el registro por ID
     db.session.delete(correction)  # Eliminar el registro
     db.session.commit()  # Guardar los cambios
-    flash("Name correction deleted successfully!", "success")
+    flash(_('Name correction deleted successfully!'), "success")
     return redirect(url_for('routes.admin'))  # Redirigir a la vista admin
 
 
@@ -1613,7 +1674,7 @@ def revert_name_correction(id):
     # Guardar los cambios en la base de datos
     db.session.commit()
 
-    flash("Name correction reverted successfully!", "success")
+    flash(_('Name correction reverted successfully!'), "success")
     return redirect(url_for('routes.admin'))
 
 
