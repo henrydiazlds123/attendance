@@ -61,7 +61,7 @@
 </div>
     <!-- Botón para generar PDFs -->
 <div class="col-md-8 offset-md-2 col-lg-10 offset-lg-1">
-    {% if session['role'] == 'Owner' or session['role'] == 'Admin' %}
+    
     <div class="row">
         <div class="col-sm-12 col-lg-4 mb-2">
             <form class="d-grid gap-2" action="/pdf/generate_week" method="POST">
@@ -72,7 +72,7 @@
                 </button>
             </form>
         </div>
-
+        {% if session['role'] == 'Owner' or session['role'] == 'Admin' %}
         <div class="col-sm-12 col-lg-4 mb-2">
             <form class="d-grid gap-2" action="/pdf/generate_all" method="POST">
                 <button class="btn btn-primary btn-block" data-toggle="tooltip" title="{{ _('Create PDF for all classes') }}"
@@ -81,6 +81,7 @@
                 </button>
             </form>
         </div>
+        {% endif %}
         <div class="col-sm-12 col-lg-4 mb-2">
             <form class="d-grid gap-2" id="extra-class-form" action="/pdf/generate_extra" method="POST">
                 <input type="hidden" name="date" id="extra-class-date"> <!-- Campo oculto para la fecha -->
@@ -94,6 +95,6 @@
         </div>
     </div>
 </div>
-    {% endif %}
+    
 
 {% endblock %}

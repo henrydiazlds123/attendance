@@ -6,7 +6,17 @@
 {% block content %}
 
 <div class="row">
-    <p>{{ _('Total Members') }}: <b id="total-members">{{ total_miembros }}</b> </p>
+    <div class="d-flex justify-content-between col-md-12">
+
+        <p>{{ _('Total Members') }}: <b id="total-members">{{ total_miembros }}</b> </p>
+        {% if session['role'] == 'Admin' or session['role'] == 'Owner' %}
+        
+        <div class="col-auto mb-2">
+            <a class="btn btn-primary col-auto" href="{{ url_for('routes.create_attendance') }}"><i class="bi bi-plus-circle-fill"></i> {{ _('New Attendance') }}</a>
+        </div>
+        {% endif %}
+    </div>
+
     <div class="col-6 col-md-4 mb-3">
         <div class="input-group">
             <span class="input-group-text"><i class="bi bi-calendar-month"></i></span>

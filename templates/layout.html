@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{{ _('Attendance') }}{% endblock %}</title>
+    <title>{% block title %}{{ _('Attendance Hub') }}{% endblock %}</title>
 
     {% include 'partials/head.html' %}
 
@@ -14,16 +14,16 @@
 
 <body class="{{ 'logged-in' if session['user_id'] else '' }}">
 
-    <head>
+    <header>
         {% include 'partials/navbar.html' %}
-    </head>
+    </header>
 
     <main  class="pb-5">
         <div class="container">
             <div class="row">
                 <p class="my-3">{% block subtitle%}{% endblock%}</p>
                 <h2>{% block pageTitle %}{% endblock %}</h2>
-                <p class="mb-3">{{ session['meeting_center_name'] if request.endpoint != 'routes.admin' else ''}}</p>
+                <p class="mb-3">{{ session['meeting_center_name'] if request.endpoint != 'routes.admin' and request.endpoint != 'routes./' else ''}}</p>
 
                 {% block content %} {% endblock %}
                 

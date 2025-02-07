@@ -16,7 +16,9 @@
                 <div class="row mb-3">
                     <div class="col-md-9 offset-md-3 d-flex justify-content-end gap-3">
                         <button type="submit" class="btn btn-{{ clas }} w-50">{{ submit_button_text }}</button>
-                        <button type="cancel" class="btn btn-secondary w-50">{{ _('Cancel') }}</button>
+                        <button type="button" class="btn btn-secondary w-50" onclick="window.location.href='{{ request.referrer or url_for(routes.index) }}'">
+                            {{ _('Cancel') }}
+                        </button>
                     </div>
                 </div>
             </form>

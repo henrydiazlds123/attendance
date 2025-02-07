@@ -1,0 +1,70 @@
+<table class="table table-striped table-sm" id="attendancesTbl">
+  <thead class="thead-dark">
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">{{ _('Fix') }}</th>
+      <th scope="col">{{ _('Member') }}</th>
+      <th scope="col">{{ _('Class') }}</th>
+      <th scope="col">{{ _('Date') }}</th>
+      {% if session['role'] == 'Owner' %}
+      <th scope="col">{{ _('Unit') }}</th>
+      <th scope="col">{{ _('Code') }}</th>
+      {% endif %}
+      {% if session['role'] == 'Admin' or session['role'] == 'Owner' %}
+      <th scope="col" class="d-none d-md-table-cell">{{ _('Submited') }}</th>
+      {% endif %}
+      {% if session['role'] == 'Owner' or session['role'] == 'Admin' %}
+      <th scope="col">{{ _('Actions') }}</th>
+      {% endif %}
+
+    </tr>
+  </thead>
+  <tbody>
+    {% for attendance in attendances %}
+    <tr>
+      <td scope="row">{{ loop.index }}</td>
+      <td>
+        {% if attendance.student_name in corrected_names %}
+          <input type="checkbox" disabled>
+        {% else %}
+        <input type="checkbox" data-wrong-name="{{ attendance.student_name }}" 
+               data-meeting-center-id="{{ attendance.meeting_center_id }}" 
+               onclick="correctName(this)">
+        {% endif %}
+      </td>
+      <td style="text-transform:capitalize">{{attendance.student_name}}</td>
+      <td>{{_(attendance.class_short_name)}}</td>
+      <td>{{ attendance.sunday_date_formatted }}</td>
+      {% if session['role'] == 'Owner' %}
+      <td>{{_(attendance.meeting_short_name)}}</td>
+      <td>{{_(attendance.sunday_code)}}</td>
+      {% endif %}
+      {% if session['role'] == 'Admin' or session['role'] == 'Owner' %}
+      <!-- <td class="d-none d-md-table-cell">{{ attendance.submit_date.strftime("%b %d, %I:%M %p")}}</td> -->
+      <td class="d-none d-md-table-cell">{{ format_datetime(attendance.submit_date, format='short') }}</td>
+
+      <td>
+        <a type="button" class="btn btn-primary btn-sm"
+          href="{{ url_for('routes.update_attendance', id=attendance.id, **request.args.to_dict()) }}"><i
+            class="bi bi-pencil-square"></i></a>
+
+        {% endif %}
+        {% if session['role'] == 'Owner' %}
+        {% if attendance.id %}
+          <form id="deleteForm-attendance-{{ attendance.id }}"
+                       action="{{ url_for('routes.delete_attendance', id=attendance.id, **request.args.to_dict()) }}"
+          method="post" style="display:inline;">
+          <button type="button" class="btn btn-danger btn-sm" data-toggle="tooltip" title="{{ _('Delete attendance') }}"
+            onclick="confirmDelete('attendance', {{ attendance.id }})">
+            <i class="bi bi-trash"></i>
+          </button>
+        </form>
+        {% else %}
+        <p>Error: Attendance ID is missing!</p>
+      {% endif %}
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

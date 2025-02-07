@@ -17,21 +17,27 @@ def role_required(*roles):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
+            if g.user is None:  # Si no está autenticado, lo redirigimos a login
+                return redirect(url_for('routes.login', next=request.url))
+            
             user_role = session.get('role')  # Suponiendo que el rol se almacena en la sesión
             if user_role not in roles:
                 flash(_('You do not have permission to perform this action.'), 'danger')
-                return redirect(url_for('routes.login'))  # Ajusta la ruta de redirección según sea necesario
+                return redirect(url_for('routes.login'))  # O podrías redirigir a otra página
+            
             return f(*args, **kwargs)
         return decorated_function
     return decorator
+
 
 
 # ================================================================
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if g.user is None:
-            return redirect(url_for('routes.login', next=request.url))  # Redirige a login si no hay usuario
+        if g.user is None:  # Si el usuario no está autenticado
+            next_url = request.url  # Guardamos la URL a la que intentaba acceder
+            return redirect(url_for('routes.login', next=next_url))  # Pasamos 'next' como parámetro
         return f(*args, **kwargs)
     return decorated_function
 
@@ -152,6 +158,7 @@ def get_meeting_center_id():
 
 
 # GRFICOS
+# ================================================================
 def get_attendance_by_class_data():
     # Obtener los datos de asistencia agrupados por clase
     attendance_by_class = db.session.query(
@@ -164,8 +171,7 @@ def get_attendance_by_class_data():
     return attendance_by_class
 
 
-import plotly.express as px
-
+# ================================================================
 def plot_attendance_by_class(attendance_data):
     classes = [f"Clase {class_id}" for class_id, _ in attendance_data]  # Puedes mejorar esto con nombres reales de clases
     attendance_counts = [attendance_count for _, attendance_count in attendance_data]
