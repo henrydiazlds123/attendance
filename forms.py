@@ -27,10 +27,13 @@ class UserForm(FlaskForm):
         # Si hay un rol en la sesión, personalizamos las opciones del rol
         if 'role' in session:
             if session['role'] == 'Owner':
-                self.role.choices = [('Admin', _('Admin')), ('Pwr', _('Power user')), ('User', _('User')), ('Operator', _('Operator'))]
+                self.role.choices = [('Admin', _('Admin')), ('Super', _('Super user')), ('User', _('User')), ('Operator', _('Operator'))]
+            elif session['role'] == 'Admin':
+                # Si el usuario no es Owner, no se muestra 'Owner' en la lista
+                self.role.choices = [('Admin', _('Admin')), ('Super', _('Super user')), ('Operator', _('Operator'))]
             else:
                 # Si el usuario no es Owner, no se muestra 'Owner' en la lista
-                self.role.choices = [('Admin', _('Admin')), ('Pwr', _('Power user')), ('User', _('User'))]
+                self.role.choices = [('Super', _('Super user')), ('User', _('User')), ('Operator', _('Operator'))]
 
             # Si no es Owner, no puede cambiar el Meeting Center
             if session['role'] != 'Owner':
@@ -58,13 +61,18 @@ class EditUserForm(FlaskForm):
 
     def __init__(self, *args, **kwargs):
         super(EditUserForm, self).__init__(*args, **kwargs)
+        # Si hay un rol en la sesión, personalizamos las opciones del rol
         if 'role' in session:
-            if session['role'] == 'Admin':
-                self.role.choices = [('Admin', _('Admin')), ('Pwr', _('Power user')), ('User', _('User')), ('Operator', _('Operator'))]
+            if session['role'] == 'Owner':
+                self.role.choices = [('Admin', _('Admin')), ('Super', _('Super user')), ('User', _('User')), ('Operator', _('Operator'))]
+            elif session['role'] == 'Admin':
+                # Si el usuario no es Owner, no se muestra 'Owner' en la lista
+                self.role.choices = [('Admin', _('Admin')), ('Super', _('Super user')), ('Operator', _('Operator'))]
             else:
-                # self.role.choices = [('Owner', _('Owner')), ('Admin', _('Admin')), ('Pwr', _('Power user')), ('User', _('User'))]
-                self.role.choices = [('Admin', _('Admin')), ('Pwr', _('Power user')), ('User', _('User')), ('Operator', _('Operator'))]
+                # Si el usuario no es Owner, no se muestra 'Owner' en la lista
+                self.role.choices = [('Super', _('Super user')), ('User', _('User')), ('Operator', _('Operator'))]
 
+            # Si no es Owner, no puede cambiar el Meeting Center
             if session['role'] != 'Owner':
                 self.meeting_center_id.data = session.get('meeting_center_id')
                 self.meeting_center_id.render_kw = {'disabled': 'disabled'}

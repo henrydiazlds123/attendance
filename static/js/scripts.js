@@ -311,31 +311,35 @@ async function confirmRevert(id) {
 //----------------------------------------------------------------------------------
 async function prevalidateAttendance(classCode, sundayCode, unitNumber) {
   try {
+      const texts    = await fetch('/get_swal_texts').then(response => response.json());
       const response = await fetch(`/prevalidar?classCode=${classCode}&sundayCode=${sundayCode}&unitNumber=${unitNumber}`);
-      const data = await response.json();
+      const data     = await response.json();
 
       if (!data.success) {
-          Swal.fire("Atención", data.message, "warning");
+          Swal.fire(texts.atention, data.message, "warning");
           return false;
       }
       return true;
   } catch (error) {
-      Swal.fire("Error", "Hubo un problema al validar la asistencia.", "error");
+      Swal.fire(texts.validatonError, "error");
       return false;
   }
 }
 
-// Llamar esta función cuando el usuario escanee el código QR o acceda a la página
-document.addEventListener("DOMContentLoaded", async function() {
-  const classCode = getParameterByName("classCode");
-  const sundayCode = getParameterByName("sundayCode");
-  const unitNumber = getParameterByName("unitNumber");
 
-  if (classCode && sundayCode && unitNumber) {
-      const isValid = await prevalidateAttendance(classCode, sundayCode, unitNumber);
-      if (!isValid) {
-          // Redirigir a otra página si la validación falla
-          window.location.href = "/";
-      }
-  }
-});
+async function confirmPromotion(userId, username) {
+  const texts = await fetch('/get_swal_texts').then(response => response.json());
+  Swal.fire({
+    title: texts.promotionTitle,
+    text: texts.promotionText,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#28a745',
+    cancelButtonColor: '#d33',
+    confirmButtonText: texts.promotionConfirmation
+  }).then((result) => {
+    if (result.isConfirmed) {
+      document.getElementById(`promoteForm-${userId}`).submit();
+    }
+  })
+};

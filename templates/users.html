@@ -45,7 +45,8 @@
                 <a type="button" class="btn btn-primary btn-sm" data-toggle="tooltip" title="{{ _('Edit user') }}" href="{{ url_for('routes.update_user', id=user.id) }}">
                   <i class="bi bi-pencil-square"></i>
                 </a>
-                {% if session['role'] == 'Owner' or (session['role'] == 'Admin' and user.role == 'User') or user.id == session['user_id'] %}
+                {% if session['role'] == 'Owner' or (session['role'] == 'Admin' and (user.role == 'User' or user.role == 'Super' or user.role == 'Operator')) or user.id == session['user_id'] %}
+
                   {% if not (user.role == 'Admin' and admin_count <= 1) %}
                     <form id="deleteForm-user-{{ user.id }}" action="{{ url_for('routes.delete_user', id=user.id) }}" method="post" style="display:inline;">
                       <button type="button" class="btn btn-danger btn-sm" data-toggle="tooltip" title="{{ _('Delete User') }}"  onclick="confirmDelete('user', {{ user.id }})">
@@ -55,8 +56,8 @@
                   {% endif %}
                 {% endif %}
                 {% if user.role == 'User' %}
-                  <form id="promoteForm-{{ user.id }}" action="{{ url_for('routes.promote_to_admin', id=user.id) }}" method="POST" style="display:inline;">
-                    <button type="button" class="btn btn-success btn-sm" data-toggle="tooltip" title="{{ _('Change to Admin') }}" onclick="confirmPromotion({{ user.id }}, '{{ user.username }}')">
+                  <form id="promoteForm-{{ user.id }}" action="{{ url_for('routes.promote_to_super', id=user.id) }}" method="POST" style="display:inline;">
+                    <button type="button" class="btn btn-success btn-sm" data-toggle="tooltip" title="{{ _('Change to Super User') }}" onclick="confirmPromotion({{ user.id }}, '{{ user.username }}')">
                       <i class="bi bi-person-lock"></i>
                     </button>
                   </form>

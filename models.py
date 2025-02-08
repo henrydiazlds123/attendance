@@ -157,7 +157,13 @@ class Classes(db.Model):
         
     @property
     def translated_name(self):
-        return _(self.class_name)  # Devuelve el nombre traducido       
+        return _(self.class_name)  # Devuelve el nombre traducido   
+    @property
+    def translated_short_name(self):
+        return _(self.short_name)  # Devuelve el nombre traducido 
+    @property
+    def translated_code(self):
+        return _(self.class_code)  # Devuelve el nombre traducido     
         
 #=======================================================================        
 

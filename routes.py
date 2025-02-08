@@ -1,7 +1,9 @@
 import qrcode
-from flask                   import Blueprint, abort, jsonify, render_template, redirect, request, session, url_for, flash, send_from_directory, send_file
+from flask                   import Blueprint, abort, jsonify, render_template, redirect, request, session, url_for, flash, send_from_directory
 from flask_babel             import gettext as _
 from sqlalchemy              import func, extract, desc, asc
+from sqlalchemy.orm          import joinedload
+from sqlalchemy.exc          import IntegrityError
 from config                  import Config
 from models                  import db, Classes, User, Attendance, MeetingCenter, Setup, Organization, NameCorrections
 from forms                   import AttendanceEditForm, AttendanceForm, MeetingCenterForm, UserForm, EditUserForm, ResetPasswordForm, ClassForm, OrganizationForm
@@ -10,19 +12,12 @@ from reportlab.lib.utils     import ImageReader
 from reportlab.pdfgen        import canvas
 from urllib.parse            import unquote
 from utils                   import *
-from sqlalchemy.exc          import IntegrityError
 from datetime                import datetime, timedelta
 
 
 
 
 bp = Blueprint('routes', __name__)
-
-# Lista con todos los meses del año
-all_months = list(range(1, 13))  # [1, 2, 3, ..., 12]
-months_translated = [_('Jan'), _('Feb'), _('Mar'), _('Apr'), _('May'), _('Jun'),
-                    _('Jul'), _('Aug'), _('Sep'), _('Oct'), _('Nov'), _('Dec')]
-
 
 
 @bp.before_request
@@ -94,7 +89,7 @@ def index():
 
 # =============================================================================================
 @bp.route('/users')
-@role_required('Admin', 'Owner')
+@role_required('Admin', 'Super', 'Owner')
 def users():
     role = session.get('role')
     meeting_center_id = get_meeting_center_id()
@@ -114,11 +109,18 @@ def users():
         if meeting_center_id != 'all':  # Filtra solo si hay un meeting_center_id seleccionado
             query = query.filter(User.meeting_center_id == meeting_center_id)
     elif role == 'Admin':
+        query = query.filter(User.role != 'Owner')
+
+    elif role != 'Admin':
         query = query.filter(User.role != 'Owner') \
                      .filter(User.organization_id == session.get('organization_id'))
     else:
          # Regular users can only see their own user
-         users = User.query.filter_by(student_name=session.get('username')).all()
+         users = User.query.filter_by(username=session.get('username')).all()
+    
+    # Asegurar que solo los Owners puedan ver otros Owners
+    if role != 'Owner':
+        query = query.filter(User.role != 'Owner')
 
     users = query.all()
     
@@ -127,12 +129,12 @@ def users():
 
 # =============================================================================================
 @bp.route('/user/new', methods=['GET', 'POST'])
-@role_required('Admin', 'Owner')
+@role_required('Admin', 'Super', 'Owner')
 def create_user():
 
     form                           = UserForm()
     form.meeting_center_id.choices = [(mc.id, mc.name) for mc in MeetingCenter.query.all()]
-    form.organization_id.choices   = [(og.id, og.name) for og in Organization.query.all()]
+    form.organization_id.choices   = [(og.id, og.translated_name) for og in Organization.query.all()]
 
     if form.validate_on_submit():
         user = User(
@@ -154,12 +156,12 @@ def create_user():
 
 # =============================================================================================
 @bp.route('/user/edit/<int:id>', methods=['GET', 'POST'])
-@role_required('Admin', 'Owner')
+@role_required('Admin', 'Super', 'Owner')
 def update_user(id):
     user                           = User.query.get_or_404(id)
     form                           = EditUserForm(obj=user)
     form.meeting_center_id.choices = [(mc.id, mc.name) for mc in MeetingCenter.query.all()]
-    form.organization_id.choices   = [(og.id, og.name) for og in Organization.query.all()]
+    form.organization_id.choices   = [(og.id, og.translated_name) for og in Organization.query.all()]
 
     if form.validate_on_submit():
         user.username          = form.username.data
@@ -178,7 +180,7 @@ def update_user(id):
 
 # =============================================================================================
 @bp.route('/user/delete/<int:id>', methods=['POST'])
-@role_required('Admin', 'Owner')  # Solo los admins pueden acceder a esta ruta
+@role_required('Admin', 'Super', 'Owner')  # Solo los admins pueden acceder a esta ruta
 def delete_user(id):
     user_to_delete = User.query.get_or_404(id)
     current_user_id = session.get('user_id')
@@ -237,28 +239,26 @@ def reset_password(id):
 
 # =============================================================================================
 @bp.route('/users/<int:id>/promote', methods=['POST'])
-@role_required('Owner')
-def promote_to_admin(id):
+@role_required('Owner', 'Admin')
+def promote_to_super(id):
     user = User.query.get_or_404(id)
-    if user.role =='Admin':
-        flash(_('The user is already an administrator.'), 'info')
+    if user.role =='Super':
+        flash(_('The user is already an Super User.'), 'info')
     else:
-        user.role = 'Admin'
+        user.role = 'Super'
         db.session.commit()
         # flash(f'El usuario {user.username} ha sido promovido a administrador.', 'success')
-        flash(_('User %(username)s has been promoted to administrator.') % {'username': user.username}, 'success')
+        flash(_('User %(username)s has been promoted to Super User.') % {'username': user.username}, 'success')
     return redirect(url_for('routes.users'))
 
 
 # =============================================================================================
 @bp.route('/attendance', methods=['GET', 'POST'])
 def attendance():
-    class_code  = request.args.get('class')
-    sunday_code = request.args.get('code')
-    unit_number = request.args.get('unit')
+    class_code  = request.args.get('classCode')
+    sunday_code = request.args.get('sundayCode')
+    unit_number = request.args.get('unitNumber')
     
-    print(class_code, unit_number, sunday_code)
-
     # if not class_code or not sunday_code or class_code not in CLASES:
     if not class_code or not sunday_code or not unit_number:
         return render_template('4xx.html', page_title=_('400 Invalid URL'), error_number='400', error_title=_(_('Check what you wrote!')), error_message=_('The address you entered is incomplete!')), 400
@@ -277,250 +277,8 @@ def attendance():
     
 
 # =============================================================================================
-# @bp.route('/attendance/list', methods=['GET', 'POST'])
-# @role_required('User', 'Admin', 'Owner')
-# def attendances():
-#     # Get user role and meeting_center_id from session
-#     role              = session.get('role')
-#     months_abr        = get_months()
-#     meeting_center_id = get_meeting_center_id()
-#     corrected_names   = [
-#         correction.correct_name 
-#         for correction in NameCorrections.query.filter_by(meeting_center_id=meeting_center_id).all()
-#     ]
-
-#     # Get distinct values for filters
-#     if meeting_center_id == 'all':
-#         classes = db.session.query(db.func.min(Classes.id).label("id"),Classes.short_name).join(Attendance, Attendance.class_id == Classes.id).group_by(Classes.short_name).all()
-#         students = db.session.query(Attendance.student_name.distinct()).all()
-#         sundays  = db.session.query(Attendance.sunday_date.distinct()).order_by(Attendance.sunday_date.desc()).all()
-#     else:    
-#         classes  = db.session.query(Classes.id, Classes.short_name).join(Attendance, Attendance.class_id == Classes.id).distinct().filter(Classes.meeting_center_id == meeting_center_id).all()
-#         students = db.session.query(Attendance.student_name.distinct()).filter(Attendance.meeting_center_id == meeting_center_id).all()
-#         sundays  = db.session.query(Attendance.sunday_date.distinct()).filter(Attendance.meeting_center_id == meeting_center_id).order_by(Attendance.sunday_date.desc()).all()
-
-#     # Formatear las fechas con Flask-Babel
-#     sundays_formatted = [
-#         {"date": sunday[0], "formatted": format_date(sunday[0], format='MMM dd')}  # 'MMM dd' para "Mes día"
-#         for sunday in sundays
-#     ]
-
-#     # Get filter parameters from URL query string
-#     class_name    = request.args.get('class_name')
-#     student_name  = request.args.get('student_name')
-#     sunday_date   = request.args.get('sunday_date')
-
-#     query = db.session.query(
-#         Attendance.id,
-#         Attendance.student_name,
-#         Classes.short_name.label('class_short_name'),
-#         Attendance.class_code,
-#         Attendance.sunday_date,
-#         Attendance.submit_date,
-#         Attendance.sunday_code,
-#         Attendance.meeting_center_id,
-#         MeetingCenter.short_name.label('meeting_short_name')
-#     ).join(
-#         Classes, 
-#         (Attendance.class_code == Classes.class_code) & (Attendance.meeting_center_id == Classes.meeting_center_id)
-#     ).join(
-#         MeetingCenter, 
-#         Attendance.meeting_center_id == MeetingCenter.id
-#     )
-    
-#     sundays = db.session.query(Attendance.sunday_date.distinct()) \
-#     .filter(Attendance.meeting_center_id == session.get('meeting_center_id')).all()
-
-#     years = db.session.query(func.strftime('%Y', Attendance.sunday_date).label('year')) \
-#     .filter(Attendance.meeting_center_id == session.get('meeting_center_id')).distinct().all()
-
-#     months = db.session.query(func.strftime('%m', Attendance.sunday_date).label('month')) \
-#     .filter(Attendance.meeting_center_id == session.get('meeting_center_id')).distinct().all()
-
-#     # Filter based on role and meeting_center_id
-#     if role == 'Admin' or role == 'User':
-#         query = query.filter(Attendance.meeting_center_id == meeting_center_id)
-#     elif role == 'Owner':
-#         pass
-
-#     # Apply filters based on form inputs
-#     if class_name:
-#         query = query.filter(Classes.short_name.ilike(f'%{class_name}%'))
-#     if student_name:
-#         query = query.filter(Attendance.student_name.ilike(f'%{student_name}%'))
-#     if sunday_date:
-#         try:
-#             date_filter = datetime.strptime(sunday_date, '%Y-%m-%d').date()
-#             query = query.filter(Attendance.sunday_date == date_filter)
-#         except ValueError:
-#             pass
-
-#     selected_year = request.args.get('year')
-#     if selected_year:
-#         query = query.filter(func.strftime('%Y', Attendance.sunday_date) == selected_year)
-
-#     selected_month = request.args.get('month')
-#     if selected_month:
-#         query = query.filter(func.strftime('%m', Attendance.sunday_date) == selected_month.zfill(2))
-
-#     # Execute the query and fetch results
-#     if meeting_center_id == 'all':
-#         attendances     = query.order_by(asc(Attendance.student_name),desc(Attendance.sunday_date), Attendance.class_id).all()
-#     else:
-#         attendances     = query.order_by(asc(Attendance.student_name), desc(Attendance.sunday_date), Attendance.class_id) \
-#         .filter(Attendance.meeting_center_id == session.get('meeting_center_id')).all()
-    
-#     # Formatear las fechas con Flask-Babel
-#     attendances_formatted = [
-#         {
-#             **attendance._asdict(),  # Convertir el objeto SQLAlchemy a un diccionario
-#             "sunday_date_formatted": format_date(attendance.sunday_date, format='MMM dd')  # Formatear la fecha
-#         }
-#         for attendance in attendances
-#     ]
-
-#     total_registros = len(attendances)
-#     has_records     = Attendance.query.count() > 0
-
-#     return render_template(
-#         'attendance_list.html', 
-#         attendances     = attendances_formatted,
-#         has_records     = has_records,
-#         classes         = classes,
-#         students        = students,
-#         sundays         = sundays_formatted,     # Usar las fechas formateadas
-#         months          = months,
-#         years           = years,
-#         total_registros = total_registros,
-#         months_abr      = months_abr,
-#         corrected_names = corrected_names
-#     )
-
-
-# @bp.route('/attendance/list', methods=['GET', 'POST'])
-# @role_required('User', 'Admin', 'Owner')
-# def attendances():
-#     # Get user role and meeting_center_id from session
-#     role              = session.get('role')
-#     months_abr        = get_months()
-#     meeting_center_id = get_meeting_center_id()
-#     corrected_names   = [
-#         correction.correct_name 
-#         for correction in NameCorrections.query.filter_by(meeting_center_id=meeting_center_id).all()
-#     ]
-
-#     # Get distinct values for filters
-#     if meeting_center_id == 'all':
-#         classes = db.session.query(db.func.min(Classes.id).label("id"),Classes.short_name).join(Attendance, Attendance.class_id == Classes.id).group_by(Classes.short_name).all()
-#         students = db.session.query(Attendance.student_name.distinct()).all()
-#         sundays  = db.session.query(Attendance.sunday_date.distinct()).order_by(Attendance.sunday_date.desc()).all()
-#     else:    
-#         classes  = db.session.query(Classes.id, Classes.short_name).join(Attendance, Attendance.class_id == Classes.id).distinct().filter(Classes.meeting_center_id == meeting_center_id).all()
-#         students = db.session.query(Attendance.student_name.distinct()).filter(Attendance.meeting_center_id == meeting_center_id).all()
-#         sundays  = db.session.query(Attendance.sunday_date.distinct()).filter(Attendance.meeting_center_id == meeting_center_id).order_by(Attendance.sunday_date.desc()).all()
-
-#     # Formatear las fechas con Flask-Babel
-#     sundays_formatted = [
-#         {"date": sunday[0], "formatted": format_date(sunday[0], format='MMM dd')}  # 'MMM dd' para "Mes día"
-#         for sunday in sundays
-#     ]
-
-#     # Get filter parameters from URL query string
-#     class_name    = request.args.get('class_name')
-#     student_name  = request.args.get('student_name')
-#     sunday_date   = request.args.get('sunday_date')
-#     page          = request.args.get('page', 1, type=int)
-#     per_page      = request.args.get('per_page', 25, type=int)
-
-#     query = db.session.query(
-#         Attendance.id,
-#         Attendance.student_name,
-#         Classes.short_name.label('class_short_name'),
-#         Attendance.class_code,
-#         Attendance.sunday_date,
-#         Attendance.submit_date,
-#         Attendance.sunday_code,
-#         Attendance.meeting_center_id,
-#         MeetingCenter.short_name.label('meeting_short_name')
-#     ).join(
-#         Classes, 
-#         (Attendance.class_code == Classes.class_code) & (Attendance.meeting_center_id == Classes.meeting_center_id)
-#     ).join(
-#         MeetingCenter, 
-#         Attendance.meeting_center_id == MeetingCenter.id
-#     )
-    
-#     sundays = db.session.query(Attendance.sunday_date.distinct()) \
-#     .filter(Attendance.meeting_center_id == session.get('meeting_center_id')).all()
-
-#     years = db.session.query(func.strftime('%Y', Attendance.sunday_date).label('year')) \
-#     .filter(Attendance.meeting_center_id == session.get('meeting_center_id')).distinct().all()
-
-#     months = db.session.query(func.strftime('%m', Attendance.sunday_date).label('month')) \
-#     .filter(Attendance.meeting_center_id == session.get('meeting_center_id')).distinct().all()
-
-#     # Filter based on role and meeting_center_id
-#     if role == 'Admin' or role == 'User':
-#         query = query.filter(Attendance.meeting_center_id == meeting_center_id)
-#     elif role == 'Owner':
-#         pass
-
-#     # Apply filters based on form inputs
-#     if class_name:
-#         query = query.filter(Classes.short_name.ilike(f'%{class_name}%'))
-#     if student_name:
-#         query = query.filter(Attendance.student_name.ilike(f'%{student_name}%'))
-#     if sunday_date:
-#         try:
-#             date_filter = datetime.strptime(sunday_date, '%Y-%m-%d').date()
-#             query = query.filter(Attendance.sunday_date == date_filter)
-#         except ValueError:
-#             pass
-
-#     selected_year = request.args.get('year')
-#     if selected_year:
-#         query = query.filter(func.strftime('%Y', Attendance.sunday_date) == selected_year)
-
-#     selected_month = request.args.get('month')
-#     if selected_month:
-#         query = query.filter(func.strftime('%m', Attendance.sunday_date) == selected_month.zfill(2))
-
-#     # Execute the query and fetch results
-#     if meeting_center_id == 'all':
-#         attendances     = query.order_by(asc(Attendance.student_name),desc(Attendance.sunday_date), Attendance.class_id).paginate(page=page, per_page=per_page, error_out=False)
-#     else:
-#         attendances     = query.order_by(asc(Attendance.student_name), desc(Attendance.sunday_date), Attendance.class_id) \
-#         .filter(Attendance.meeting_center_id == session.get('meeting_center_id')).paginate(page=page, per_page=per_page, error_out=False)
-    
-#     # Formatear las fechas con Flask-Babel
-#     attendances_formatted = [
-#         {
-#             **attendance._asdict(),  # Convertir el objeto SQLAlchemy a un diccionario
-#             "sunday_date_formatted": format_date(attendance.sunday_date, format='MMM dd')  # Formatear la fecha
-#         }
-#         for attendance in attendances.items
-#     ]
-
-#     total_registros = attendances.total
-#     has_records     = total_registros > 0
-
-#     return render_template(
-#         'attendance_list.html', 
-#         attendances     = attendances_formatted,
-#         has_records     = has_records,
-#         classes         = classes,
-#         students        = students,
-#         sundays         = sundays_formatted,     # Usar las fechas formateadas
-#         months          = months,
-#         years           = years,
-#         total_registros = total_registros,
-#         months_abr      = months_abr,
-#         corrected_names = corrected_names,
-#         pagination      = attendances
-#     )
-
 @bp.route('/attendance/list', methods=['GET', 'POST'])
-@role_required('User', 'Admin', 'Owner')
+@login_required
 def attendances():
     # Get user role and meeting_center_id from session
     role              = session.get('role')
@@ -552,8 +310,7 @@ def attendances():
     student_name  = request.args.get('student_name')
     sunday_date   = request.args.get('sunday_date')
     page          = request.args.get('page', 1, type=int)
-    per_page      = request.args.get('per_page', 25, type=int)
-    print(per_page)
+    per_page      = request.args.get('per_page', 52, type=int)
 
     query = db.session.query(
         Attendance.id,
@@ -632,11 +389,11 @@ def attendances():
         # Si es una solicitud AJAX, devolver JSON
         return jsonify({
             'attendances': attendances_formatted,
-            'pagination': {
-                'page': attendances.page,
+            'pagination' : {
+                'page'    : attendances.page,
                 'per_page': attendances.per_page,
-                'total': attendances.total,
-                'pages': attendances.pages,
+                'total'   : attendances.total,
+                'pages'   : attendances.pages,
                 'has_next': attendances.has_next,
                 'has_prev': attendances.has_prev,
                 'next_num': attendances.next_num,
@@ -661,7 +418,7 @@ def attendances():
         )
 # =============================================================================================
 @bp.route('/attendance/new', methods=['GET', 'POST'])
-@role_required('Admin', 'Owner')
+@role_required('Admin', 'Super', 'Owner')
 def create_attendance():
     meeting_center_id = get_meeting_center_id()
     form                           = AttendanceForm()
@@ -713,7 +470,7 @@ def create_attendance():
 
 # =============================================================================================
 @bp.route('/attendance/edit/<int:id>', methods=['GET', 'POST'])
-@role_required('Admin', 'Owner')
+@role_required('Admin', 'Super', 'Owner')
 def update_attendance(id):
     attendance = Attendance.query.get_or_404(id)
     form = AttendanceEditForm(obj=attendance)
@@ -743,7 +500,7 @@ def update_attendance(id):
 
 # =============================================================================================
 @bp.route('/attendance/delete/<int:id>', methods=['GET', 'POST'])
-@role_required('Admin', 'Owner')
+@role_required('Admin', 'Super', 'Owner')
 def delete_attendance(id):
     
     attendance = Attendance.query.get_or_404(id)
@@ -755,7 +512,7 @@ def delete_attendance(id):
 
 # =============================================================================================
 @bp.route('/attendance/manual')
-# @role_required('User', 'Admin', 'Owner', 'Operator')
+@login_required
 def manual_attendance():
     """Genera enlaces solo para las clases correspondientes al próximo domingo."""
     next_sunday_code = get_next_sunday_code(get_next_sunday())
@@ -765,7 +522,7 @@ def manual_attendance():
     # Generar enlaces solo para las clases correspondientes
     class_links = {
         class_entry.class_code: {
-            'url': f"{Config.BASE_URL}/attendance/manual?className={class_entry.translated_name}&classCode={class_entry.class_code}&sundayCode={next_sunday_code}&unit={unit}",
+            'url': f"{Config.BASE_URL}/attendance/manual?className={class_entry.translated_name}&classCode={class_entry.class_code}&sundayCode={next_sunday_code}&unitNumber={unit}",
             'name': class_entry.class_name
         }
         for class_entry in Classes.query.filter_by(is_active=True).all() if str(sunday_week) in class_entry.schedule.split(',')
@@ -945,8 +702,9 @@ def export_attendance():
     ) 
 # =============================================================================================
 @bp.route('/attendance/stats')
-def attendance_page():
-    meeting_center_id = 1
+@role_required('Owner', 'Admin')
+def attendance_stats():
+    meeting_center_id = get_meeting_center_id()
     year = request.args.get('year', type=int, default=2025)
 
     students = (db.session.query(Attendance.student_name)
@@ -1007,12 +765,12 @@ def attendance_page():
             bottom_students = [{"name": student[0], "attendance_percentage": 100} for student in bottom_attendance]
         else:
             top_students = [
-                {"name": student[0], "attendance_percentage": (student[1] / max_count) * 100}
+                {"name": student[0], "attendance_percentage": round((student[1] / max_count) * 100)}
                 for student in top_attendance
             ]
             bottom_students = sorted(
                 [
-                    {"name": student[0], "attendance_percentage": (student[1] / max_count) * 100}
+                    {"name": student[0], "attendance_percentage": round((student[1] / max_count) * 100)}
                     for student in bottom_attendance
                 ],
                 key=lambda x: x["name"],  # Ordenar por nombre
@@ -1024,8 +782,7 @@ def attendance_page():
 
     # Convertir el resultado en una lista de years
     years = [year[0] for year in years]
-    # print(top_students)
-    print(bottom_students)
+
     return render_template('attendance_stats.html', 
                            students          = student_names,
                            years             = years,
@@ -1036,12 +793,13 @@ def attendance_page():
 
 # =============================================================================================
 @bp.route('/attendance/monthly/<student_name>')
+@login_required
 def get_monthly_attendance(student_name):
     if not student_name:
         return jsonify({"error": "student_name is required"}), 400  # Retorna un error 400 en lugar de 404
     
     year = request.args.get('year', type=int, default=2024)
-    meeting_center_id = request.args.get('meeting_center_id', type=int)
+    meeting_center_id = get_meeting_center_id()
 
     # Obtener la cantidad de asistencias por mes para el estudiante
     attendance_query = (
@@ -1066,16 +824,16 @@ def get_monthly_attendance(student_name):
     attendance_dict  = {int(row.month): row.attendance_count for row in attendance_query}
     total_weeks_dict = {int(row.month): row.total_weeks for row in total_weeks_query}
 
-    # # Lista con todos los meses del año
-    # all_months = list(range(1, 13))  # [1, 2, 3, ..., 12]
-    # months_translated = [_('Jan'), _('Feb'), _('Mar'), _('Apr'), _('May'), _('Jun'),
-    #                      _('Jul'), _('Aug'), _('Sep'), _('Oct'), _('Nov'), _('Dec')]
-
     # Inicializar listas completas con 0s para los meses sin datos
     attendance_counts = []
     attendance_percentages = []
     total_weeks_list = []
     month_names = []
+
+    # Lista con todos los meses del año
+    all_months = list(range(1, 13))  # [1, 2, 3, ..., 12]
+    months_translated = [_('Jan'), _('Feb'), _('Mar'), _('Apr'), _('May'), _('Jun'),
+                    _('Jul'), _('Aug'), _('Sep'), _('Oct'), _('Nov'), _('Dec')]
 
     # Filtramos solo los meses con datos de asistencia o semanas reportadas
     for month in all_months:
@@ -1090,21 +848,23 @@ def get_monthly_attendance(student_name):
             total_weeks_list.append(total_weeks)
             month_names.append(months_translated[month - 1])  # Guardar el nombre del mes correspondiente
     # Convertir números de meses en nombres
+    
     month_names = [months_translated[m - 1] for m in all_months]
        
     # Lógica para obtener la frecuencia de clases por mes
     class_frequencies = {}
     for month in range(1, 13):
         class_frequencies[month] = {}
-        attendances = Attendance.query.join(Classes).filter(
-            Attendance.student_name == student_name,
-            extract('year', Attendance.sunday_date) == year,
-            extract('month', Attendance.sunday_date) == month
-        ).all()
+
+        attendances = Attendance.query.join(Classes).options(
+            joinedload(Attendance.classes)
+        ).filter(
+            Attendance.student_name == student_name, extract('year', Attendance.sunday_date) == year, extract('month', Attendance.sunday_date) == month).with_entities(Classes.class_code).filter(Attendance.meeting_center_id == meeting_center_id).all()  # Recupera class_code
 
         for attendance in attendances:
-            class_code = attendance.class_code
-            class_frequencies[month][class_code] = class_frequencies[month].get(class_code, 0) + 1
+            class_code = attendance[0]  # Extrae el valor de la tupla
+            translated_code = _(class_code)  # Aplica la traducción en Python
+            class_frequencies[month][translated_code] = class_frequencies[month].get(translated_code, 0) + 1
 
     return jsonify({
         "months": month_names,
@@ -1113,8 +873,6 @@ def get_monthly_attendance(student_name):
         "total_weeks": total_weeks_list,
         "class_frequencies": class_frequencies
     })
-
-
 
     
 # =============================================================================================
@@ -1278,7 +1036,7 @@ def generate_all_pdfs():
 
 # =============================================================================================
 @bp.route('/pdf/generate_week', methods=['GET', 'POST'])
-@role_required('Admin', 'Owner')
+@role_required('Admin', 'Super', 'Owner')
 def generate_week_pdfs():
     return redirect(url_for('routes.generate_pdfs', type='semana_especifica'))  # redirige a la misma función para PDFs de la semana específica
 
@@ -1371,8 +1129,8 @@ def generate_pdfs():
         class_code  = class_entry.class_code
         class_color = class_entry.class_color or "black"
 
-        qr_url = f"{Config.BASE_URL}/attendance?className={class_name.replace(' ', '+')}&sundayCode={next_sunday_code}&date={class_date.strftime('%Y-%m-%d')}&unit={unit}&classCode={class_code}"
-        # print(f"QR URL for {class_name}: {qr_url}")
+        qr_url = f"{Config.BASE_URL}/attendance?className={class_name.replace(' ', '+')}&sundayCode={next_sunday_code}&date={class_date.strftime('%Y-%m-%d')}&unitNumber={unit}&classCode={class_code}"
+        print(f"QR URL for {class_name}: {qr_url}")
 
         qr = qrcode.QRCode(version=1, box_size=10, border=4)
         qr.add_data(qr_url)
@@ -1425,7 +1183,7 @@ def generate_pdfs():
 
 # =============================================================================================
 @bp.route('/pdf/download/<path:filename>', methods=['GET'])
-@role_required('User', 'Admin', 'Owner')
+@login_required
 def download_pdf(filename):
     OUTPUT_DIR = get_output_dir()
     try:
@@ -1443,8 +1201,7 @@ def download_pdf(filename):
         return send_from_directory(directory, filename, as_attachment=True)
     except Exception as e:
         print(f"Error: {e}")  # Log the actual error for debugging
-        abort(500, description=str(e))
-        
+        abort(500, description=str(e))      
         
         
 # =============================================================================================
@@ -1494,7 +1251,7 @@ def update_meeting_center(id):
 
 # =============================================================================================
 @bp.route('/meeting_center/delete/<int:id>', methods=['POST'])
-@role_required('Admin', 'Owner')
+@role_required('Owner')
 def delete_meeting_center(id):
     meeting_center = MeetingCenter.query.get_or_404(id)
     if meeting_center.attendances:
@@ -1505,6 +1262,7 @@ def delete_meeting_center(id):
     db.session.commit()
     flash(_('Meeting Center successfully removed.'), 'success')
     return redirect(url_for('routes.meeting_centers'))
+
 
 # =============================================================================================
 @bp.route('/meeting_center/set', methods=['POST'])
@@ -1538,7 +1296,7 @@ def set_meeting_center():
     
 # =============================================================================================
 @bp.route('/meeting_center/api')
-@role_required('Owner')
+@login_required
 def get_meeting_centers():
     meeting_centers = MeetingCenter.query.order_by(MeetingCenter.name).all()
     return jsonify([
@@ -1548,7 +1306,7 @@ def get_meeting_centers():
 
 # =============================================================================================
 @bp.route('/classes', methods=['GET'])
-@role_required('Admin', 'Owner')
+@role_required('Admin', 'Super', 'Owner')
 def classes():
     # Get user role and meeting_center_id from session
     role = session.get('role')
@@ -1578,7 +1336,7 @@ def classes():
 
 # =============================================================================================
 @bp.route('/classes/new', methods=['GET', 'POST'])
-@role_required('Admin', 'Owner')
+@role_required('Admin', 'Super', 'Owner')
 def create_class():
     form = ClassForm()
     form.meeting_center_id.choices = [(mc.id, mc.name) for mc in MeetingCenter.query.all()]
@@ -1607,7 +1365,7 @@ def create_class():
 
 # =============================================================================================
 @bp.route('/classes/edit/<int:id>', methods=['GET', 'POST'])
-@role_required('Admin', 'Owner')
+@role_required('Admin', 'Super', 'Owner')
 def update_class(id):
     class_instance = Classes.query.get_or_404(id)
     form           = ClassForm(obj=class_instance)
@@ -1718,8 +1476,11 @@ def delete_organization(id):
 @bp.route('/get_swal_texts', methods=['GET'])
 def get_swal_texts():
     return {    
-        'alreadyRegistered'     : _("You already have registered assistance on {sunday_date}."),
         'actionCanceled'        : _("Action canceled"),
+        'alreadyRegistered'     : _("You already have registered assistance on {sunday_date}."),
+        'attendance_label'      : _("Attendance"),
+        'atention'              : _("Attention"),
+        'attendance_value_label': _("Attendance"),
         'attendanceRecorded'    : _("¡{student_name}, your attendance was recorded!"),
         'cancel'                : _("Cancel"),
         'cancelled'             : _("Cancelled"),
@@ -1729,6 +1490,10 @@ def get_swal_texts():
         'confirm'               : _("Confirm"),
         'confirmDelete'         : _("You \'re sure?"),
         'connectionError'       : _("There was a problem connecting to the server."),
+        'confirmSave'           : _("Confirm"),
+        'classesNumber'         : _("Number of Classes"),
+        'classesLabel'          : _("Classes"),
+        'classesTitle'          : _("Frequency of Classes per Month"),
         'deleteConfirmationText': _("This action will delete all records and cannot be undone."),
         'deleteOneRecordText   ': _("This record will be deleted."),
         'errorTitle'            : _("Error"),
@@ -1736,6 +1501,8 @@ def get_swal_texts():
         'great'                 : _("Great!"),
         'incorrectPatternLabel' : _("Incorrect format"),
         'incorrectPatternText'  : _("The name must be in the format 'Last Name, First Name', separated by a comma."),
+        'months_label'          : _("Months"),
+        'monthly_attendance'    : _("Monthly Attendance"),
         'mustSelectDate'        : _("You must select a date!"),
         'nameFormatText'        : _("Please enter your name in \'First Name Last Name\' format."),
         'nameNotRemoved'        : _("Your name was not removed."),
@@ -1743,24 +1510,29 @@ def get_swal_texts():
         'noNameFound'           : _("No Name Found"),
         'noNameSaved'           : _("No name is currently saved."),
         'noQrGenerated'         : _("QR codes were not generated"),
+        'promotionConfirmation' : _("Yes, Do it!"),
+        'promotionText'         : _("Do you want to promote \'{user_name}\' as a Power User?"),
+        'promotionTitle'        : _("You 're sure?"),
         'resetStudentName'      : _("Reset Student Name"),
-        'savedNameText'         : _("The saved name is: \'{name}\'. Do you want to clear it?"),
         'revertTitle'           : _("Are you sure you want to revert this correction?"),
+        'savedNameText'         : _("The saved name is: \'{name}\'. Do you want to clear it?"),
         'revertConfirmButton'   : _("Revert"),
         'selectDateExtraClasses': _("Select a date for Extra classes"),
+        'successMessage'        : _("The name has been corrected"),
         'sundayClassRestriction': _("You cannot register a \'Sunday Class\' outside of Sunday."),
+        'successTitle'          : _("¡Success"),
         'yes'                   : _("Yes"),
         'yesDeleteEverything'   : _("Yes, delete everything"),
         'yesClearIt'            : _("Yes, clear it!"),
         'yesDeleteIt'           : _("Yes, Delete it!"),
+        'validationError'       : _("Error, There was a problem validating the attendance."),
         'warningTitle'          : _("warning"),
         'wrongNameTitle'        : _("Please enter the correct name"),
         'wrongNameText'         : _("Please enter the correct name for "),
         'wrongNameLabel'        : _("Correct Format: Last Name, First Name"),
         'wrongNamePlaceholder'  : _("Enter the new name"),
-        'confirmSave'           : _("Confirm"),
-        'successTitle'          : _("¡Success"),
-        'successMessage'        : _("The name has been corrected"),
+        'weeks_label'           : _("Weeks with attendance in the month"),
+        
     }
     
     
@@ -1775,7 +1547,7 @@ def populate_classes(id):
         {
             'class_name': _('Elders Quorum'),
             'short_name': _('Elders_Q'),
-            'class_code': 'EQ',
+            'class_code': _('EQ'),
             'class_type': _('Main'),
             'schedule'  : '2,4',
             'is_active' : True,
@@ -1784,7 +1556,7 @@ def populate_classes(id):
         {
             'class_name': _('Aaronic Priesthood'),
             'short_name': _('Aaronic_P'),
-            'class_code': 'AP',
+            'class_code': _('AP'),
             'class_type': _('Main'),
             'schedule'  : '2,4',
             'is_active' : True,
@@ -1793,7 +1565,7 @@ def populate_classes(id):
         {
             'class_name': _('Relief Society'),
             'short_name': _('Relief_S'),
-            'class_code': 'RS',
+            'class_code': _('RS'),
             'class_type': _('Main'),
             'schedule'  : '2,4',
             'is_active' : True,
@@ -1802,7 +1574,7 @@ def populate_classes(id):
         {
             'class_name': _('Young Woman'),
             'short_name': _('Young_W'),
-            'class_code': 'YW',
+            'class_code': _('YW'),
             'class_type': _('Main'),
             'schedule'  : '2,4',
             'is_active' : True,
@@ -1811,7 +1583,7 @@ def populate_classes(id):
         {
             'class_name': _('Sunday School Adults'),
             'short_name': _('S_S_Adults'),
-            'class_code': 'SSA',
+            'class_code': _('SSA'),
             'class_type': _('Main'),
             'schedule'  : '1,3',
             'is_active' : True,
@@ -1820,7 +1592,7 @@ def populate_classes(id):
         {
             'class_name': _('Sunday School Youth'),
             'short_name': _('S_S_Youth'),
-            'class_code': 'SSY',
+            'class_code': _('SSY'),
             'class_type': _('Main'),
             'schedule'  : '1,3',
             'is_active' : True,
@@ -1829,7 +1601,7 @@ def populate_classes(id):
         {
             'class_name': _('Fifth Sunday'),
             'short_name': _('F_Sunday'),
-            'class_code': 'FS',
+            'class_code': _('FS'),
             'class_type': _('Main'),
             'schedule'  : '5',
             'is_active' : True,
@@ -1875,7 +1647,7 @@ def populate_classes(id):
 
 # =============================================================================================
 @bp.route('/update_name_correction', methods=['POST'])
-@role_required('Admin', 'Owner')
+@role_required('Admin', 'Super', 'Owner')
 def update_name_correction():
     data = request.get_json()
     # print("Datos recibidos:", data)  # Esto imprimirá los datos recibidos para depurar
@@ -1917,7 +1689,7 @@ def update_name_correction():
     
 # =============================================================================================       
 @bp.route('/admin', methods=['GET', 'POST'])
-@role_required('Admin', 'Owner')
+@role_required('Admin', 'Super', 'Owner')
 def admin():
     meeting_center_id = get_meeting_center_id()
     
@@ -1964,6 +1736,7 @@ def admin():
 
 # ============================================================================================= 
 @bp.route('/admin/get_settings', methods=['GET'])
+@login_required
 def get_settings():
     meeting_center_id = request.args.get('meeting_center_id')
     
@@ -1980,6 +1753,7 @@ def get_settings():
 
 # =============================================================================================  
 @bp.route('/admin/bypass', methods=['POST'])
+@login_required
 def update_bypass_restriction():
     new_value = request.form.get('bypass_restriction', 'false')  # Default "false"
     meeting_center_id = get_meeting_center_id()  # Obtener el ID del centro de reunión actual
@@ -2003,6 +1777,7 @@ def update_bypass_restriction():
 
 # =============================================================================================
 @bp.route('/admin/name_correction/delete/<int:id>', methods=['POST'])
+@login_required
 def delete_name_correction(id):
     correction = NameCorrections.query.get_or_404(id)  # Buscar el registro por ID
     db.session.delete(correction)  # Eliminar el registro
@@ -2013,6 +1788,7 @@ def delete_name_correction(id):
 
 # =============================================================================================
 @bp.route('/admin/name_correction/revert/<int:id>', methods=['POST'])
+@login_required
 def revert_name_correction(id):
     # Obtener la corrección de nombre
     correction = NameCorrections.query.get_or_404(id)
@@ -2041,6 +1817,7 @@ def revert_name_correction(id):
 
 # =============================================================================================
 @bp.route('/admin/name_corrections/filter', methods=['GET'])
+@login_required
 def filter_name_corrections():
     meeting_center_id = request.args.get('meeting_center_id', type=int)
     
@@ -2054,6 +1831,7 @@ def filter_name_corrections():
 
 # =============================================================================================
 @bp.route('/api/admin_data')
+@login_required
 def admin_data():
     meeting_center_id = request.args.get('meeting_center_id')
 
@@ -2078,71 +1856,6 @@ def admin_data():
 
 
 # =============================================================================================
-# @bp.route('/prevalidar', methods=['GET'])
-# def prevalidar():
-#     try:
-#         class_code  = request.args.get('classCode')
-#         sunday_date = get_next_sunday()
-#         sunday_code = request.args.get('sundayCode')
-#         unit_number = request.args.get('unitNumber')
-
-#         # Verificar si la clase es válida
-#         class_entry = Classes.query.filter_by(class_code=class_code).first()
-#         if not class_entry:
-#             return jsonify({
-#                 "success": False,
-#                 "message": _('The selected class is not valid.'),
-#             }), 400
-
-#         # Verificar si el Meeting Center es válido
-#         meeting_center = MeetingCenter.query.filter_by(unit_number=unit_number).first()
-#         if not meeting_center:
-#             return jsonify({
-#                 "success": False,
-#                 "message": _('The church unit is invalid.'),
-#             }), 400
-
-#         # Obtener el estado del bypass desde la tabla Setup
-#         bypass_entry  = Setup.query.filter_by(key='allow_weekday_attendance').first()
-#         bypass_active = bypass_entry and bypass_entry.value.lower() == 'yes'
-
-#         # Si la clase es Main y hay restricciones de día
-#         if class_entry.class_type == "Main":
-#             if not (bypass_active and meeting_center.id == 2):
-#                 if meeting_center.is_restricted:
-#                     grace_period_hours = int(meeting_center.grace_period_hours) if meeting_center.grace_period_hours else 0
-#                     time_now           = datetime.now()
-
-#                     start_time = meeting_center.start_time
-#                     end_time   = meeting_center.end_time
-
-#                     if isinstance(start_time, str):
-#                         start_time = datetime.strptime(start_time, "%H:%M").time()
-#                     if isinstance(end_time, str):
-#                         end_time   = datetime.strptime(end_time, "%H:%M").time()
-
-#                     today            = datetime.today()
-#                     start_time_dt    = datetime.combine(today, start_time)
-#                     end_time_dt      = datetime.combine(today, end_time)
-#                     grace_start_time = start_time_dt - timedelta(hours=grace_period_hours)
-#                     grace_end_time   = end_time_dt + timedelta(hours=grace_period_hours)
-
-#                     if not (grace_start_time <= time_now <= grace_end_time):
-#                         return jsonify({
-#                             "success": False,
-#                             "message": _('Attendance can only be recorded during the grace period or meeting time.'),
-#                         }), 400
-
-#         return jsonify({
-#             "success": True,
-#             "message": _('You may proceed with attendance registration.'),
-#         }), 200
-
-#     except Exception as e:
-#         return jsonify({
-#             "success": False,
-#             "message": _('There was an error validating attendance: %(error)s') % {'error': str(e)}
-#         }), 500
 @bp.route('/prevalidar', methods=['GET'])
 def prevalidar():
     try:
@@ -2172,10 +1885,10 @@ def prevalidar():
 
         # Determinar en qué semana del mes cae el sunday_date
         first_day_of_month = sunday_date.replace(day=1)
-        first_sunday = first_day_of_month + timedelta(days=(6 - first_day_of_month.weekday()) % 7)
+        first_sunday       = first_day_of_month + timedelta(days=(6 - first_day_of_month.weekday()) % 7)
 
         # Calcular la semana del mes (1 a 5)
-        week_of_month = ((sunday_date - first_sunday).days // 7) + 1
+        week_of_month      = ((sunday_date - first_sunday).days // 7) + 1
 
         # Validar horario de la clase tipo Main
         if class_entry.class_type == "Main":

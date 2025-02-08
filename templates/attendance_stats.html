@@ -5,6 +5,7 @@
 {% block head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+
 {% endblock %}
 
 {% block pageTitle %}<i class="bi bi-bar-chart-line"></i> {{ _('Attendance Records by Member') }}{% endblock %}
@@ -45,192 +46,213 @@
         </div>
     </div>
 </div>
-<div class="row">
+<div class="row  mb-5">
     <div class="col-md-6">
-        <h3 class="mt-5">Member with high attendance</h3>
-    <table class="table table-striped table-sm">
+        <h3 class="mt-5">{{ _('Member with high attendance') }}</h3>
+
+    <table class="table table-striped table-sm" data-show-columns="true" data-search="true"
+        data-mobile-responsive="true" data-check-on-init="true">
         <thead>
             <tr>
-                <th>Name</th>
-                <th>Attendance Percentage</th>
+                <th>{{ _('Name') }}</th>
+                <th>{{ _('Percentage') }}</th>
             </tr>
         </thead>
         <tbody id="topStudentsTable">
             {% for student in top_students %}
-                <tr>
-                    <td>{{ student.name }}</td>
-                    <td>{{ student.attendance_percentage }}%</td>
-                </tr>
+            <tr>
+                <td>{{ student.name }}</td>
+                <td>{{ student.attendance_percentage }}%</td>
+            </tr>
             {% endfor %}
         </tbody>
     </table>
-    </div>
-    <div class="col-md-6">
-        <h3 class="mt-5">Member with low attendance</h3>
+</div>
+<div class="col-md-6">
+    <h3 class="mt-5">{{ _('Member with low attendance') }}</h3>
     <table class="table table-striped table-sm">
         <thead>
             <tr>
-                <th>Name</th>
-                <th>Attendance Percentage</th>
+                <th>{{ _('Name') }}</th>
+                <th>{{ _('Percentage') }}</th>
             </tr>
         </thead>
         <tbody id="bottomStudentsTable">
             {% for student in bottom_students %}
-                <tr>
-                    <td>{{ student.name }}</td>
-                    <td>{{ student.attendance_percentage }}%</td>
-                </tr>
+            <tr>
+                <td>{{ student.name }}</td>
+                <td>{{ student.attendance_percentage }}%</td>
+            </tr>
             {% endfor %}
         </tbody>
     </table>
-    </div>
+</div>
 </div>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const studentSelect     = document.getElementById('studentSelect');
-        const yearSelect        = document.getElementById('yearSelect');
-        const ctx               = document.getElementById('attendanceChart').getContext('2d');
+        const studentSelect = document.getElementById('studentSelect');
+        const yearSelect = document.getElementById('yearSelect');
+        const ctx = document.getElementById('attendanceChart').getContext('2d');
         const ctxClassFrequency = document.getElementById('classFrequencyChart').getContext('2d');
         const meeting_center_id = 1;
-    
+
+
         // Crear gráficos vacíos
-        window.attendanceChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: [],
-                datasets: [
-                    {
-                        type: 'bar',
-                        label: 'Attendance',
-                        data: [],
-                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1,
-                        yAxisID: 'y',
-                        datalabels: {
-                            anchor: 'end',
-                            align: 'top',
-                            formatter: () => '',
-                            font: { weight: 'bold' },
-                            color: '#333'
-                        }
-                    },
-                    {
-                        type: 'line',
-                        label: 'Weeks with attendance in the month',
-                        data: [],
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                        borderWidth: 2,
-                        pointStyle: 'circle',
-                        pointRadius: 5,
-                        pointBackgroundColor: 'rgba(255, 99, 132, 1)'
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function (context) {
-                                if (context.dataset.label === "Attendance") {
-                                    return ` ${context.raw}%`;
+        async function loadTranslationsAndCreateChart() {
+            try {
+                const texts = await fetch('/get_swal_texts').then(response => response.json());
+
+                // Ahora que las traducciones están disponibles, crea el gráfico
+                window.attendanceChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: [],
+                        datasets: [
+                            {
+                                type: 'bar',
+                                label: texts.attendance_label,
+                                data: [],
+                                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                borderWidth: 1,
+                                yAxisID: 'y',
+                                datalabels: {
+                                    anchor: 'end',
+                                    align: 'top',
+                                    formatter: () => '',
+                                    font: { weight: 'bold' },
+                                    color: '#333'
                                 }
-                                return ` ${context.dataset.label}: ${context.raw}`;
+                            },
+                            {
+                                type: 'line',
+                                label: texts.weeks_label,
+                                data: [],
+                                borderColor: 'rgba(255, 99, 132, 1)',
+                                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                borderWidth: 2,
+                                pointStyle: 'circle',
+                                pointRadius: 5,
+                                pointBackgroundColor: 'rgba(255, 99, 132, 1)'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        if (context.dataset.label === texts.attendance_label) {
+                                            return ` ${context.raw}%`;
+                                        }
+                                        return ` ${context.dataset.label}: ${context.raw}`;
+                                    }
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: texts.monthly_attendance,
+                                font: { size: 18 }
+                            },
+                        },
+                        scales: {
+                            x: {
+                                title: { display: true, text: texts.monthly_attendance, }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                min: 0,
+                                suggestedMax: 5,
+                                ticks: { stepSize: 1 },
+                                title: { display: true, text: texts.attendance_value_label }
                             }
                         }
                     },
-                    title: {
-                        display: true,
-                        text: 'Monthly Attendance',
-                        font: { size: 18 }
+                    plugins: [ChartDataLabels]
+                });
+
+                window.classFrequencyChart = new Chart(ctxClassFrequency, {
+                    type: 'bar',
+                    data: {
+                        labels: [],
+                        datasets: [
+                            {
+                                type: 'bar',
+                                label: texts.classesLabel,
+                                data: [],
+                                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                borderWidth: 1,
+                                yAxisID: 'y',
+                                datalabels: {
+                                    anchor: 'end',
+                                    align: 'top',
+                                    formatter: () => '',
+                                    font: { weight: 'bold' },
+                                    color: '#333'
+                                }
+                            },
+                        ]
                     },
-                },
-                scales: {
-                    x: {
-                        title: { display: true, text: 'Months' }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        min: 0,
-                        suggestedMax: 5,
-                        ticks: { stepSize: 1 },
-                        title: { display: true, text: 'Attendance' }
-                    }
-                }
-            },
-            plugins: [ChartDataLabels]
-        });
-    
-        window.classFrequencyChart = new Chart(ctxClassFrequency, {
-            type: 'bar',
-            data: { 
-                labels: [], 
-                datasets: [
-                    {
-                        type: 'bar',
-                        label: 'Classes',
-                        data: [],
-                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1,
-                        yAxisID: 'y',
-                        datalabels: {
-                            anchor: 'end',
-                            align: 'top',
-                            formatter: () => '',
-                            font: { weight: 'bold' },
-                            color: '#333'
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: { font: { size: 14 } }
+                            },
+                            title: {
+                                display: true,
+                                text: texts.classesTitle,
+                                font: { size: 18 }
+                            },
+                            tooltip: { mode: 'index', intersect: false }
+                        },
+                        scales: {
+                            x: {
+                                title: { display: true, text: texts.months_label }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                min: 0,
+                                max: 3,
+                                title: { display: true, text: texts.classesNumber },
+                                ticks: { stepSize: 1 }
+                            }
                         }
-                    },
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: { font: { size: 14 } }
-                    },
-                    title: {
-                        display: true,
-                        text: 'Frequency of Classes per Month',
-                        font: { size: 18 }
-                    },
-                    tooltip: { mode: 'index', intersect: false }
-                },
-                scales: {
-                    x: {
-                        title: { display: true, text: 'Months' }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        min: 0,
-                        max: 3,
-                        title: { display: true, text: 'Number of Classes' },
-                        ticks: { stepSize: 1 }
                     }
-                }
+                });
+
+            } catch (error) {
+                console.error('Error fetching texts:', error);
             }
-        });
-        
+
+        };
+
+        // Llamada a la función para cargar las traducciones y crear el gráfico
+        loadTranslationsAndCreateChart();
+
+
+
         function fetchAttendanceData() {
             const studentName = studentSelect.value;
             const year = yearSelect.value;
-    
+
+
             fetch(`/attendance/monthly/${encodeURIComponent(studentName)}?year=${year}&meeting_center_id=${meeting_center_id}`)
                 .then(response => response.json())
                 .then(data => {
+
                     updateAttendanceChart(data.months, data.attendance_percentages, data.attendance_counts, data.total_weeks);
                     updateClassFrequencyChart(data.months, data.class_frequencies);
                 })
                 .catch(error => console.error('Error fetching data:', error));
         }
-    
-        function updateAttendanceChart(months, attendance_percentages, attendance_counts, totalWeeks) {
+
+        async function updateAttendanceChart(months, attendance_percentages, attendance_counts, totalWeeks) {
             if (window.attendanceChart) {
                 window.attendanceChart.destroy();
             }
@@ -240,7 +262,8 @@
                 'rgba(75, 192, 192, 0.6)', 'rgba(153, 102, 255, 0.6)', 'rgba(255, 159, 64, 0.6)'
             ];
             const borderColors = colors.map(color => color.replace('0.6', '1'));
-             
+            const texts = await fetch('/get_swal_texts').then(response => response.json());
+
             window.attendanceChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -248,7 +271,7 @@
                     datasets: [
                         {
                             type: 'bar',
-                            label: 'Attendance',
+                            label: texts.attendance_label,
                             data: attendance_counts,
                             backgroundColor: attendance_counts.map((_, index) => colors[index % colors.length]),
                             borderColor: attendance_counts.map((_, index) => borderColors[index % borderColors.length]),
@@ -264,75 +287,76 @@
                         },
                         {
                             type: 'line',
-                            label: 'Weeks',
+                            label: texts.weeks_label,
                             data: totalWeeks,
                             borderColor: 'rgba(255, 99, 132, 1)',
                             backgroundColor: 'rgba(255, 99, 132, 0.2)',
                             borderWidth: 2,
                             pointStyle: 'circle',
-                            pointRadius: 5,
+                            pointRadius: 4,
                             pointBackgroundColor: 'rgba(255, 99, 132, 1)',
-                            datalabels: { display: true } // Desactiva las etiquetas en la línea
+                            datalabels: { display: false } // Desactiva las etiquetas en la línea
                         }
                     ]
                 },
                 options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function (context) {
-                                if (context.dataset.label === "Attendance") {
-                                    return ` ${context.raw} attendances`;
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    if (context.dataset.label === 'Attendances') {
+                                        return ` ${context.raw} attendances`;
+                                    }
+                                    return ` ${context.dataset.label}: ${context.raw}`;
                                 }
-                                return ` ${context.dataset.label}: ${context.raw}`;
                             }
+                        },
+                        title: {
+                            display: true,
+                            text: texts.monthly_attendance,
+                            font: { size: 18 }
+                        },
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: texts.monthly_attendance, }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            min: 0,
+                            suggestedMax: 5,
+                            ticks: { stepSize: 1 },
+                            title: { display: true, text: texts.attendance_value_label }
                         }
-                    },
-                    title: {
-                        display: true,
-                        text: 'Monthly Attendance',
-                        font: { size: 18 }
-                    },
-                },
-                scales: {
-                    x: {
-                        title: { display: true, text: 'Months' }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        min: 0,
-                        suggestedMax: 5,
-                        ticks: { stepSize: 1 },
-                        title: { display: true, text: 'Attendance' }
                     }
-                }
-            },
-            plugins: [ChartDataLabels]
-        });
+                },
+                plugins: [ChartDataLabels]
+            });
         }
-    
-        function updateClassFrequencyChart(months, class_frequencies) {
+
+        async function updateClassFrequencyChart(months, class_frequencies) {
             if (window.classFrequencyChart) {
                 window.classFrequencyChart.destroy();
             }
-    
+
             const colors = [
                 'rgba(255, 99, 132, 0.6)', 'rgba(54, 162, 235, 0.6)', 'rgba(255, 206, 86, 0.6)',
                 'rgba(75, 192, 192, 0.6)', 'rgba(153, 102, 255, 0.6)', 'rgba(255, 159, 64, 0.6)'
             ];
             const borderColors = colors.map(color => color.replace('0.6', '1'));
-    
+            const texts = await fetch('/get_swal_texts').then(response => response.json());
+
             const allClasses = new Set();
             Object.values(class_frequencies).forEach(monthData => {
                 Object.keys(monthData).forEach(classCode => allClasses.add(classCode));
             });
-    
+
             const classList = Array.from(allClasses);
             const datasets = classList.map((classCode, index) => {
-                const data = months.map((_, i) => class_frequencies[i + 1]?.[classCode] );
-    
+                const data = months.map((_, i) => class_frequencies[i + 1]?.[classCode]);
+
                 return {
                     label: classCode,
                     data: data,
@@ -341,12 +365,13 @@
                     borderWidth: 1
                 };
             });
-    
+
             window.classFrequencyChart = new Chart(ctxClassFrequency, {
                 type: 'bar',
-                data: { 
-                    labels: months, 
-                    datasets: datasets },
+                data: {
+                    labels: months,
+                    datasets: datasets
+                },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
@@ -357,38 +382,39 @@
                         },
                         title: {
                             display: true,
-                            text: 'Frequency of Classes per Month',
+                            text: texts.classesTitle,
                             font: { size: 18 }
                         },
                         tooltip: { mode: 'index', intersect: false }
                     },
                     scales: {
                         x: {
-                            title: { display: true, text: 'Months' }
+                            title: { display: true, text: texts.months_label }
                         },
                         y: {
                             beginAtZero: true,
                             min: 0,
                             suggestedMax: 2,
-                            title: { display: true, text: 'Number of Classes' },
+                            title: { display: true, text: texts.classesNumber },
                             ticks: { stepSize: 1 }
                         }
                     }
                 },
                 plugins: [ChartDataLabels]
             });
-    
+
             window.classFrequencyChart.update();
         }
-    
+
         studentSelect.addEventListener('change', fetchAttendanceData);
         yearSelect.addEventListener('change', fetchAttendanceData);
-    
+
         if (studentSelect.value) {
             fetchAttendanceData();
         }
     });
-    
+
+
 </script>
 
 

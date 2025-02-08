@@ -172,14 +172,15 @@ def get_attendance_by_class_data():
 
 
 # ================================================================
-def plot_attendance_by_class(attendance_data):
-    classes = [f"Clase {class_id}" for class_id, _ in attendance_data]  # Puedes mejorar esto con nombres reales de clases
-    attendance_counts = [attendance_count for _, attendance_count in attendance_data]
+def translations():
+    main_organizations = [
+        {'id': 1, 'name': _('Bishopric')},
+        {'id': 2, 'name': _('Elders Quorum')},
+        {'id': 3, 'name': _('Relief Society')},
+        {'id': 4, 'name': _('Aaronic Priesthood Quorums')},
+        {'id': 5, 'name': _('Young Women')},
+        {'id': 6, 'name': _('Sunday School')},
+        {'id': 7, 'name': _('Primary')},
+        {'id': 8, 'name': _('Other')}
 
-    fig = px.bar(
-        x=classes, 
-        y=attendance_counts, 
-        labels={'x': 'Clase', 'y': 'Estudiantes Asistentes'}, 
-        title="Asistencia por Clase"
-    )
-    return fig.to_html(full_html=False)
+    ]
