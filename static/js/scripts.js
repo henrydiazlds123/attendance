@@ -95,7 +95,9 @@ async function sendAttendanceForm(formData) {
             if (!savedName) {
               localStorage.setItem("studentName", data.student_name);
             }
-            window.location.href = "https://www.churchofjesuschrist.org";
+            setTimeout(() => {
+              window.location.href = "https://www.churchofjesuschrist.org";
+            }, 100); // Pequeño delay para asegurar que la acción se procesa correctamente
           } else { // Usuario logueado
             document.getElementById("studentName").value = "";
           }

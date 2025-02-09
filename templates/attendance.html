@@ -38,46 +38,69 @@
         </form>
     </div>
 </div>
+
 <script>
-    const params = Object.fromEntries(new URLSearchParams(window.location.search));
+    // Llamar esta función cuando el usuario escanee el código QR o acceda a la página
+    document.addEventListener("DOMContentLoaded", async function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        const classCode = urlParams.get("classCode");
+        const sundayCode = urlParams.get("sundayCode");
+        const unitNumber = urlParams.get("unitNumber");
+        console.log(className, classCode, sundayCode, unitNumber)
+
+        if (classCode && sundayCode && unitNumber) {
+            const isValid = await prevalidateAttendance(classCode, sundayCode, unitNumber);
+            if (!isValid) {
+                // Redirigir a otra página si la validación falla
+                window.location.href = "/";
+            }
+        }
+    });
 
     async function initializePage() {
-        if (params.classCode && params.sundayCode && params.unitNumber) {
-            const isValid = await prevalidateAttendance(params.classCode, params.sundayCode, params.unitNumber);
-            if (!isValid) return (window.location.href = "/");
-        }
+        // ----------- Configuración de parámetros de clase desde URL ----------- 
+        const urlParams = new URLSearchParams(window.location.search);
+        const className = urlParams.get("className");
+        const classCode = urlParams.get("classCode");
+        const sundayCode = urlParams.get("sundayCode");
+        const unitNumber = urlParams.get("unitNumber");
+        console.log(className, classCode, sundayCode, unitNumber)
 
         try {
             const response = await fetch('/get_swal_texts');
             const texts = await response.json();
 
-            const classNameDisplay = document.getElementById("classNameDisplay");
-            const buttonAddon2 = document.getElementById("button-addon2");
-            const studentName = document.getElementById("studentName");
+            if (className) {
+                document.getElementById("classNameDisplay").textContent = className;
+                document.getElementById("className").value = decodeURIComponent(className);
+                document.getElementById("classCode").value = classCode;
+                document.getElementById("sundayCode").value = sundayCode;
+                document.getElementById("unitNumber").value = unitNumber;
 
-            if (params.className) {
-                classNameDisplay.textContent = decodeURIComponent(params.className);
-                ["className", "classCode", "sundayCode", "unitNumber"].forEach(id => {
-                    document.getElementById(id).value = params[id] || "";
-                });
-
-                document.querySelectorAll('.list-group-item').forEach(item => {
-                    item.classList.toggle('active', item.textContent.trim() === decodeURIComponent(params.className));
+                const listGroupItems = document.querySelectorAll('.list-group-item');
+                listGroupItems.forEach(item => {
+                    if (item.textContent.trim() === decodeURIComponent(className)) {
+                        item.classList.add('active');
+                    } else {
+                        item.classList.remove('active');
+                    }
                 });
             } else {
-                classNameDisplay.textContent = texts.chooseClass;
-                buttonAddon2.disabled = studentName.disabled = true;
+                document.getElementById("classNameDisplay").textContent = texts.chooseClass;
+                document.getElementById("button-addon2").disabled = true;
+                document.getElementById("studentName").disabled = true;
             }
 
+            // ----------- Establecer la fecha actual -----------
             document.getElementById("date").value = new Date().toISOString().split("T")[0];
         } catch (error) {
             console.error("Error al obtener los textos:", error);
         }
     }
 
-    document.addEventListener("DOMContentLoaded", initializePage);
+    // Llamar a la función async
+    initializePage();
 </script>
-
 
 
 

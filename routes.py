@@ -449,7 +449,7 @@ def create_attendance():
         # Obtener el class_code basado en el class_id seleccionado
         selected_class = Classes.query.filter_by(id=form.class_id.data).first()
         if not selected_class:
-            flash(_('The selected class is invalid.'), 'danger')
+            flash(_('The selected class is invalid. rt-452'), 'danger')
             return render_template('form.html', form=form, title=_('Create attendance'), submit_button_text=_('Create'), clas='warning')
 
         attendance = Attendance(
@@ -883,8 +883,14 @@ def registrar():
         sunday_date    = get_next_sunday()
         sunday_code    = request.form.get('sundayCode')
         unit_number    = request.form.get('unitNumber')
-        student_name   = request.form.get('studentName')  
-        
+        student_name   = request.form.get('studentName') 
+
+        print(f"Unit Number: {unit_number}") 
+        print(f"Class Code: {class_code}") 
+        print(f"Sunday Code: {sunday_code}") 
+        print(f"Student Name: {student_name}") 
+
+                
         # Limpiar el nombre recibido
         student_name     = ' '.join(student_name.strip().split()) # Elimina espacios antes y después
         student_name     = student_name.title() # Convertir a título (primera letra en mayúscula)  
@@ -894,11 +900,12 @@ def registrar():
 
         # Verificar si la clase es válida
         class_entry = Classes.query.filter_by(class_code=class_code).first()
-        if not class_entry:
-            return jsonify({
-                "success": False,
-                "message": _('The selected class is not valid.'),
-            }), 400
+        # print(f"Class Entry: {class_entry}") 
+        # if not class_entry:
+        #     return jsonify({
+        #         "success": False,
+        #         "message": _('The selected class is not valid. rt 903'),
+        #     }), 400
 
         # Verificar si el Meeting Center es válido
         meeting_center = MeetingCenter.query.filter_by(unit_number=unit_number).first()
@@ -1008,15 +1015,15 @@ def list_pdfs():
     meeting_center_id = get_meeting_center_id()
     # Verificar si hay clases asociadas al meeting center
     has_classes       = Classes.query.filter_by(meeting_center_id=meeting_center_id, is_active=True).first() is not None
-    print(f"Has Classes (Meeting Center {meeting_center_id}): {has_classes}")
+    # print(f"Has Classes (Meeting Center {meeting_center_id}): {has_classes}")
     
     # Verificar si hay clases 'Main' activas
     has_main_classes  = Classes.query.filter_by(meeting_center_id=meeting_center_id, is_active=True, class_type='Main').first() is not None
-    print(f"Has Main Classes (Meeting Center {meeting_center_id}): {has_main_classes}")
+    # print(f"Has Main Classes (Meeting Center {meeting_center_id}): {has_main_classes}")
     
     # Verificar si hay clases 'Extra' activas
     has_extra_classes = Classes.query.filter_by(meeting_center_id=meeting_center_id, is_active=True, class_type='Extra').first() is not None
-    print(f"Has Extra Classes (Meeting Center {meeting_center_id}): {has_extra_classes}")
+    # print(f"Has Extra Classes (Meeting Center {meeting_center_id}): {has_extra_classes}")
     
     if not os.path.exists(OUTPUT_DIR):
       os.makedirs(OUTPUT_DIR)  # Crea el directorio si no existe
@@ -1046,7 +1053,7 @@ def generate_week_pdfs():
 @login_required
 def generate_extra_pdfs():
     selected_date = request.form.get('date')  # Obtener la fecha desde el formulario
-    print(f'Date: {selected_date}')
+    # print(f'Date: {selected_date}')
 
     # Validar si la fecha fue proporcionada
     if not selected_date:
@@ -1062,10 +1069,10 @@ def generate_extra_pdfs():
 @login_required
 def generate_pdfs():
     user_date = request.args.get('selected_date')
-    print(f"User-provided date: {user_date}")  # Debugging
+    # print(f"User-provided date: {user_date}")  # Debugging
     
     OUTPUT_DIR = get_output_dir()
-    print(f"Output directory: {OUTPUT_DIR}")
+    # print(f"Output directory: {OUTPUT_DIR}")
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     # Función auxiliar para obtener la fecha de la clase
@@ -1109,11 +1116,9 @@ def generate_pdfs():
             ]
         )
     })
-
-    print(f"Classes to print for meeting center {meeting_center_id}: {[c.class_name for c in clases_a_imprimir]}")
-
+    # print(f"Classes to print for meeting center {meeting_center_id}: {[c.class_name for c in clases_a_imprimir]}")
     clean_qr_folder(OUTPUT_DIR)
-    print("QR folder cleaned.")
+    # print("QR folder cleaned.")
 
     for class_entry in clases_a_imprimir:
         if class_entry.class_type == 'Extra' and not user_date:
@@ -1130,7 +1135,7 @@ def generate_pdfs():
         class_color = class_entry.class_color or "black"
 
         qr_url = f"{Config.BASE_URL}/attendance?className={class_name.replace(' ', '+')}&sundayCode={next_sunday_code}&date={class_date.strftime('%Y-%m-%d')}&unitNumber={unit}&classCode={class_code}"
-        print(f"QR URL for {class_name}: {qr_url}")
+        # print(f"QR URL for {class_name}: {qr_url}")
 
         qr = qrcode.QRCode(version=1, box_size=10, border=4)
         qr.add_data(qr_url)
@@ -1153,7 +1158,8 @@ def generate_pdfs():
         # Dibuja caga grande
         rec_x=45
         rec_y=45
-        c.rect(rec_x, rec_y, page_width-rec_x * 2, page_height - rec_y * 4)
+        c.rect(rec_x+22, rec_y, (page_width-rec_x * 2)-44, page_height - rec_y * 4) #inside
+     
 
         qr_image = ImageReader(qr_filename)
         qr_size = 442
@@ -1161,47 +1167,51 @@ def generate_pdfs():
         qr_y=115
         c.drawImage(qr_image, qr_x, qr_y, width=qr_size, height=qr_size)
 
-        c.line(0, page_height - rec_y * 4 +90, 612, page_height - rec_y * 4 +90)
-
         c.setFont("Helvetica-Bold", 35)
         c.drawCentredString(page_width / 2, 560, _(class_name))
-
 
         c.setFont("Helvetica", 16)
         c.setFillColor("black")
         c.drawCentredString(page_width / 2, 99, unit_name)
-        c.drawCentredString(page_width / 2, 74, f"{format_date(class_date)}")
-        c.save()
+        c.drawCentredString(page_width / 2, 74, f"{format_date(class_date)}") 
         # print(f"PDF saved: {pdf_filename}")
 
+        c.setLineWidth(0.5)  # Valores menores hacen la línea más delgada
+        c.setDash(5, 10)  # Segmentos de 5 unidades con espacios de 3 unidades
+        c.line(0, page_height - rec_y * 4 +68, 612, page_height - rec_y * 4 +68)
+        c.line(rec_x, 0, rec_x, page_height)
+        c.line(567, 0, 567, page_height)
+        c.line(0, 22.5, page_width, 22.5)
+
+        c.save()
+
     clean_qr_images(OUTPUT_DIR)
-    print("QR images cleaned.")
+    # print("QR images cleaned.")
 
     flash(_('QR Codes generated successfully.'), 'success')
     return redirect(url_for('routes.list_pdfs'))
 
 
 # =============================================================================================
-@bp.route('/pdf/download/<path:filename>', methods=['GET'])
+@bp.route('/pdf/view/<path:filename>', methods=['GET'])
 @login_required
-def download_pdf(filename):
+def view_pdf(filename):
     OUTPUT_DIR = get_output_dir()
     try:
         directory = os.path.join(os.getcwd(), OUTPUT_DIR)
         filename = unquote(filename)
         full_path = os.path.join(directory, filename)
 
-        print(f"Trying to download from: {full_path}")  # Debugging output
+        print(f"Trying to access: {full_path}")  # Debugging output
 
         if not os.path.exists(full_path):
             print("File not found:", full_path)  # More detailed log
             abort(404, description=f"File not found: {filename}")
-                       
 
-        return send_from_directory(directory, filename, as_attachment=True)
+        return send_from_directory(directory, filename, as_attachment=False)  # Se muestra en el navegador
     except Exception as e:
         print(f"Error: {e}")  # Log the actual error for debugging
-        abort(500, description=str(e))      
+        abort(500, description=str(e))
         
         
 # =============================================================================================
@@ -1868,7 +1878,7 @@ def prevalidar():
         if not class_entry:
             return jsonify({
                 "success": False,
-                "message": _('The selected class is not valid.'),
+                "message": _('The selected class is not valid. rt-1877'),
             }), 400
 
         # Verificar si el Meeting Center es válido
@@ -1881,7 +1891,7 @@ def prevalidar():
 
         # Obtener el estado del bypass desde la tabla Setup
         bypass_entry  = Setup.query.filter_by(key='allow_weekday_attendance').first()
-        bypass_active = bypass_entry and bypass_entry.value.lower() == 'yes'
+        bypass_active = bypass_entry and bypass_entry.value.lower() == 'true'
 
         # Determinar en qué semana del mes cae el sunday_date
         first_day_of_month = sunday_date.replace(day=1)
