@@ -878,34 +878,29 @@ def get_monthly_attendance(student_name):
 # =============================================================================================
 @bp.route('/registrar', methods=['POST'])
 def registrar():
+    # 🔍 Depurar: Ver qué datos llegan al servidor
+    print("Datos recibidos en el servidor:", request.form.to_dict())
     try:
         class_code     = request.form.get('classCode')
         sunday_date    = get_next_sunday()
         sunday_code    = request.form.get('sundayCode')
         unit_number    = request.form.get('unitNumber')
         student_name   = request.form.get('studentName') 
-
-        print(f"Unit Number: {unit_number}") 
-        print(f"Class Code: {class_code}") 
-        print(f"Sunday Code: {sunday_code}") 
-        print(f"Student Name: {student_name}") 
-
-                
+               
         # Limpiar el nombre recibido
         student_name     = ' '.join(student_name.strip().split()) # Elimina espacios antes y después
         student_name     = student_name.title() # Convertir a título (primera letra en mayúscula)  
         nombre, apellido = student_name.split(" ", 1) # Dividir el nombre y apellido, asumiendo que solo hay un nombre y un apellido        
         formatted_name   = f"{apellido}, {nombre}" # Formatear el nombre como "apellido, nombre"
 
-
         # Verificar si la clase es válida
         class_entry = Classes.query.filter_by(class_code=class_code).first()
-        # print(f"Class Entry: {class_entry}") 
-        # if not class_entry:
-        #     return jsonify({
-        #         "success": False,
-        #         "message": _('The selected class is not valid. rt 903'),
-        #     }), 400
+        print(f"Class Entry: {class_entry}") 
+        if not class_entry:
+            return jsonify({
+                "success": False,
+                "message": _('The selected class is not valid. rt 903'),
+            }), 409
 
         # Verificar si el Meeting Center es válido
         meeting_center = MeetingCenter.query.filter_by(unit_number=unit_number).first()
@@ -913,7 +908,7 @@ def registrar():
             return jsonify({
                 "success": False,
                 "message": _('The church unit is invalid.'),
-            }), 400
+            }), 409
 
         # Obtener el estado del bypass desde la tabla Setup
         bypass_entry  = Setup.query.filter_by(key='allow_weekday_attendance').first()
@@ -945,7 +940,7 @@ def registrar():
                         return jsonify({
                             "success": False,
                             "message": _('Attendance can only be recorded during the grace period or meeting time.'),
-                        }), 400
+                        }), 403
 
                 # Verificar si ya existe un registro en una clase `Main` ese domingo
                 existing_main_attendance = Attendance.query.filter_by(
@@ -959,7 +954,7 @@ def registrar():
                         "success": False,
                         "error_type": "main_class_restriction",
                         "message": _("%(name)s! You have already registered for a Sunday class today!") % {'name': formatted_name}
-                    }), 400
+                    }), 409
 
         elif class_entry.class_type == "Extra":
             # Verificar si ya existe un registro para una clase `Extra` ese domingo
@@ -1005,7 +1000,7 @@ def registrar():
             "message": _('There was an error recording attendance: %(error)s') % {'error': str(e)}
         }), 500
 
-        
+       
 # =============================================================================================
 @bp.route('/pdf/list', methods=['GET'])
 @login_required
@@ -1135,7 +1130,7 @@ def generate_pdfs():
         class_color = class_entry.class_color or "black"
 
         qr_url = f"{Config.BASE_URL}/attendance?className={class_name.replace(' ', '+')}&sundayCode={next_sunday_code}&date={class_date.strftime('%Y-%m-%d')}&unitNumber={unit}&classCode={class_code}"
-        # print(f"QR URL for {class_name}: {qr_url}")
+        print(f"QR URL for {class_name}: {qr_url}")
 
         qr = qrcode.QRCode(version=1, box_size=10, border=4)
         qr.add_data(qr_url)
@@ -1872,6 +1867,7 @@ def prevalidar():
         class_code  = request.args.get('classCode')
         sunday_date = get_next_sunday()  # Fecha real del domingo a validar
         unit_number = request.args.get('unitNumber')
+  
 
         # Verificar si la clase es válida
         class_entry = Classes.query.filter_by(class_code=class_code).first()
@@ -1937,6 +1933,7 @@ def prevalidar():
                             "success": False,
                             "message": _('Attendance can only be recorded during the grace period or meeting time.'),
                         }), 400
+                               
 
         return jsonify({
             "success": True,

@@ -61,7 +61,6 @@
         const bypassRestriction        = document.getElementById('bypass_restriction');
         const codeVerification         = document.getElementById('code_verification');
 
-
         // Escuchar cambios en el selector de meeting centers
         meetingCenterSelector.addEventListener('change', toggleSelects);
         meetingCenterSelector.addEventListener('change', function () {
@@ -81,7 +80,6 @@
 
         });
             
-
         // ----------------------------------------------------------------
         // Función para actualizar los selects de code_verification y bypass_restriction
         function updateSettings(meetingCenterId) {
@@ -129,8 +127,9 @@
                 codeVerification.disabled = false;
             }
         }
+        // Ejecutar la función al cargar la página
+        toggleSelects();
     
-
         // ----------------------------------------------------------------
         // Función para enviar el meeting center seleccionado al servidor
         function sendMeetingCenterToServer(meetingCenterId) {
@@ -192,8 +191,7 @@
     function submitBypassForm() {
         document.getElementById('bypassForm').submit();
     }
-    // Ejecutar la función al cargar la página
-        toggleSelects();
+    
 </script>
 
 {% endblock %}

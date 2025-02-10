@@ -2,8 +2,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   initTheme();
   handleFlashMessages();
-  autoFillStudentName();
-  initAttendanceForm();
+
   initDeleteAllButton();
   initColorPickers();
 
@@ -34,102 +33,6 @@ function handleFlashMessages() {
   const flashMessages = document.getElementById("flash-messages");
   if (flashMessages) {
     setTimeout(() => (flashMessages.style.display = "none"), 3000);
-  }
-}
-
-
-// ----------- Rellenar nombre del estudiante automáticamente -----------
-function autoFillStudentName() {
-  const studentNameInput = document.getElementById("studentName");
-  const savedName        = localStorage.getItem("studentName");
-  const isLoggedIn       = document.body.classList.contains("logged-in");
-
-  if (!isLoggedIn && savedName) {
-    studentNameInput.value = savedName;
-    sendAttendanceForm(new FormData(document.getElementById("attendanceForm")));
-  }
-}
-
-// ----------- Inicializar el formulario de asistencia -----------
-async function initAttendanceForm() {
-  const attendanceForm = document.getElementById("attendanceForm");
-  if (!attendanceForm) return;
-
-  attendanceForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-
-    const studentName = document.getElementById("studentName").value;
-    const regex = /^[^\s]+(?:\s+[^\s]+)\s*$/;
-    if (!regex.test(studentName)) {
-      const texts = await fetch('/get_swal_texts').then(response => response.json());
-      Swal.fire(texts.warningTitle, texts.nameFormatText, "warning");
-      return;
-    }
-
-    if (!document.body.classList.contains("logged-in")) {
-      localStorage.setItem("studentName", studentName);
-    }
-
-    sendAttendanceForm(new FormData(attendanceForm));
-  });
-}
-
-//----------------------------------------------------------------------------------
-async function sendAttendanceForm(formData) {
-  try {
-    const response = await fetch("/registrar", { method: "POST", body: formData });
-    const data     = await response.json();
-    const texts    = await fetch('/get_swal_texts').then(response => response.json());
-
-    if (response.ok && data.success) {
-      Swal.fire({
-        title            : texts.great,
-        text             : texts.attendanceRecorded.replace("{student_name}", data.student_name),
-        icon             : "success",
-        confirmButtonText: "OK"
-      }).then((result) => { 
-        if (result.isConfirmed) {
-          const isLoggedIn = document.body.classList.contains("logged-in");
-          if (!isLoggedIn) { // Usuario NO logueado
-            let savedName = localStorage.getItem("studentName");
-            if (!savedName) {
-              localStorage.setItem("studentName", data.student_name);
-            }
-            setTimeout(() => {
-              window.location.href = "https://www.churchofjesuschrist.org";
-            }, 100); // Pequeño delay para asegurar que la acción se procesa correctamente
-          } else { // Usuario logueado
-            document.getElementById("studentName").value = "";
-          }
-        }
-      });
-    } else {
-      const errorMsg = data.message || (data.error_type === "main_class_restriction"
-          ? texts.sundayClassRestriction
-          : texts.alreadyRegistered.replace("{sunday_date}", data.sunday_date || "unknown"));
-  
-      Swal.fire({
-          title: texts.errorTitle,
-          text: errorMsg,
-          icon: "error",
-          confirmButtonText: "OK"
-      }).then((result) => {
-          if (result.isConfirmed) {
-              const isLoggedIn = document.body.classList.contains("logged-in");
-  
-              if (!isLoggedIn && localStorage.getItem("studentName")) {
-                  // Si el usuario NO está logueado y tiene un nombre guardado, redirigirlo
-                  window.location.href = "https://www.churchofjesuschrist.org/";
-              } else {
-                  // Si el usuario está logueado, limpiar el campo de nombre
-                  document.getElementById("studentName").value = "";
-              }
-          }
-      });
-    }
-  } catch (error) {
-    const texts = await fetch('/get_swal_texts').then(response => response.json());
-    Swal.fire(texts.errorTitle, texts.connectionError, "error");
   }
 }
 
@@ -345,3 +248,8 @@ async function confirmPromotion(userId, username) {
     }
   })
 };
+
+function getUrlParameter(name) {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get(name);
+}
