@@ -535,107 +535,117 @@ def manual_attendance():
 @login_required
 def attendance_report():
     meeting_center_id = get_meeting_center_id()
-
     if meeting_center_id == 'all':
         meeting_center_id = None  # No aplicar filtro
 
-    current_year  = datetime.now().year
+    current_year = datetime.now().year
     current_month = datetime.now().month
 
-    # Obtener años y meses disponibles, manejando el caso donde `meeting_center_id` es `None`
-    year_query  = db.session.query(func.extract('year', Attendance.sunday_date)).distinct().order_by(func.extract('year', Attendance.sunday_date))
+    selected_year = request.args.get('year', type=int, default=current_year)
+    selected_month = request.args.get('month', default=str(current_month))
+
+    
+    # Determinar el filtro de mes o trimestre
+    month_filter = []
+    if selected_month == "all":
+        month_filter = list(range(1, 13))  # Todos los meses
+    elif selected_month.startswith("Q"):
+        quarter_map = {"Q1": [1, 2, 3], "Q2": [4, 5, 6], "Q3": [7, 8, 9], "Q4": [10, 11, 12]}
+        month_filter = quarter_map.get(selected_month, [])
+    else:
+        month_filter = [int(selected_month)]  # Mes específico
+
+    # Obtener años y meses disponibles
+    year_query = db.session.query(func.extract('year', Attendance.sunday_date)).distinct().order_by(func.extract('year', Attendance.sunday_date))
     month_query = db.session.query(func.extract('month', Attendance.sunday_date)).distinct().order_by(func.extract('month', Attendance.sunday_date))
 
     if meeting_center_id is not None:
-        year_query  = year_query.filter(Attendance.meeting_center_id == meeting_center_id)
+        year_query = year_query.filter(Attendance.meeting_center_id == meeting_center_id)
         month_query = month_query.filter(Attendance.meeting_center_id == meeting_center_id)
 
-    available_years  = [y[0] for y in year_query.all() if y[0] is not None]
+    available_years = [y[0] for y in year_query.all() if y[0] is not None]
     available_months = [m[0] for m in month_query.all() if m[0] is not None]
-    month_names      = [{"num": m, "name": _(datetime(2000, m, 1).strftime('%b'))} for m in available_months]
+    month_names = [{"num": m, "name": _(datetime(2000, m, 1).strftime('%b'))} for m in available_months]
 
-    selected_year  = request.args.get('year', type=int, default=current_year)
-    selected_month = request.args.get('month', type=int, default=current_month)
-
-    # Verificar si hay datos en el mes actual
+    # Obtener fechas de domingos filtradas
     query = db.session.query(Attendance.sunday_date).distinct().order_by(Attendance.sunday_date)
     if meeting_center_id is not None:
         query = query.filter(Attendance.meeting_center_id == meeting_center_id)
     query = query.filter(extract('year', Attendance.sunday_date) == selected_year)
-    query = query.filter(extract('month', Attendance.sunday_date) == selected_month)
+    query = query.filter(extract('month', Attendance.sunday_date).in_(month_filter))
 
     sundays = query.all()
-    sunday_dates = [s[0] for s in sundays]
+    sunday_dates = [s[0] for s in sundays][-5:]  # Limitar a las últimas 5 semanas
 
-    # Si no hay datos en el mes actual, cambiar al mes anterior
-    if not sunday_dates:
-        selected_month -= 1
-        if selected_month < 1:
-            selected_month = 12
-            selected_year -= 1
-
-        # Rehacer la consulta con el nuevo mes
-        query = db.session.query(Attendance.sunday_date).distinct().order_by(Attendance.sunday_date)
-        if meeting_center_id is not None:
-            query = query.filter(Attendance.meeting_center_id == meeting_center_id)
-        query = query.filter(extract('year', Attendance.sunday_date) == selected_year)
-        query = query.filter(extract('month', Attendance.sunday_date) == selected_month)
-
-        sundays = query.all()
-        sunday_dates = [s[0] for s in sundays]
-
-    # Limitar los datos a 5 semanas
-    sunday_dates = sunday_dates[-5:]
-
-    # Formatear las fechas con Flask-Babel
+    # Formatear fechas
     sunday_dates_formatted = [
-        {"date": date, "formatted": format_date(date, format='MMM dd')}  # 'MMM dd' para "Mes día"
+        {"date": date, "formatted": format_date(date, format='MMM dd')}
         for date in sunday_dates
     ]
 
     # Obtener registros de asistencia filtrados
     attendance_query = db.session.query(Attendance).order_by(Attendance.student_name, Attendance.sunday_date)
-
     if meeting_center_id is not None:
         attendance_query = attendance_query.filter(Attendance.meeting_center_id == meeting_center_id)
-
     attendance_query = attendance_query.filter(extract('year', Attendance.sunday_date) == selected_year)
-    attendance_query = attendance_query.filter(extract('month', Attendance.sunday_date) == selected_month)
+    attendance_query = attendance_query.filter(extract('month', Attendance.sunday_date).in_(month_filter))
 
     attendance_records = attendance_query.all()
 
-    # Recalcular el total de miembros, basado en los registros de asistencia
+    # Procesar asistencia
     students = {}
     for record in attendance_records:
         if record.student_name not in students:
             students[record.student_name] = {date['date']: False for date in sunday_dates_formatted}
         students[record.student_name][record.sunday_date] = True
 
-    # Contar los miembros únicos basados en los registros filtrados
     total_miembros = len(students)
+    # Si el usuario no ha seleccionado nada, debe coincidir con el mes actual
+    if selected_month == "all" or selected_month not in ["Q1", "Q2", "Q3", "Q4"] + [str(m["num"]) for m in month_names]:
+        selected_month = str(current_month)  # Asegurar que el select refleje el mes actual
+ 
+    # Obtener registros de asistencia por trimestre
+    quarters_with_data = {
+        "Q1": db.session.query(Attendance).filter(
+            extract('month', Attendance.sunday_date).in_([1, 2, 3]),
+            Attendance.meeting_center_id == meeting_center_id
+        ).count() > 0,
+        "Q2": db.session.query(Attendance).filter(
+            extract('month', Attendance.sunday_date).in_([4, 5, 6]),
+            Attendance.meeting_center_id == meeting_center_id
+        ).count() > 0,
+        "Q3": db.session.query(Attendance).filter(
+            extract('month', Attendance.sunday_date).in_([7, 8, 9]),
+            Attendance.meeting_center_id == meeting_center_id
+        ).count() > 0,
+        "Q4": db.session.query(Attendance).filter(
+            extract('month', Attendance.sunday_date).in_([10, 11, 12]),
+            Attendance.meeting_center_id == meeting_center_id
+        ).count() > 0
+    }
 
-    # Si la solicitud es AJAX, devolver solo la parte de la asistencia
+    # Respuesta AJAX parcial
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
         return render_template(
             "partials/attendance_table.html", 
             students=students, 
             dates=sunday_dates_formatted,
-            total_miembros=total_miembros  # Incluir total_miembros en la respuesta AJAX
+            total_miembros=total_miembros
         )
 
     return render_template(
         'attendance_report.html',
-        students         = students,
-        dates            = sunday_dates_formatted,
-        available_years  = available_years,
-        available_months = month_names,
-        selected_year    = selected_year,
-        selected_month   = selected_month,
-        total_miembros   = total_miembros,
-        disable_month    = len(available_months) == 1,
-        disable_year     = len(available_years) == 1
+        students=students,
+        dates=sunday_dates_formatted,
+        available_years=available_years,
+        available_months=month_names,
+        selected_year=selected_year,
+        selected_month=selected_month,
+        total_miembros=total_miembros,
+        quarters_with_data=quarters_with_data,  # Pasar los trimestres con datos
+        disable_month=len(available_months) == 1,
+        disable_year=len(available_years) == 1
     )
-
     
 # =============================================================================================
 @bp.route('/attendance/export', methods=['GET'])
@@ -889,7 +899,8 @@ def registrar():
                
         # Limpiar el nombre recibido
         student_name     = ' '.join(student_name.strip().split()) # Elimina espacios antes y después
-        student_name     = student_name.title() # Convertir a título (primera letra en mayúscula)  
+        student_name     = student_name.title() # Convertir a título (primera letra en mayúscula) 
+        student_name     = remove_accents(student_name) # Elimina los acentos
         nombre, apellido = student_name.split(" ", 1) # Dividir el nombre y apellido, asumiendo que solo hay un nombre y un apellido        
         formatted_name   = f"{apellido}, {nombre}" # Formatear el nombre como "apellido, nombre"
 

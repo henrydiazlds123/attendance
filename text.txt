@@ -1,0 +1,20 @@
+UPDATE name_corrections
+SET correct_name = REPLACE(correct_name, 'á', 'a');
+UPDATE name_corrections
+SET correct_name = REPLACE(correct_name, 'é', 'e');
+UPDATE name_corrections
+SET correct_name = REPLACE(correct_name, 'í', 'i');
+UPDATE name_corrections
+SET correct_name = REPLACE(correct_name, 'ó', 'o');
+UPDATE name_corrections
+SET correct_name = REPLACE(correct_name, 'ú', 'u');
+UPDATE name_corrections
+SET correct_name = REPLACE(correct_name, 'Á', 'A');
+UPDATE name_corrections
+SET correct_name = REPLACE(correct_name, 'É', 'E');
+UPDATE name_corrections
+SET correct_name = REPLACE(correct_name, 'Í', 'I');
+UPDATE name_corrections
+SET correct_name = REPLACE(correct_name, 'Ó', 'O');
+UPDATE name_corrections
+SET correct_name = REPLACE(correct_name, 'Ú', 'U');

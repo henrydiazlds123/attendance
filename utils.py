@@ -1,13 +1,12 @@
 import os
-import io
-import csv
 from functools    import wraps
 from datetime     import datetime, timedelta
-from flask        import flash, redirect, session, url_for, request, Response, g
+from flask        import flash, redirect, session, url_for, request, g
 from flask_babel  import format_date, gettext as _
 from config       import Config
 from models import Attendance, Classes, db
 from sqlalchemy import func
+import unicodedata
 
 
 
@@ -184,3 +183,7 @@ def translations():
         {'id': 8, 'name': _('Other')}
 
     ]
+
+def remove_accents(input_str):
+    nfkd_form = unicodedata.normalize('NFKD', input_str)
+    return ''.join([c for c in nfkd_form if not unicodedata.combining(c) or c == 'ñ' or c == 'Ñ'])

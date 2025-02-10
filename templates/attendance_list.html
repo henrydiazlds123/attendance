@@ -126,6 +126,31 @@
         <option value="100" {% if per_page==100 %}selected{% endif %}>100</option>
         <option value="150" {% if per_page==150 %}selected{% endif %}>150</option>
       </select> -->
+      <nav aria-label="Page navigation">
+        <ul class="pagination">
+          {% if pagination.has_prev %}
+          <li class="page-item"><a class="page-link"
+              href="{{ url_for('routes.attendances', page=pagination.prev_num, per_page=pagination.per_page, class_name=request.args.get('class_name'), student_name=request.args.get('student_name'), sunday_date=request.args.get('sunday_date')) }}">{{_('Previous')}}</a>
+          </li>
+          {% endif %}
+          {% for page_num in pagination.iter_pages() %}
+          {% if page_num %}
+          <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+            <a class="page-link"
+              href="{{ url_for('routes.attendances', page=page_num, per_page=pagination.per_page, class_name=request.args.get('class_name'), student_name=request.args.get('student_name'), sunday_date=request.args.get('sunday_date')) }}">{{
+              page_num }}</a>
+          </li>
+          {% else %}
+          <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% endif %}
+          {% endfor %}
+          {% if pagination.has_next %}
+          <li class="page-item"><a class="page-link"
+              href="{{ url_for('routes.attendances', page=pagination.next_num, per_page=pagination.per_page, class_name=request.args.get('class_name'), student_name=request.args.get('student_name'), sunday_date=request.args.get('sunday_date')) }}">{{_('Next')}}</a>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
 
       {% include 'partials/attendance_list_table.html' %}
       <!-- Agregar la paginación -->

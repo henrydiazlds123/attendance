@@ -142,8 +142,8 @@
 
     function autoSubmitIfNameExists() {
         const saveName = localStorage.getItem("studentName");
-        if (saveName) {
-            
+
+        if (saveName) {            
             const formElement = document.getElementById("attendanceForm");
             const formData = new FormData(formElement);
             // 💡 Asegurar que el nombre se agregue manualmente
