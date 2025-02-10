@@ -90,12 +90,17 @@
 </div>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const studentSelect = document.getElementById('studentSelect');
-        const yearSelect = document.getElementById('yearSelect');
-        const ctx = document.getElementById('attendanceChart').getContext('2d');
+        const studentSelect     = document.getElementById('studentSelect');
+        const yearSelect        = document.getElementById('yearSelect');
+        const ctx               = document.getElementById('attendanceChart').getContext('2d');
         const ctxClassFrequency = document.getElementById('classFrequencyChart').getContext('2d');
         const meeting_center_id = 1;
 
+        const colors = [
+                'rgba(255, 99, 132, 0.6)', 'rgba(54, 162, 235, 0.6)', 'rgba(255, 206, 86, 0.6)',
+                'rgba(75, 192, 192, 0.6)', 'rgba(153, 102, 255, 0.6)', 'rgba(255, 159, 64, 0.6)'
+            ];
+        const borderColors = colors.map(color => color.replace('0.6', '1'));
 
         // Crear gráficos vacíos
         async function loadTranslationsAndCreateChart() {
@@ -229,23 +234,19 @@
             } catch (error) {
                 console.error('Error fetching texts:', error);
             }
-
         };
 
         // Llamada a la función para cargar las traducciones y crear el gráfico
         loadTranslationsAndCreateChart();
 
 
-
         function fetchAttendanceData() {
             const studentName = studentSelect.value;
             const year = yearSelect.value;
 
-
             fetch(`/attendance/monthly/${encodeURIComponent(studentName)}?year=${year}&meeting_center_id=${meeting_center_id}`)
                 .then(response => response.json())
                 .then(data => {
-
                     updateAttendanceChart(data.months, data.attendance_percentages, data.attendance_counts, data.total_weeks);
                     updateClassFrequencyChart(data.months, data.class_frequencies);
                 })
@@ -257,11 +258,6 @@
                 window.attendanceChart.destroy();
             }
 
-            const colors = [
-                'rgba(255, 99, 132, 0.6)', 'rgba(54, 162, 235, 0.6)', 'rgba(255, 206, 86, 0.6)',
-                'rgba(75, 192, 192, 0.6)', 'rgba(153, 102, 255, 0.6)', 'rgba(255, 159, 64, 0.6)'
-            ];
-            const borderColors = colors.map(color => color.replace('0.6', '1'));
             const texts = await fetch('/get_swal_texts').then(response => response.json());
 
             window.attendanceChart = new Chart(ctx, {
@@ -341,11 +337,6 @@
                 window.classFrequencyChart.destroy();
             }
 
-            const colors = [
-                'rgba(255, 99, 132, 0.6)', 'rgba(54, 162, 235, 0.6)', 'rgba(255, 206, 86, 0.6)',
-                'rgba(75, 192, 192, 0.6)', 'rgba(153, 102, 255, 0.6)', 'rgba(255, 159, 64, 0.6)'
-            ];
-            const borderColors = colors.map(color => color.replace('0.6', '1'));
             const texts = await fetch('/get_swal_texts').then(response => response.json());
 
             const allClasses = new Set();
@@ -414,8 +405,6 @@
         }
     });
 
-
 </script>
-
 
 {% endblock %}

@@ -146,21 +146,20 @@
         if (saveName) {            
             const formElement = document.getElementById("attendanceForm");
             const formData = new FormData(formElement);
+
             // 💡 Asegurar que el nombre se agregue manualmente
             formData.set("studentName", saveName);
             console.log("🚀 Auto-submit activado. Datos a enviar:");
+
             for (let pair of formData.entries()) {
                 console.log(pair[0] + ": " + pair[1]);
             }
 
             setTimeout(() => {
                 sendAttendanceForm(formData); // Enviar usando la función AJAX
-            }, 1000); // Pequeña espera para asegurar carga completa
+            }, 500); // Pequeña espera para asegurar carga completa
         }
     }
-
-
-    
 
     function handleSuccessResponse(studentName) {
         if (!document.body.classList.contains("logged-in")) {
@@ -191,8 +190,7 @@
             }
         });
     }
-    
-    
+     
 </script>
 
 {% endblock %}

@@ -65,17 +65,15 @@
     </div>
 </div>
 
-
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const monthSelect         = document.getElementById("month-select");
         const yearSelect          = document.getElementById("year-select");
         const clearFilters        = document.getElementById("clear-filters");
         const reportContainer     = document.getElementById("report-container");
-        const totalMembersElement = document.getElementById("total-members");     // Suponiendo que tienes un elemento con este ID en tu HTML.
+        const totalMembersElement = document.getElementById("total-members");  // Suponiendo que tienes un elemento con este ID en tu HTML.
         const quarterSelect       = document.getElementById("quarter-select");
-        const availableQuarters   = {{ quarters_with_data|tojson }};              // Pasamos la información desde Flask
-
+        const availableQuarters   = {{ quarters_with_data|tojson }};   // Pasamos la información desde Flask
 
         function disableUnavailableQuarters() {
             for (const option of monthSelect.options) {

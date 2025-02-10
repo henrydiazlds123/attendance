@@ -449,7 +449,7 @@ def create_attendance():
         # Obtener el class_code basado en el class_id seleccionado
         selected_class = Classes.query.filter_by(id=form.class_id.data).first()
         if not selected_class:
-            flash(_('The selected class is invalid. rt-452'), 'danger')
+            flash(_('The selected class is invalid.'), 'danger')
             return render_template('form.html', form=form, title=_('Create attendance'), submit_button_text=_('Create'), clas='warning')
 
         attendance = Attendance(
@@ -544,7 +544,6 @@ def attendance_report():
     selected_year = request.args.get('year', type=int, default=current_year)
     selected_month = request.args.get('month', default=str(current_month))
 
-    
     # Determinar el filtro de mes o trimestre
     month_filter = []
     if selected_month == "all":
@@ -910,7 +909,7 @@ def registrar():
         if not class_entry:
             return jsonify({
                 "success": False,
-                "message": _('The selected class is not valid. rt 903'),
+                "message": _('The selected class is not valid.'),
             }), 409
 
         # Verificar si el Meeting Center es válido
@@ -1885,7 +1884,7 @@ def prevalidar():
         if not class_entry:
             return jsonify({
                 "success": False,
-                "message": _('The selected class is not valid. rt-1877'),
+                "message": _('The selected class is not valid.'),
             }), 400
 
         # Verificar si el Meeting Center es válido
