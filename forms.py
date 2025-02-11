@@ -163,10 +163,15 @@ class ClassForm(FlaskForm):
 
         # Manejo del rol para meeting_center_id y class_type
         if 'role' in session:
-            if session['role'] != 'Owner':
-                self.meeting_center_id.data = session.get('meeting_center_id')
+            if session['role'] != 'Owner' and self.class_type.data == 'Main':
+                self.meeting_center_id.data      = session.get('meeting_center_id')
                 self.meeting_center_id.render_kw = {'disabled': 'disabled'}
-                self.class_type.render_kw = {'disabled': 'disabled'}
+                self.class_name.render_kw        = {'disabled': 'disabled'}
+                self.short_name.render_kw        = {'disabled': 'disabled'}
+                self.class_code.render_kw        = {'disabled': 'disabled'}
+                self.class_type.render_kw        = {'disabled': 'disabled'}
+                self.schedule.render_kw          = {'disabled': 'disabled'}
+                self.is_active.render_kw         = {'disabled': 'disabled'}
                 
 
 #==================================================================================================

@@ -1,5 +1,7 @@
+import csv
+import io
 import qrcode
-from flask                   import Blueprint, abort, jsonify, render_template, redirect, request, session, url_for, flash, send_from_directory
+from flask                   import Blueprint, Response, abort, jsonify, render_template, redirect, request, session, url_for, flash, send_from_directory
 from flask_babel             import gettext as _
 from sqlalchemy              import func, extract, desc, asc
 from sqlalchemy.orm          import joinedload
@@ -555,25 +557,25 @@ def attendance_report():
         month_filter = [int(selected_month)]  # Mes específico
 
     # Obtener años y meses disponibles
-    year_query = db.session.query(func.extract('year', Attendance.sunday_date)).distinct().order_by(func.extract('year', Attendance.sunday_date))
+    year_query  = db.session.query(func.extract('year', Attendance.sunday_date)).distinct().order_by(func.extract('year', Attendance.sunday_date))
     month_query = db.session.query(func.extract('month', Attendance.sunday_date)).distinct().order_by(func.extract('month', Attendance.sunday_date))
 
     if meeting_center_id is not None:
-        year_query = year_query.filter(Attendance.meeting_center_id == meeting_center_id)
+        year_query  = year_query.filter(Attendance.meeting_center_id == meeting_center_id)
         month_query = month_query.filter(Attendance.meeting_center_id == meeting_center_id)
 
-    available_years = [y[0] for y in year_query.all() if y[0] is not None]
+    available_years  = [y[0] for y in year_query.all() if y[0] is not None]
     available_months = [m[0] for m in month_query.all() if m[0] is not None]
-    month_names = [{"num": m, "name": _(datetime(2000, m, 1).strftime('%b'))} for m in available_months]
+    month_names      = [{"num": m, "name": _(datetime(2000, m, 1).strftime('%b'))} for m in available_months]
 
     # Obtener fechas de domingos filtradas
     query = db.session.query(Attendance.sunday_date).distinct().order_by(Attendance.sunday_date)
     if meeting_center_id is not None:
         query = query.filter(Attendance.meeting_center_id == meeting_center_id)
-    query = query.filter(extract('year', Attendance.sunday_date) == selected_year)
-    query = query.filter(extract('month', Attendance.sunday_date).in_(month_filter))
 
-    sundays = query.all()
+    query        = query.filter(extract('year', Attendance.sunday_date) == selected_year)
+    query        = query.filter(extract('month', Attendance.sunday_date).in_(month_filter))
+    sundays      = query.all()
     sunday_dates = [s[0] for s in sundays][-5:]  # Limitar a las últimas 5 semanas
 
     # Formatear fechas
@@ -709,6 +711,8 @@ def export_attendance():
             "Content-Disposition": f"attachment; filename={filename}"
         }
     ) 
+
+
 # =============================================================================================
 @bp.route('/attendance/stats')
 @role_required('Owner', 'Admin')
@@ -1074,16 +1078,13 @@ def generate_extra_pdfs():
 @login_required
 def generate_pdfs():
     user_date = request.args.get('selected_date')
-    # print(f"User-provided date: {user_date}")  # Debugging
     
     OUTPUT_DIR = get_output_dir()
-    # print(f"Output directory: {OUTPUT_DIR}")
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    # Función auxiliar para obtener la fecha de la clase
     def get_class_date(class_type, user_date=None):
         if class_type == 'Main':
-            return get_next_sunday()  # Fecha del próximo domingo
+            return get_next_sunday()
         elif class_type == 'Extra' and user_date:
             try:
                 class_date = datetime.strptime(user_date, '%Y-%m-%d')
@@ -1093,21 +1094,17 @@ def generate_pdfs():
                     raise ValueError(_('The date must be today or in the future.'))
             except ValueError as e:
                 flash(str(e), 'error')
-                print(f"Error parsing date: {e}")
                 return None
         else:
             flash(_('Invalid date for extra class.'), 'error')
-            print('Invalid date for extra class.')
             return None
 
-    # Obtener el ID del meeting center desde la sesión
     next_sunday_code  = get_next_sunday_code(get_next_sunday())
     meeting_center_id = session['meeting_center_id']
     unit_name         = session['meeting_center_name']
     unit              = session['meeting_center_number']
     sunday_week       = (get_next_sunday().day - 1) // 7 + 1
 
-    # Obtener las clases filtradas por meeting center
     clases_a_imprimir = list({
         c for c in (
             Classes.query.filter_by(is_active=True, meeting_center_id=meeting_center_id)
@@ -1117,22 +1114,17 @@ def generate_pdfs():
             else [
                 c for c in Classes.query.filter_by(is_active=True, meeting_center_id=meeting_center_id)
                 if str(sunday_week) in c.schedule.split(',')
-
             ]
         )
     })
-    # print(f"Classes to print for meeting center {meeting_center_id}: {[c.class_name for c in clases_a_imprimir]}")
     clean_qr_folder(OUTPUT_DIR)
-    # print("QR folder cleaned.")
 
     for class_entry in clases_a_imprimir:
         if class_entry.class_type == 'Extra' and not user_date:
-            print(f"No date provided for extra class: {class_entry.class_name}")
             continue
 
         class_date = get_class_date(class_entry.class_type, user_date)
         if not class_date:
-            print(f"Skipping class {class_entry.class_name} due to invalid date.")
             continue
 
         class_name  = class_entry.translated_name
@@ -1140,8 +1132,6 @@ def generate_pdfs():
         class_color = class_entry.class_color or "black"
 
         qr_url = f"{Config.BASE_URL}/attendance?className={class_name.replace(' ', '+')}&sundayCode={next_sunday_code}&date={class_date.strftime('%Y-%m-%d')}&unitNumber={unit}&classCode={class_code}"
-        print(f"QR URL for {class_name}: {qr_url}")
-
         qr = qrcode.QRCode(version=1, box_size=10, border=4)
         qr.add_data(qr_url)
         qr.make(fit=True)
@@ -1149,23 +1139,19 @@ def generate_pdfs():
 
         qr_filename = os.path.join(OUTPUT_DIR, f"{class_name}_{format_date(class_date)}.png")
         img.save(qr_filename)
-        # print(f"QR code saved: {qr_filename}")
 
         pdf_filename = os.path.join(OUTPUT_DIR, f"{_(class_name)}_{format_date(class_date)}.pdf")
-
-        page_width, page_height = letter
         c = canvas.Canvas(pdf_filename, pagesize=letter)
 
+        page_width, page_height = letter
         c.setFont("Helvetica-Bold", 24)
         c.setFillColor("black")
         c.drawCentredString(page_width / 2, 600, _(f"Attendance Sheet"))
         
-        # Dibuja caga grande
         rec_x=45
         rec_y=45
-        c.rect(rec_x+22, rec_y, (page_width-rec_x * 2)-44, page_height - rec_y * 4) #inside
-     
-
+        c.rect(rec_x+22, rec_y, (page_width-rec_x * 2)-44, page_height - rec_y * 4)
+        
         qr_image = ImageReader(qr_filename)
         qr_size = 442
         qr_x=85
@@ -1174,28 +1160,78 @@ def generate_pdfs():
 
         c.setFont("Helvetica-Bold", 35)
         c.drawCentredString(page_width / 2, 560, _(class_name))
-
+        
         c.setFont("Helvetica", 16)
-        c.setFillColor("black")
         c.drawCentredString(page_width / 2, 99, unit_name)
         c.drawCentredString(page_width / 2, 74, f"{format_date(class_date)}") 
-        # print(f"PDF saved: {pdf_filename}")
 
-        c.setLineWidth(0.5)  # Valores menores hacen la línea más delgada
-        c.setDash(5, 10)  # Segmentos de 5 unidades con espacios de 3 unidades
+        c.setLineWidth(0.5)
+        c.setDash(5, 10)
         c.line(0, page_height - rec_y * 4 +68, 612, page_height - rec_y * 4 +68)
         c.line(rec_x, 0, rec_x, page_height)
         c.line(567, 0, 567, page_height)
         c.line(0, 22.5, page_width, 22.5)
+        c.showPage()
+           
+        # Segunda página con QR de reset y QR del maestro si ya existe
+        # QR para resetear el nombre
+        manual_qr_url = f"{Config.BASE_URL}/attendance/manual"
+        manual_qr = qrcode.QRCode(version=1, box_size=5, border=2)
+        manual_qr.add_data(manual_qr_url)
+        manual_qr.make(fit=True)
+        manual_img = manual_qr.make_image(fill_color="black", back_color="white")
+        manual_qr_filename = os.path.join(OUTPUT_DIR, "manual_attendance.png")
+        manual_img.save(manual_qr_filename)
 
+        reset_qr_image = ImageReader(manual_qr_filename)
+        c.drawCentredString(page_width / 2, 605, _('Register Attendance'))
+        c.drawImage(reset_qr_image, page_width / 2 - 50, 500, width=100, height=100)
+
+        # Verificar si el QR del maestro ya existe
+        classes_teacher = {
+            "YW": "RS",
+            "AP": "EQ",
+            "SSY": "SSA"
+        }        
+        # Obtener el nombre de la clase del maestro usando el código del maestro
+        class_teacher = classes_teacher.get(class_code)
+        if class_teacher:
+            # Buscar la clase asociada al código del maestro
+            teacher_class = Classes.query.filter_by(class_code=class_teacher).first()
+            
+            if teacher_class:
+                teacher_class_name = teacher_class.translated_name  # Obtén el nombre de la clase
+
+                # Crear el nombre del archivo para el QR del maestro
+                teacher_qr_filename = os.path.join(OUTPUT_DIR, f"{class_teacher}_{format_date(class_date)}.png")
+
+                # Comprobar si el QR del maestro ya existe
+                if os.path.exists(teacher_qr_filename):  # Si el QR ya existe, reutilízalo
+                    teacher_qr_image = ImageReader(teacher_qr_filename)
+                else:  # Si no existe, genera uno nuevo
+                    teacher_qr_url = f"{Config.BASE_URL}/attendance?className={teacher_class_name.replace(' ', '+')}&classCode={class_teacher}&date={class_date.strftime('%Y-%m-%d')}&sundayCode={next_sunday_code}&unitNumber={unit}"
+                    teacher_qr = qrcode.QRCode(version=1, box_size=10, border=4)
+                    teacher_qr.add_data(teacher_qr_url)
+                    teacher_qr.make(fit=True)
+                    teacher_img = teacher_qr.make_image(fill_color="black", back_color="white")
+                    teacher_img.save(teacher_qr_filename)
+                    teacher_qr_image = ImageReader(teacher_qr_filename)
+
+                # Dibujar el QR del maestro en la página
+                teacher_qr_size = 180
+                teacher_qr_x = (page_width - teacher_qr_size) / 2
+                teacher_qr_y = 90
+                c.drawImage(teacher_qr_image, teacher_qr_x, teacher_qr_y, width=teacher_qr_size, height=teacher_qr_size)
+                c.drawCentredString(page_width / 2, teacher_qr_y + teacher_qr_size, _('Teacher\'s Attendance Class'))  # Mostrar el nombre de la clase del maestro
+                c.setFont("Helvetica-Bold", 14)
+                c.drawCentredString(page_width / 2, teacher_qr_y - 10, teacher_class_name)  # Mostrar el nombre de la clase del maestro
+
+        # Guardar la página PDF
         c.save()
 
     clean_qr_images(OUTPUT_DIR)
-    # print("QR images cleaned.")
-
     flash(_('QR Codes generated successfully.'), 'success')
     return redirect(url_for('routes.list_pdfs'))
-
 
 # =============================================================================================
 @bp.route('/pdf/view/<path:filename>', methods=['GET'])
@@ -1878,7 +1914,6 @@ def prevalidar():
         sunday_date = get_next_sunday()  # Fecha real del domingo a validar
         unit_number = request.args.get('unitNumber')
   
-
         # Verificar si la clase es válida
         class_entry = Classes.query.filter_by(class_code=class_code).first()
         if not class_entry:
@@ -1944,7 +1979,6 @@ def prevalidar():
                             "message": _('Attendance can only be recorded during the grace period or meeting time.'),
                         }), 400
                                
-
         return jsonify({
             "success": True,
             "message": _('You may proceed with attendance registration.'),

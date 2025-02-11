@@ -82,7 +82,7 @@
         <td style="color: {{ class.class_color }};" class="col-md-1 d-none d-lg-table-cell"><div class="class_color" style="background-color: {{ class.class_color }};"></div></td>
         <td class="col-md-2 d-none d-lg-table-cell dot-1">{{ class.meeting_short_name}}</td>
         <td class="col-md-2">
-          <a class="btn btn-primary btn-sm" data-toggle="tooltip" title="Edit class" href="{{ url_for('routes.update_class', id=class.id) }}">
+          <a type="button" class="btn btn-primary btn-sm" data-toggle="tooltip" title="Edit class" href="{{ url_for('routes.update_class', id=class.id) }}">
             <i class="bi bi-pencil-square"></i>
           </a>
           {% if not (class.class_type == 'Main')  %}
