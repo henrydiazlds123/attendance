@@ -543,6 +543,16 @@ def attendance_report():
     current_year = datetime.now().year
     current_month = datetime.now().month
 
+    selected_class = request.args.get('class', default='all')
+
+    # Obtener clases disponibles
+    class_query = db.session.query(Classes).filter(Classes.is_active == True)
+    if meeting_center_id is not None:
+        class_query = class_query.filter(Classes.meeting_center_id == meeting_center_id)
+
+    available_classes = class_query.order_by(Classes.class_name).all()
+    # print(f"Available classes: {available_classes}")
+
     selected_year = request.args.get('year', type=int, default=current_year)
     selected_month = request.args.get('month', default=str(current_month))
 
@@ -590,6 +600,22 @@ def attendance_report():
         attendance_query = attendance_query.filter(Attendance.meeting_center_id == meeting_center_id)
     attendance_query = attendance_query.filter(extract('year', Attendance.sunday_date) == selected_year)
     attendance_query = attendance_query.filter(extract('month', Attendance.sunday_date).in_(month_filter))
+
+    if selected_class != 'all':
+        # Obtener los nombres de los estudiantes que asistieron a la clase seleccionada
+        student_names = (
+            db.session.query(Attendance.student_name)
+            .filter(Attendance.class_code == selected_class)
+            .distinct()
+            .all()
+        )
+
+        # Extraer los nombres en una lista
+        student_names = [name[0] for name in student_names]
+
+        # Filtrar attendance_query para incluir todas las asistencias de esos estudiantes
+        if student_names:
+            attendance_query = attendance_query.filter(Attendance.student_name.in_(student_names))
 
     attendance_records = attendance_query.all()
 
@@ -645,7 +671,8 @@ def attendance_report():
         total_miembros=total_miembros,
         quarters_with_data=quarters_with_data,  # Pasar los trimestres con datos
         disable_month=len(available_months) == 1,
-        disable_year=len(available_years) == 1
+        disable_year=len(available_years) == 1,
+        available_classes=available_classes  # Pasar clases disponibles a la plantilla
     )
     
 # =============================================================================================
