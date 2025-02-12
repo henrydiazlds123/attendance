@@ -2,7 +2,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   initTheme();
   handleFlashMessages();
-
   initDeleteAllButton();
   initColorPickers();
 
@@ -73,9 +72,6 @@ function initColorPickers() {
 }
 
 
-
-
-
 // Agregar evento para manejar selección en list-group-item
 document.addEventListener("DOMContentLoaded", () => {
   // Obtener todos los elementos de la lista
@@ -107,7 +103,7 @@ async function confirmDelete(entityType, entityId) {
       text : `The form with ID ${formId} does not exist.`,
       icon : "error",
     });
-    return; // Salir si no encuentra el formulario
+    return; 
   }
 
   const texts = await fetch('/get_swal_texts').then(response => response.json());
@@ -123,10 +119,13 @@ async function confirmDelete(entityType, entityId) {
   }).then((result) => {
     if (result.isConfirmed) {
       console.log(`Submitting form ID: ${formId}`);
-      formElement.submit(); // Enviar el formulario
+      setTimeout(() => {
+        formElement.submit(); // Esperar un pequeño tiempo antes de enviar
+      }, 100); 
     }
   });
 }
+
 
 //----------------------------------------------------------------------------------
 function changeLanguage(lang) {
@@ -214,23 +213,6 @@ async function confirmRevert(id) {
 }
 
 //----------------------------------------------------------------------------------
-async function prevalidateAttendance(classCode, sundayCode, unitNumber) {
-  try {
-      const texts    = await fetch('/get_swal_texts').then(response => response.json());
-      const response = await fetch(`/prevalidar?classCode=${classCode}&sundayCode=${sundayCode}&unitNumber=${unitNumber}`);
-      const data     = await response.json();
-
-      if (!data.success) {
-          Swal.fire(texts.atention, data.message, "warning");
-          return false;
-      }
-      return true;
-  } catch (error) {
-      Swal.fire(texts.validatonError, "error");
-      return false;
-  }
-}
-
 
 async function confirmPromotion(userId, username) {
   const texts = await fetch('/get_swal_texts').then(response => response.json());
@@ -256,4 +238,23 @@ function getUrlParameter(name) {
 
 function removeAccents(str) {
   return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function ordenarSelect(selectId) {
+  // Paso 1: Obtener el select y las opciones
+  const select = document.getElementById(selectId);
+  const options = Array.from(select.getElementsByTagName('option'));
+
+  // Paso 2: Ordenar las opciones por el texto visible
+  options.sort((a, b) => {
+      const textA = a.textContent.trim();
+      const textB = b.textContent.trim();
+      return textA.localeCompare(textB);  // Compara alfabéticamente
+  });
+
+  // Paso 3: Limpiar el select y reinsertar las opciones ordenadas
+  select.innerHTML = ''; // Limpiar todas las opciones del select
+  options.forEach(option => {
+      select.appendChild(option);  // Agregar las opciones ordenadas
+  });
 }

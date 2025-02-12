@@ -28,9 +28,7 @@
 {% block content %}
 <div class="blog-post">
   <div class="col-xl-8">
-    <p class="mb-3">
-      
-    </p>
+    <p class="mb-3"></p>
   </div>
   {% if session['role'] == 'Owner' %}
 
@@ -47,73 +45,79 @@
 
     <form id="filterForm" method="GET" action="/attendance/list" class="card mb-3 p-3">
       <p>{{ _('Total Attendance Records') }}: <b>{{ total_registros }} </b></p>
-<div class="row mb-2">
-    <div class="input-group col-md">
-        <span class="input-group-text"><i class="bi bi-person-check-fill"></i></span>
-        <select name="student_name" id="student_name" onchange="submitForm()" class="form-select">
-            <option value="" disabled {% if not request.args.get('student_name') %}selected{% endif %}>{{ _('Member') }}</option>
+      <div class="row mb-2">
+        <div class="input-group col-md">
+          <span class="input-group-text"><i class="bi bi-person-check-fill"></i></span>
+          <select name="student_name" id="student_name" onchange="submitForm()" class="form-select">
+            <option value="" disabled {% if not request.args.get('student_name') %}selected{% endif %}>{{ _('Member') }}
+            </option>
             {% for student in students %}
             <option value="{{ student[0] }}" {% if student[0]==request.args.get('student_name') %}selected{% endif %}>
-                {{ student[0] }}
+              {{ student[0] }}
             </option>
             {% endfor %}
-        </select>
-    </div>
-    
-    <div class="input-group col-md">
-        <span class="input-group-text"><i class="bi bi-mortarboard-fill"></i></span>
-        <select name="class_name" id="class_name" onchange="submitForm()" class="form-select">
-            <option value="" disabled {% if not request.args.get('class_code') %}selected{% endif %}>{{ _('Class') }}</option>
+          </select>
+        </div>
+
+        <div class="input-group col-md">
+          <span class="input-group-text"><i class="bi bi-mortarboard-fill"></i></span>
+          <select name="class_name" id="class_name" onchange="submitForm()" class="form-select">
+            <option value="" disabled {% if not request.args.get('class_code') %}selected{% endif %}>{{ _('Class') }}
+            </option>
             {% for class in classes %}
-            <option value="{{ class[1] }}" {% if class[1]==request.args.get('class_name') %}selected{% endif %}>
-                {{ _(class[1]) }}
+            <option value="{{ class[1] }}" data-class-name="{{ _(class[1]) }}" {% if
+              class[1]==request.args.get('class_name') %}selected{% endif %}>
+              {{ _(class[1]) }}
             </option>
             {% endfor %}
-        </select>
-    </div>
-    <div class="input-group col-md">
-        <span class="input-group-text"><i class="bi bi-calendar2-date"></i></span>
-        <select name="sunday_date" id="sunday_date" onchange="submitForm()" class="form-select">
-            <option value="" disabled {% if not request.args.get('sunday_date') %}selected{% endif %}>{{ _('Date') }}</option>
+          </select>
+        </div>
+        <div class="input-group col-md">
+          <span class="input-group-text"><i class="bi bi-calendar2-date"></i></span>
+          <select name="sunday_date" id="sunday_date" onchange="submitForm()" class="form-select">
+            <option value="" disabled {% if not request.args.get('sunday_date') %}selected{% endif %}>{{ _('Date') }}
+            </option>
             {% for sunday in sundays %}
-            <option value="{{ sunday['date'].strftime('%Y-%m-%d') }}" {% if sunday['date']|string==request.args.get('sunday_date') %}selected{% endif %}>
-                {{ sunday['formatted'] }}  <!-- Usar la fecha formateada -->
+            <option value="{{ sunday['date'].strftime('%Y-%m-%d') }}" {% if
+              sunday['date']|string==request.args.get('sunday_date') %}selected{% endif %}>
+              {{ sunday['formatted'] }} <!-- Usar la fecha formateada -->
             </option>
             {% endfor %}
-        </select>
-    </div>
-    {% if years|length > 1 %}
-    <div class="input-group col-md">
-        <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
-        <select name="year" id="year" onchange="submitForm()" class="form-select">
+          </select>
+        </div>
+        {% if years|length > 1 %}
+        <div class="input-group col-md">
+          <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+          <select name="year" id="year" onchange="submitForm()" class="form-select">
             <option value="" disabled {% if not request.args.get('year') %}selected{% endif %}>{{ _('Year') }}</option>
             {% for year in years %}
             <option value="{{ year[0] }}" {% if year[0]|string==request.args.get('year') %}selected{% endif %}>
-                {{ year[0] }}
+              {{ year[0] }}
             </option>
             {% endfor %}
-        </select>
-    </div>
-    {% endif %}
-    {% if months|length > 1 %}
-    <div class="input-group col-md">
-        <span class="input-group-text"><i class="bi bi-calendar-month"></i></span>
-        <select name="month" id="month" onchange="submitForm()" class="form-select">
-            <option value="" disabled {% if not request.args.get('month') %}selected{% endif %}> {{ _('Month') }}</option>
+          </select>
+        </div>
+        {% endif %}
+        {% if months|length > 1 %}
+        <div class="input-group col-md">
+          <span class="input-group-text"><i class="bi bi-calendar-month"></i></span>
+          <select name="month" id="month" onchange="submitForm()" class="form-select">
+            <option value="" disabled {% if not request.args.get('month') %}selected{% endif %}> {{ _('Month') }}
+            </option>
             {% for month, name in months_abr %}
             <option value="{{ month }}" {% if month==request.args.get('month') %}selected{% endif %}>
-                {{ name }}
+              {{ name }}
             </option>
             {% endfor %}
-        </select>
-    </div>
-    {% endif %}
-    <div class="input-group col-md">
-        <button id="filter-clear2" type="button" class="btn btn-warning form-control" onclick="clearFilters()">
+          </select>
+        </div>
+        {% endif %}
+        <div class="input-group col-md">
+          <button id="filter-clear2" type="button" class="btn btn-warning form-control" onclick="clearFilters()">
             {{ _('Remove filters') }} <i class="bi bi-funnel"></i>
-        </button>
-    </div>
-</div>
+          </button>
+        </div>
+      </div>
     </form>
     <!-- Actions Form -->
     <form method="POST" action="/attendance/list" class="pb-2">
@@ -152,7 +156,9 @@
         </ul>
       </nav>
 
+
       {% include 'partials/attendance_list_table.html' %}
+
       <!-- Agregar la paginación -->
       <nav aria-label="Page navigation">
         <ul class="pagination">
@@ -196,6 +202,24 @@
     <script>
       document.addEventListener('DOMContentLoaded', function () {
         const perPageSelect = document.getElementById('per_page_select');
+        const className = document.getElementById("class_name");
+
+
+        const options = Array.from(className.options);
+
+        // Elimina la opción "All" para no incluirla en el orden
+        const allOption = options.shift();
+
+        // Ordena las opciones por el atributo "data-class-name"
+        options.sort((a, b) => a.getAttribute('data-class-name').localeCompare(b.getAttribute('data-class-name')));
+
+        // Añade la opción "All" nuevamente en la parte superior
+        options.unshift(allOption);
+
+        // Limpia el <className> y agrega las opciones ordenadas
+        className.innerHTML = '';
+        options.forEach(option => className.appendChild(option));
+
 
         // Restaurar selección previa desde localStorage
         const savedPerPage = localStorage.getItem('per_page');

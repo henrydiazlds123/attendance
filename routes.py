@@ -550,7 +550,7 @@ def attendance_report():
     if meeting_center_id is not None:
         class_query = class_query.filter(Classes.meeting_center_id == meeting_center_id)
 
-    available_classes = class_query.order_by(Classes.class_name).all()
+    available_classes = class_query.order_by(Classes.class_name).filter(Classes.meeting_center_id == meeting_center_id).all()
     # print(f"Available classes: {available_classes}")
 
     selected_year = request.args.get('year', type=int, default=current_year)
@@ -603,12 +603,7 @@ def attendance_report():
 
     if selected_class != 'all':
         # Obtener los nombres de los estudiantes que asistieron a la clase seleccionada
-        student_names = (
-            db.session.query(Attendance.student_name)
-            .filter(Attendance.class_code == selected_class)
-            .distinct()
-            .all()
-        )
+        student_names = (db.session.query(Attendance.student_name).filter(Attendance.class_code == selected_class, Attendance.meeting_center_id == meeting_center_id)).distinct().all()
 
         # Extraer los nombres en una lista
         student_names = [name[0] for name in student_names]
@@ -738,97 +733,6 @@ def export_attendance():
             "Content-Disposition": f"attachment; filename={filename}"
         }
     ) 
-
-
-# =============================================================================================
-@bp.route('/attendance/stats')
-@role_required('Owner', 'Admin')
-def attendance_stats():
-    meeting_center_id = get_meeting_center_id()
-    year = request.args.get('year', type=int, default=2025)
-
-    students = (db.session.query(Attendance.student_name)
-                .filter(Attendance.meeting_center_id == meeting_center_id)
-                .distinct()
-                .order_by(Attendance.student_name)
-                .all()
-                )
-
-    years = (
-        db.session.query(func.strftime('%Y', Attendance.sunday_date).label("year"))
-        .filter(Attendance.meeting_center_id == meeting_center_id)
-        .distinct()
-        .order_by(func.strftime('%Y', Attendance.sunday_date).desc())
-        .all()
-        )
-    
-   # Obtener estudiantes con mejor asistencia
-    student_attendance = (
-        db.session.query(
-            Attendance.student_name, func.count().label('attendance_count')
-        )
-        .filter(Attendance.meeting_center_id == meeting_center_id)
-        .filter(func.strftime('%Y', Attendance.sunday_date) == str(year))
-        .group_by(Attendance.student_name)
-        .order_by(func.count().desc())  # Ordenado de mayor a menor
-        .all()
-    )
-
-    if not student_attendance:
-        top_students = []
-        bottom_students = []
-    else:
-        # Determinar máximo y mínimo de asistencias
-        max_count = student_attendance[0][1]
-        min_count = student_attendance[-1][1]
-
-        # Obtener los mejores (top)
-        top_attendance = []
-        for student in student_attendance:
-            if len(top_attendance) >= 10 and student[1] < max_count:
-                break
-            top_attendance.append(student)
-
-        # Filtrar estudiantes que ya están en top_attendance para bottom_attendance
-        top_names = {student[0] for student in top_attendance}
-
-        bottom_attendance = []
-        for student in reversed(student_attendance):
-            if len(bottom_attendance) >= 10 and student[1] > min_count:
-                break
-            if student[0] not in top_names:  # Asegurar que no estén en el top
-                bottom_attendance.append(student)
-
-        # Evitar división por cero si max_count == min_count
-        if max_count == min_count:
-            top_students = [{"name": student[0], "attendance_percentage": 100} for student in top_attendance]
-            bottom_students = [{"name": student[0], "attendance_percentage": 100} for student in bottom_attendance]
-        else:
-            top_students = [
-                {"name": student[0], "attendance_percentage": round((student[1] / max_count) * 100)}
-                for student in top_attendance
-            ]
-            bottom_students = sorted(
-                [
-                    {"name": student[0], "attendance_percentage": round((student[1] / max_count) * 100)}
-                    for student in bottom_attendance
-                ],
-                key=lambda x: x["name"],  # Ordenar por nombre
-                reverse=False  # Descendente (de Z a A)
-            )
-
-    # Convertir el resultado en una lista de nombres
-    student_names = [student[0] for student in students]
-
-    # Convertir el resultado en una lista de years
-    years = [year[0] for year in years]
-
-    return render_template('attendance_stats.html', 
-                           students          = student_names,
-                           years             = years,
-                           meeting_center_id = meeting_center_id,
-                           top_students      = top_students,
-                           bottom_students   = bottom_students)
 
 
 # =============================================================================================
@@ -1554,62 +1458,64 @@ def delete_organization(id):
 @bp.route('/get_swal_texts', methods=['GET'])
 def get_swal_texts():
     return {    
-        'actionCanceled'        : _("Action canceled"),
-        'alreadyRegistered'     : _("You already have registered assistance on {sunday_date}."),
-        'attendance_label'      : _("Attendance"),
-        'atention'              : _("Attention"),
-        'attendance_value_label': _("Attendance"),
-        'attendanceRecorded'    : _("¡{student_name}, your attendance was recorded!"),
-        'cancel'                : _("Cancel"),
-        'cancelled'             : _("Cancelled"),
-        'cancelledMessage'      : _("No correction has been made."),
-        'chooseClass'           : _("Choose a Class"),
-        'cleared'               : _("Cleared!"),
-        'confirm'               : _("Confirm"),
-        'confirmDelete'         : _("You \'re sure?"),
-        'connectionError'       : _("There was a problem connecting to the server."),
-        'confirmSave'           : _("Confirm"),
-        'classesNumber'         : _("Number of Classes"),
-        'classesLabel'          : _("Classes"),
-        'classesTitle'          : _("Frequency of Classes per Month"),
-        'deleteConfirmationText': _("This action will delete all records and cannot be undone."),
-        'deleteOneRecordText   ': _("This record will be deleted."),
-        'errorTitle'            : _("Error"),
-        'errorMessage'          : _("There was a problem saving the correction"),
-        'great'                 : _("Great!"),
-        'incorrectPatternLabel' : _("Incorrect format"),
-        'incorrectPatternText'  : _("The name must be in the format 'Last Name, First Name', separated by a comma."),
-        'months_label'          : _("Months"),
-        'monthly_attendance'    : _("Monthly Attendance"),
-        'mustSelectDate'        : _("You must select a date!"),
-        'nameFormatText'        : _("Please enter your name in \'First Name Last Name\' format."),
-        'nameNotRemoved'        : _("Your name was not removed."),
-        'nameRemoved'           : _("The name has been removed."),
-        'noNameFound'           : _("No Name Found"),
-        'noNameSaved'           : _("No name is currently saved."),
-        'noQrGenerated'         : _("QR codes were not generated"),
-        'promotionConfirmation' : _("Yes, Do it!"),
-        'promotionText'         : _("Do you want to promote \'{user_name}\' as a Power User?"),
-        'promotionTitle'        : _("You 're sure?"),
-        'resetStudentName'      : _("Reset Student Name"),
-        'revertTitle'           : _("Are you sure you want to revert this correction?"),
-        'savedNameText'         : _("The saved name is: \'{name}\'. Do you want to clear it?"),
-        'revertConfirmButton'   : _("Revert"),
-        'selectDateExtraClasses': _("Select a date for Extra classes"),
-        'successMessage'        : _("The name has been corrected"),
-        'sundayClassRestriction': _("You cannot register a \'Sunday Class\' outside of Sunday."),
-        'successTitle'          : _("¡Success"),
-        'yes'                   : _("Yes"),
-        'yesDeleteEverything'   : _("Yes, delete everything"),
-        'yesClearIt'            : _("Yes, clear it!"),
-        'yesDeleteIt'           : _("Yes, Delete it!"),
-        'validationError'       : _("Error, There was a problem validating the attendance."),
-        'warningTitle'          : _("warning"),
-        'wrongNameTitle'        : _("Please enter the correct name"),
-        'wrongNameText'         : _("Please enter the correct name for "),
-        'wrongNameLabel'        : _("Correct Format: Last Name, First Name"),
-        'wrongNamePlaceholder'  : _("Enter the new name"),
-        'weeks_label'           : _("Weeks with attendance in the month"),
+        'actionCanceled'          : _("Action canceled"),
+        'alreadyRegistered'       : _("You already have registered assistance on {sunday_date}."),
+        'attendance_label'        : _("Attendance"),
+        'attendance_unit'         : _("attendance(s)"),
+        'atention'                : _("Attention"),
+        'attendance_value_label'  : _("Attendance"),
+        'attendanceRecorded'      : _("¡{student_name}, your attendance was recorded!"),
+        'cancel'                  : _("Cancel"),
+        'cancelled'               : _("Cancelled"),
+        'cancelledMessage'        : _("No correction has been made."),
+        'chooseClass'             : _("Choose a Class"),
+        'cleared'                 : _("Cleared!"),
+        'confirm'                 : _("Confirm"),
+        'confirmDelete'           : _("You \'re sure?"),
+        'connectionError'         : _("There was a problem connecting to the server."),
+        'confirmSave'             : _("Confirm"),
+        'classesNumber'           : _("Number of Classes"),
+        'classesLabel'            : _("Classes"),
+        'classesTitle'            : _("Frequency of Classes per Month"),
+        'deleteConfirmationText'  : _("This action will delete all records and cannot be undone."),
+        'deleteOneRecordText   '  : _("This record will be deleted."),
+        'errorTitle'              : _("Error"),
+        'errorMessage'            : _("There was a problem saving the correction"),
+        'great'                   : _("Great!"),
+        'incorrectPatternLabel'   : _("Incorrect format"),
+        'incorrectPatternText'    : _("The name must be in the format 'Last Name, First Name', separated by a comma."),
+        'months_label'            : _("Months"),
+        'members_label'           : _("members"),
+        'monthly_attendance'      : _("Monthly Attendance"),
+        'mustSelectDate'          : _("You must select a date!"),
+        'nameFormatText'          : _("Please enter your name in \'First Name Last Name\' format."),
+        'nameNotRemoved'          : _("Your name was not removed."),
+        'nameRemoved'             : _("The name has been removed."),
+        'noNameFound'             : _("No Name Found"),
+        'noNameSaved'             : _("No name is currently saved."),
+        'noQrGenerated'           : _("QR codes were not generated"),
+        'promotionConfirmation'   : _("Yes, Do it!"),
+        'promotionText'           : _("Do you want to promote \'{user_name}\' as a Power User?"),
+        'promotionTitle'          : _("You 're sure?"),
+        'resetStudentName'        : _("Reset Student Name"),
+        'revertTitle'             : _("Are you sure you want to revert this correction?"),
+        'savedNameText'           : _("The saved name is: \'{name}\'. Do you want to clear it?"),
+        'revertConfirmButton'     : _("Revert"),
+        'selectDateExtraClasses'  : _("Select a date for Extra classes"),
+        'successMessage'          : _("The name has been corrected"),
+        'sundayClassRestriction'  : _("You cannot register a \'Sunday Class\' outside of Sunday."),
+        'successTitle'            : _("¡Success"),
+        'yes'                     : _("Yes"),
+        'yesDeleteEverything'     : _("Yes, delete everything"),
+        'yesClearIt'              : _("Yes, clear it!"),
+        'yesDeleteIt'             : _("Yes, Delete it!"),
+        'validationError'         : _("Error, There was a problem validating the attendance."),
+        'warningTitle'            : _("warning"),
+        'wrongNameTitle'          : _("Please enter the correct name"),
+        'wrongNameText'           : _("Please enter the correct name for "),
+        'wrongNameLabel'          : _("Correct Format: Last Name, First Name"),
+        'wrongNamePlaceholder'    : _("Enter the new name"),
+        'weeks_label'             : _("Weeks with attendance"),
         
     }
     
@@ -1933,86 +1839,186 @@ def admin_data():
     return jsonify(meeting_center)
 
 
-# =============================================================================================
-@bp.route('/prevalidar', methods=['GET'])
-def prevalidar():
-    try:
-        class_code  = request.args.get('classCode')
-        sunday_date = get_next_sunday()  # Fecha real del domingo a validar
-        unit_number = request.args.get('unitNumber')
-  
-        # Verificar si la clase es válida
-        class_entry = Classes.query.filter_by(class_code=class_code).first()
-        if not class_entry:
-            return jsonify({
-                "success": False,
-                "message": _('The selected class is not valid.'),
-            }), 400
 
-        # Verificar si el Meeting Center es válido
-        meeting_center = MeetingCenter.query.filter_by(unit_number=unit_number).first()
-        if not meeting_center:
-            return jsonify({
-                "success": False,
-                "message": _('The church unit is invalid.'),
-            }), 400
+@bp.route('/stats')
+@role_required('Owner', 'Admin')
+def render_stats():
+    # Obtener el centro de reunión
+    meeting_center_id = get_meeting_center_id()
+    
+    # Obtener año de la query string (si no se pasa, por defecto 2025)
+    year = request.args.get('year', type=int, default=2025)
 
-        # Obtener el estado del bypass desde la tabla Setup
-        bypass_entry  = Setup.query.filter_by(key='allow_weekday_attendance').first()
-        bypass_active = bypass_entry and bypass_entry.value.lower() == 'true'
+    # Consultar años y meses disponibles
+    year_query = db.session.query(func.extract('year', Attendance.sunday_date)).distinct().order_by(func.extract('year', Attendance.sunday_date))
+    month_query = db.session.query(func.extract('month', Attendance.sunday_date)).distinct().order_by(func.extract('month', Attendance.sunday_date))
+    
+    # Obtener clases disponibles
+    class_query = db.session.query(Classes).filter(Classes.is_active == True)
 
-        # Determinar en qué semana del mes cae el sunday_date
-        first_day_of_month = sunday_date.replace(day=1)
-        first_sunday       = first_day_of_month + timedelta(days=(6 - first_day_of_month.weekday()) % 7)
+    if meeting_center_id == 'all':
+        meeting_center_id = None  # No aplicar filtro
+    if meeting_center_id is not None:
+        class_query = class_query.filter(Classes.meeting_center_id == meeting_center_id)
+        year_query = year_query.filter(Attendance.meeting_center_id == meeting_center_id)
+        month_query = month_query.filter(Attendance.meeting_center_id == meeting_center_id)
 
-        # Calcular la semana del mes (1 a 5)
-        week_of_month      = ((sunday_date - first_sunday).days // 7) + 1
+    # Datos disponibles para clases, años y meses
+    available_classes = class_query.order_by(Classes.class_name).all()    
+    available_years = [y[0] for y in year_query.all() if y[0] is not None]
+    available_months = [m[0] for m in month_query.all() if m[0] is not None]
+    month_names = [{"num": m, "name": _(datetime(2000, m, 1).strftime('%b'))} for m in available_months]
 
-        # Validar horario de la clase tipo Main
-        if class_entry.class_type == "Main":
-            # Obtener los domingos permitidos desde el schedule
-            allowed_weeks = class_entry.schedule.split(',')
-            allowed_weeks = [int(s.strip()) for s in allowed_weeks]  # Convertir a enteros
+    # Consultar los estudiantes con mejor asistencia
+    students = (db.session.query(Attendance.student_name)
+                .filter(Attendance.meeting_center_id == meeting_center_id)
+                .distinct()
+                .order_by(Attendance.student_name)
+                .all())
 
-            if week_of_month not in allowed_weeks:
-                return jsonify({
-                    "success": False,
-                    "message": _('This class is not scheduled for the selected Sunday.'),
-                }), 400
+    # Consultar los años disponibles para la asistencia
+    years = (db.session.query(func.strftime('%Y', Attendance.sunday_date).label("year"))
+             .filter(Attendance.meeting_center_id == meeting_center_id)
+             .distinct()
+             .order_by(func.strftime('%Y', Attendance.sunday_date).desc())
+             .all())
 
-            # Verificación de horario solo si no se permite la flexibilidad
-            if not (bypass_active and meeting_center.id == 2):
-                if meeting_center.is_restricted:
-                    grace_period_hours = int(meeting_center.grace_period_hours) if meeting_center.grace_period_hours else 0
-                    time_now           = datetime.now()
+    # Consultar los estudiantes con mejor asistencia
+    student_attendance = (
+        db.session.query(
+            Attendance.student_name, func.count().label('attendance_count')
+        )
+        .filter(Attendance.meeting_center_id == meeting_center_id)
+        .filter(func.strftime('%Y', Attendance.sunday_date) == str(year))
+        .group_by(Attendance.student_name)
+        .order_by(func.count().desc())  # Ordenado de mayor a menor
+        .all()
+    )
 
-                    start_time = meeting_center.start_time
-                    end_time   = meeting_center.end_time
+    # Procesar la lista de estudiantes con mejor y peor asistencia
+    if not student_attendance:
+        top_students = []
+        bottom_students = []
+    else:
+        max_count = student_attendance[0][1]
+        min_count = student_attendance[-1][1]
 
-                    if isinstance(start_time, str):
-                        start_time = datetime.strptime(start_time, "%H:%M").time()
-                    if isinstance(end_time, str):
-                        end_time   = datetime.strptime(end_time, "%H:%M").time()
+        # Obtener los mejores estudiantes
+        top_attendance = []
+        for student in student_attendance:
+            if len(top_attendance) >= 10 and student[1] < max_count:
+                break
+            top_attendance.append(student)
 
-                    today            = datetime.today()
-                    start_time_dt    = datetime.combine(today, start_time)
-                    end_time_dt      = datetime.combine(today, end_time)
-                    grace_start_time = start_time_dt - timedelta(hours=grace_period_hours)
-                    grace_end_time   = end_time_dt + timedelta(hours=grace_period_hours)
+        # Filtrar los estudiantes para los peores
+        top_names = {student[0] for student in top_attendance}
+        bottom_attendance = []
+        for student in reversed(student_attendance):
+            if len(bottom_attendance) >= 10 and student[1] > min_count:
+                break
+            if student[0] not in top_names:
+                bottom_attendance.append(student)
 
-                    if not (grace_start_time <= time_now <= grace_end_time):
-                        return jsonify({
-                            "success": False,
-                            "message": _('Attendance can only be recorded during the grace period or meeting time.'),
-                        }), 400
-                               
-        return jsonify({
-            "success": True,
-            "message": _('You may proceed with attendance registration.'),
-        }), 200
+        # Calcular el porcentaje de asistencia
+        if max_count == min_count:
+            top_students = [{"name": student[0], "attendance_percentage": 100} for student in top_attendance]
+            bottom_students = [{"name": student[0], "attendance_percentage": 100} for student in bottom_attendance]
+        else:
+            top_students = [
+                {"name": student[0], "attendance_percentage": round((student[1] / max_count) * 100)}
+                for student in top_attendance
+            ]
+            bottom_students = sorted(
+                [
+                    {"name": student[0], "attendance_percentage": round((student[1] / max_count) * 100)}
+                    for student in bottom_attendance
+                ],
+                key=lambda x: x["name"],  # Ordenar por nombre
+                reverse=False  # Ascendente
+            )
 
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "message": _('There was an error validating attendance: %(error)s') % {'error': str(e)}
-        }), 500
+    # Convertir los resultados de estudiantes y años
+    student_names = [student[0] for student in students]
+    years = [year[0] for year in years]
+
+    # Retornar la plantilla con todos los datos
+    return render_template('stats.html',
+                           available_years=available_years,
+                           available_months=month_names,
+                           available_classes=available_classes,
+                           students=student_names,
+                           years=years,
+                           meeting_center_id=meeting_center_id,
+                           top_students=top_students,
+                           disable_year=len(available_years) == 1,
+                           bottom_students=bottom_students)
+
+
+@bp.route("/classes_stats/data")
+def get_classes_stats():
+    """Devuelve los datos de asistencia filtrados para la gráfica."""
+    meeting_center_id = get_meeting_center_id()
+    if meeting_center_id == 'all':
+        meeting_center_id = None  # No aplicar filtro
+
+    current_year = datetime.now().year
+    current_month = datetime.now().month
+
+    class_code = request.args.get("class_code", type=str, default='all')
+    selected_year = request.args.get('year', type=int, default=current_year)
+    selected_month = 'all'
+
+    # Lista de todos los meses y nombres traducidos
+    all_months = list(range(1, 13))
+    months_translated = [_('Jan'), _('Feb'), _('Mar'), _('Apr'), _('May'), _('Jun'),
+                         _('Jul'), _('Aug'), _('Sep'), _('Oct'), _('Nov'), _('Dec')]
+
+    # Construcción de la consulta base
+    query = db.session.query(
+        func.extract('month', Attendance.sunday_date).label("month"),
+        func.count(func.distinct(Attendance.student_name)).label("count")
+    ).group_by(func.extract('month', Attendance.sunday_date))
+
+    if meeting_center_id is not None:
+        query = query.filter(Attendance.meeting_center_id == meeting_center_id)
+
+    # Filtrar por código de clase si se especifica
+    if class_code and class_code != "all":
+        query = query.filter(Attendance.class_code == class_code)
+
+    # Filtrar por año si se especifica
+    if selected_year:
+        query = query.filter(func.extract("year", Attendance.sunday_date) == selected_year)
+
+    # Filtrar por mes o trimestre
+    month_filter = []
+    if selected_month == "all":
+        month_filter = all_months  # Todos los meses
+    elif selected_month.startswith("Q"):
+        quarter_map = {"Q1": [1, 2, 3], "Q2": [4, 5, 6], "Q3": [7, 8, 9], "Q4": [10, 11, 12]}
+        month_filter = quarter_map.get(selected_month, [])
+    else:
+        month_filter = [int(selected_month)]  # Mes específico
+
+    if selected_month and selected_month != "all":
+        query = query.filter(func.extract('month', Attendance.sunday_date).in_(month_filter))
+
+    # Obtener resultados de asistencia
+    results = query.all()
+
+    # Inicializar diccionario con todos los meses en 0
+    attendance_by_month = {m: 0 for m in all_months}
+
+    # Rellenar con los datos reales obtenidos de la consulta
+    for row in results:
+        attendance_by_month[int(row.month)] = row.count
+
+    # Convertir a lista de diccionarios para la respuesta JSON
+    chart_data = [
+        {"month": months_translated[m - 1], "value": attendance_by_month[m]}
+        for m in all_months
+    ]
+
+    return jsonify({
+        "chart_data": chart_data,
+    })

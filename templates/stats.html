@@ -2,104 +2,163 @@
 
 {% block title %}{{ _('Attendance | Stats') }}{% endblock %}
 
+
 {% block head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 
 {% endblock %}
 
-{% block pageTitle %}<i class="bi bi-bar-chart-line"></i> {{ _('Attendance Records by Member') }}{% endblock %}
+{% block pageTitle %}<i class="bi bi-bar-chart-line"></i> {{ _('Stadistics') }}{% endblock %}
 {% block content %}
-<div class="row">
-    <div class="d-flex mb-4">
-        <div class="input-group col">
-            <span class="input-group-text"><i class="bi bi-person-check-fill"></i></span>
-            <select class="form-select" id="studentSelect">
-                <option value="">{{_('Select a name')}}</option>
-                {% for student in students %}
-                <option value="{{ student }}">{{ student }}</option>
-                {% endfor %}
-            </select>
+<div class="card mb-5 p-3">
+    <h3 class="text-center py-4">{{ _('Monthly Attendance per Member') }}</h3>
+    <div class="row justify-content-md-center">
+        <div class="col-lg-4">
+            <div class="input-group ">
+                <span class="input-group-text"><i class="bi bi-person-check-fill"></i></span>
+                <select class="form-select" id="studentSelect">
+                    <option value="">{{_('Select a name')}}</option>
+                    {% for student in students %}
+                    <option value="{{ student }}">{{ student }}</option>
+                    {% endfor %}
+                </select>
+            </div>
         </div>
-        <div class="input-group col">
-            <span class="input-group-text"><i class="bi bi-calendar-week"></i></span>
-            <select class="form-select" id="yearSelect">
-                {% for year in years %}
-                <option value="{{ year }}">{{ year }}</option>
-                {% endfor %}
-            </select>
+        <div class="col-lg-1"></div>
+        <div class="col-lg-2">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-calendar-week"></i></span>
+                <select class="form-select" id="yearSelect" " {% if disable_year %}disabled{% endif %}>
+                    {% for year in years %}
+                    <option value="{{ year }}">{{ year }}</option>
+                    {% endfor %}
+                </select>
 
+            </div>
+        </div>
+    </div>
+    <div class="row justify-content-center mb-4">
+        <div class="col-md-10">
+            <div class="chart-container">
+                <canvas id="attendanceChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="chart-container">
+                <canvas id="classFrequencyChart"></canvas>
+            </div>
         </div>
     </div>
 </div>
-<div class="row justify-content-center mb-4">
-    <div class="col-md-10">
-        <div class="chart-container">
-            <canvas id="attendanceChart"></canvas>
-        </div>
-    </div>
-</div>
-<div class="row justify-content-center">
-    <div class="col-md-10">
-        <div class="chart-container">
-            <canvas id="classFrequencyChart"></canvas>
-        </div>
-    </div>
-</div>
-<div class="row  mb-5">
-    <div class="col-md-6">
-        <h3 class="mt-5">{{ _('Member with high attendance') }}</h3>
 
-    <table class="table table-striped table-sm" data-show-columns="true" data-search="true"
-        data-mobile-responsive="true" data-check-on-init="true">
-        <thead>
-            <tr>
-                <th>{{ _('Name') }}</th>
-                <th>{{ _('Percentage') }}</th>
-            </tr>
-        </thead>
-        <tbody id="topStudentsTable">
-            {% for student in top_students %}
-            <tr>
-                <td>{{ student.name }}</td>
-                <td>{{ student.attendance_percentage }}%</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="card mb-5 p-3">
+    <h3 class="text-center py-4">{{_('Monthly Attendance per Classes')}}</h3>
+    <div class="row justify-content-center">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-mortarboard-fill"></i></span>
+                    <select id="class-select" class="form-select">
+                        <option value="all">{{ _('All') }}</option>
+                        {% for clase in available_classes %}
+                        <option value="{{ clase.class_code }}" data-translated-name="{{ clase.translated_name }}">{{
+                            clase.translated_name }}</option>
+                        {% endfor %}
+                    </select>
+                    
+                </div>
+            </div>
+            <div class="col-md-1"></div>
+            <div class="col-md-2">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-calendar3"></i></span>
+                    <select id="year-select" class="form-select" {% if disable_year %}disabled{% endif %}>
+                        {% for year in available_years %}
+                        <option value="{{ year }}" {% if year==selected_year %}selected{% endif %}>{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+    </div>
+    <div class="row justify-content-center mb-4">
+        <div class="col-md-10">
+            <div class="chart-container">
+                <canvas id="classChart"></canvas>
+            </div>
+        </div>
+    </div>
 </div>
-<div class="col-md-6">
-    <h3 class="mt-5">{{ _('Member with low attendance') }}</h3>
-    <table class="table table-striped table-sm">
-        <thead>
-            <tr>
-                <th>{{ _('Name') }}</th>
-                <th>{{ _('Percentage') }}</th>
-            </tr>
-        </thead>
-        <tbody id="bottomStudentsTable">
-            {% for student in bottom_students %}
-            <tr>
-                <td>{{ student.name }}</td>
-                <td>{{ student.attendance_percentage }}%</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+
+<div class="card mb-3 p-3">
+    <h3 class="text-center py-3">{{_('List of Members with Attendances')}}</h3>
+    <div class="row justify-content-center mb-5">
+        <div class="col-md-5">
+            <h3 class="mt-5">{{ _('Member with high attendance') }}</h3>
+
+            <table class="table table-striped table-sm" data-show-columns="true" data-search="true"
+                data-mobile-responsive="true" data-check-on-init="true">
+                <thead>
+                    <tr>
+                        <th>{{ _('Name') }}</th>
+                        <th>{{ _('Percentage') }}</th>
+                    </tr>
+                </thead>
+                <tbody id="topStudentsTable">
+                    {% for student in top_students %}
+                    <tr>
+                        <td>{{ student.name }}</td>
+                        <td>{{ student.attendance_percentage }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="col-md-5">
+            <h3 class="mt-5">{{ _('Member with Low Attendance') }}</h3>
+            <table class="table table-striped table-sm">
+                <thead>
+                    <tr>
+                        <th>{{ _('Name') }}</th>
+                        <th>{{ _('Percentage') }}</th>
+                    </tr>
+                </thead>
+                <tbody id="bottomStudentsTable">
+                    {% for student in bottom_students %}
+                    <tr>
+                        <td>{{ student.name }}</td>
+                        <td>{{ student.attendance_percentage }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
-</div>
+
+
+
 <script>
+    
     document.addEventListener('DOMContentLoaded', function () {
-        const studentSelect     = document.getElementById('studentSelect');
-        const yearSelect        = document.getElementById('yearSelect');
-        const ctx               = document.getElementById('attendanceChart').getContext('2d');
+        const studentSelect = document.getElementById('studentSelect');
+        const yearSelect = document.getElementById('yearSelect');
+        const classSelect = document.getElementById("class-select");
+        //const monthSelect = document.getElementById("month-select");
+        const year_Select = document.getElementById("year-select");
+        const ctxAttendance = document.getElementById('attendanceChart').getContext('2d');
         const ctxClassFrequency = document.getElementById('classFrequencyChart').getContext('2d');
-        const meeting_center_id = 1;
+        const meeting_center_id = "{{ meeting_center_id }}";
+        let classChart;
+        
+        ordenarSelect('class-select');
 
         const colors = [
-                'rgba(255, 99, 132, 0.6)', 'rgba(54, 162, 235, 0.6)', 'rgba(255, 206, 86, 0.6)',
-                'rgba(75, 192, 192, 0.6)', 'rgba(153, 102, 255, 0.6)', 'rgba(255, 159, 64, 0.6)'
-            ];
+            'rgba(255, 99, 132, 0.6)', 'rgba(54, 162, 235, 0.6)', 'rgba(255, 206, 86, 0.6)',
+            'rgba(75, 192, 192, 0.6)', 'rgba(153, 102, 255, 0.6)', 'rgba(255, 159, 64, 0.6)'
+        ];
         const borderColors = colors.map(color => color.replace('0.6', '1'));
 
         // Crear gráficos vacíos
@@ -108,7 +167,7 @@
                 const texts = await fetch('/get_swal_texts').then(response => response.json());
 
                 // Ahora que las traducciones están disponibles, crea el gráfico
-                window.attendanceChart = new Chart(ctx, {
+                window.attendanceChart = new Chart(ctxAttendance, {
                     type: 'bar',
                     data: {
                         labels: [],
@@ -239,6 +298,23 @@
         // Llamada a la función para cargar las traducciones y crear el gráfico
         loadTranslationsAndCreateChart();
 
+        // Función para obtener los datos desde el servidor
+        async function fetchClassData() {
+            const classCode = document.getElementById("class-select").value;
+            const year = document.getElementById("year-select").value;
+            //const month = document.getElementById("month-select").value;
+
+            // Construir la URL con los filtros
+            const url = `/classes_stats/data?class_code=${classCode}&year=${year}`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                updateClassChart(data);
+            } catch (error) {
+                console.error("Error obteniendo datos de asistencia:", error);
+            }
+        }
 
         function fetchAttendanceData() {
             const studentName = studentSelect.value;
@@ -253,14 +329,20 @@
                 .catch(error => console.error('Error fetching data:', error));
         }
 
+        // Funciones para actualizar los gráficos
         async function updateAttendanceChart(months, attendance_percentages, attendance_counts, totalWeeks) {
+            // Destruir el gráfico anterior si existe
             if (window.attendanceChart) {
+                console.log("Destroying the previous chart...");
                 window.attendanceChart.destroy();
+            } else {
+                console.log("No previous chart to destroy.");
             }
 
             const texts = await fetch('/get_swal_texts').then(response => response.json());
 
-            window.attendanceChart = new Chart(ctx, {
+            // Crear el nuevo gráfico
+            window.attendanceChart = new Chart(ctxAttendance, {
                 type: 'bar',
                 data: {
                     labels: months,
@@ -291,7 +373,7 @@
                             pointStyle: 'circle',
                             pointRadius: 4,
                             pointBackgroundColor: 'rgba(255, 99, 132, 1)',
-                            datalabels: { display: false } // Desactiva las etiquetas en la línea
+                            datalabels: { display: false }
                         }
                     ]
                 },
@@ -302,8 +384,8 @@
                         tooltip: {
                             callbacks: {
                                 label: function (context) {
-                                    if (context.dataset.label === 'Attendances') {
-                                        return ` ${context.raw} attendances`;
+                                    if (context.dataset.label === texts.attendance_label) {
+                                        return ` ${context.raw} ` + texts.attendance_unit;
                                     }
                                     return ` ${context.dataset.label}: ${context.raw}`;
                                 }
@@ -317,7 +399,7 @@
                     },
                     scales: {
                         x: {
-                            title: { display: true, text: texts.monthly_attendance, }
+                            title: { display: true, text: texts.monthly_attendance }
                         },
                         y: {
                             beginAtZero: true,
@@ -397,14 +479,111 @@
             window.classFrequencyChart.update();
         }
 
+        async function updateClassChart(data) {
+            const ctxClassData = document.getElementById("classChart").getContext("2d");
+            const texts = await fetch('/get_swal_texts').then(response => response.json());
+
+            // Extraer etiquetas y valores
+            const labels = data.chart_data.map(entry => entry.month);
+            const values = data.chart_data.map(entry => entry.value);
+
+            // Si el gráfico ya existe, lo destruye antes de crear uno nuevo
+            if (classChart) {
+                classChart.destroy();
+            }
+
+            classChart = new Chart(ctxClassData, {
+                type: "line",
+                data: {
+                    labels: labels, // Etiquetas corregidas
+                    datasets: [{
+                        label: texts.attendance_label,
+                        data: values, // Datos corregidos
+                        borderColor: "purple",
+                        backgroundColor: "rgba(0, 0, 255, 0.2)",
+                        borderWidth: 2,
+                        fill: true,
+                        pointStyle: 'circle', // Puedes usar el estilo de punto que desees (círculo, triángulo, etc.)
+                        pointRadius: 5, // Tamaño de los puntos
+                        pointHoverRadius: 7, // Tamaño en el hover
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    if (context.dataset.label === texts.attendance_label) {
+                                        return ` ${context.raw} ` + texts.members_label;
+                                    }
+                                    return ` ${context.dataset.label}: ${context.raw}`;
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: texts.monthly_attendance,
+                            font: { size: 18 }
+                        },
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: texts.months_label }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            min: 0,
+                            suggestedMax: 5,
+                            ticks: { stepSize: 1 },
+                            title: { display: true, text: texts.attendance_value_label }
+                        }
+                    }
+                },
+                plugins: [{
+                    afterDatasetsDraw: function (chart, args, options) {
+                        const ctx = chart.ctx;
+                        chart.data.datasets.forEach(function (dataset, i) {
+                            dataset.data.forEach(function (dataPoint, index) {
+                                const x = chart.scales.x.getPixelForValue(chart.data.labels[index]);
+                                const y = chart.scales.y.getPixelForValue(dataPoint);
+                                const value = dataset.data[index];  // Valor de la asistencia para este punto
+
+                                // Si el valor es 0, no dibujamos nada
+                                if (value === 0) {
+                                    return; // No dibujar el valor
+                                }
+
+                                // Dibuja el valor encima del punto
+                                ctx.font = 'bold 12px Arial';  // Establecer el estilo de la fuente
+                                ctx.fillStyle = 'black';  // Establecer el color del texto
+                                ctx.textAlign = 'center';  // Alineación del texto
+                                ctx.textBaseline = 'bottom';  // Alineación vertical (debajo del punto)
+                                ctx.fillText(value, x, y - 10);  // Ajusta el valor para que se dibuje encima del punto
+                            });
+                        });
+                    }
+                }]
+            });
+        }
+
+
+        // Escuchar cambios en los filtros
         studentSelect.addEventListener('change', fetchAttendanceData);
         yearSelect.addEventListener('change', fetchAttendanceData);
+        classSelect.addEventListener("change", fetchClassData);
+        //monthSelect.addEventListener("change", fetchClassData);
+        year_Select.addEventListener("change", fetchClassData);
+
+        // Llamar a la función al cargar la página
+        fetchClassData();
 
         if (studentSelect.value) {
             fetchAttendanceData();
         }
     });
-
 </script>
 
 {% endblock %}

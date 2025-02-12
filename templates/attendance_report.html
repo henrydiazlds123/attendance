@@ -16,25 +16,25 @@
     </div>
     <div class="d-flex justify-content-between">
         {% if session['role'] == 'Admin' or session['role'] == 'Owner' %}       
-        <div class="col-3 col-md-3 col-lg-3 mb-2">
+        <div class="col-md-3 col-lg-3 mb-2">
             <a class="btn btn-primary col-auto" href="{{ url_for('routes.create_attendance') }}"><i class="bi bi-plus-circle-fill"></i> {{ _('New Attendance') }}</a>
         </div>
         {% endif %}
-        <div class="col-3 col-md-3 col-lg-3"><p>{{ _('Total Members') }}: <b id="total-members">{{ total_miembros }}</b> </p></div>
+        <div class="col-md-3 col-lg-3"><p>{{ _('Total Members') }}: <b id="total-members">{{ total_miembros }}</b> </p></div>
     </div>
-    <div class="col-6 col-md-3 mb-3">
+    <div class="col-md-3 mb-3">
         <div class="input-group">
-            <span class="input-group-text"><i class="bi bi-calendar3"></i></span>
+            <span class="input-group-text"><i class="bi bi-mortarboard-fill"></i></span>
             <select id="class-select" class="form-select">
                 <option value="all" >{{ _('All') }}</option>
                 {% for clase in available_classes %}
-                <option value="{{ clase.class_code }}" >{{ clase.translated_name }}</option>
+                <option value="{{ clase.class_code }}" data-translated-name="{{ clase.translated_name }}">{{ clase.translated_name }}</option>
                 {% endfor %}
             </select>
         </div>
     </div>
 
-    <div class="col-6 col-md-3 mb-3">
+    <div class="col-md-3 mb-3">
         <div class="input-group">
             <span class="input-group-text"><i class="bi bi-calendar-month"></i></span>
             <select id="month-select" class="form-select">
@@ -52,7 +52,7 @@
             
         </div>
     </div>
-    <div class="col-6 col-md-3 mb-3">
+    <div class="col-md-3 mb-3">
         <div class="input-group">
             <span class="input-group-text"><i class="bi bi-calendar3"></i></span>
             <select id="year-select" class="form-select" {% if disable_year %}disabled{% endif %}>
@@ -86,6 +86,23 @@
         const totalMembersElement = document.getElementById("total-members");  // Suponiendo que tienes un elemento con este ID en tu HTML.
         const quarterSelect       = document.getElementById("quarter-select");
         const availableQuarters   = {{ quarters_with_data|tojson }};   // Pasamos la información desde Flask
+
+
+        const options = Array.from(classSelect.options);
+        
+        // Elimina la opción "All" para no incluirla en el orden
+        const allOption = options.shift(); 
+
+        // Ordena las opciones por el atributo "data-translated-name"
+        options.sort((a, b) => a.getAttribute('data-translated-name').localeCompare(b.getAttribute('data-translated-name')));
+
+        // Añade la opción "All" nuevamente en la parte superior
+        options.unshift(allOption);
+
+        // Limpia el <classSelect> y agrega las opciones ordenadas
+        classSelect.innerHTML = '';
+        options.forEach(option => classSelect.appendChild(option));
+
 
         function disableUnavailableQuarters() {
             for (const option of monthSelect.options) {
@@ -146,7 +163,7 @@
                     reportContainer.innerHTML = html;
                     monthSelect.value = currentMonth;
                     yearSelect.value = currentYear;
-                    classSelect.value = ""; // Restablecer a la opción predeterminada
+                    classSelect.value = "all"; // Restablecer a la opción predeterminada
                 })
                 .catch(error => console.error("Error al limpiar los filtros:", error));
         });
