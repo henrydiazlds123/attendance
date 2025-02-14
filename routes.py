@@ -312,7 +312,7 @@ def attendances():
     student_name  = request.args.get('student_name')
     sunday_date   = request.args.get('sunday_date')
     page          = request.args.get('page', 1, type=int)
-    per_page      = request.args.get('per_page', 52, type=int)
+    per_page      = request.args.get('per_page', 25, type=int)
 
     query = db.session.query(
         Attendance.id,
@@ -387,21 +387,16 @@ def attendances():
     total_registros = attendances.total
     has_records = total_registros > 0
 
+   # For AJAX requests, return only the table partial
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        # Si es una solicitud AJAX, devolver JSON
-        return jsonify({
-            'attendances': attendances_formatted,
-            'pagination' : {
-                'page'    : attendances.page,
-                'per_page': attendances.per_page,
-                'total'   : attendances.total,
-                'pages'   : attendances.pages,
-                'has_next': attendances.has_next,
-                'has_prev': attendances.has_prev,
-                'next_num': attendances.next_num,
-                'prev_num': attendances.prev_num
-            }
-        })
+        return render_template(
+            'partials/attendance_list_table.html',
+            attendances=attendances_formatted,
+            has_records=has_records,
+            total_registros=total_registros,
+            corrected_names=corrected_names,
+            pagination=attendances
+        )
     else:
         # Si no es AJAX, renderizar la plantilla completa
         return render_template(
@@ -739,10 +734,13 @@ def export_attendance():
 @bp.route('/attendance/monthly/<student_name>')
 @login_required
 def get_monthly_attendance(student_name):
+    
+    student_name = unquote(student_name)
+    
     if not student_name:
         return jsonify({"error": "student_name is required"}), 400  # Retorna un error 400 en lugar de 404
     
-    year = request.args.get('year', type=int, default=2024)
+    year = request.args.get('year', type=int, default=2025)
     meeting_center_id = get_meeting_center_id()
 
     # Obtener la cantidad de asistencias por mes para el estudiante
@@ -1845,9 +1843,12 @@ def admin_data():
 def render_stats():
     # Obtener el centro de reunión
     meeting_center_id = get_meeting_center_id()
+
+    #Current year
+    current_year = (datetime.now()).year
     
     # Obtener año de la query string (si no se pasa, por defecto 2025)
-    year = request.args.get('year', type=int, default=2025)
+    year = request.args.get('year', type=int, default=current_year)
 
     # Consultar años y meses disponibles
     year_query = db.session.query(func.extract('year', Attendance.sunday_date)).distinct().order_by(func.extract('year', Attendance.sunday_date))
@@ -1951,7 +1952,8 @@ def render_stats():
                            meeting_center_id=meeting_center_id,
                            top_students=top_students,
                            disable_year=len(available_years) == 1,
-                           bottom_students=bottom_students)
+                           bottom_students=bottom_students,
+                           current_year=current_year)
 
 
 @bp.route("/classes_stats/data")
@@ -1961,11 +1963,10 @@ def get_classes_stats():
     if meeting_center_id == 'all':
         meeting_center_id = None  # No aplicar filtro
 
-    current_year = datetime.now().year
-    current_month = datetime.now().month
+    current_year = (datetime.now()).year
 
-    class_code = request.args.get("class_code", type=str, default='all')
-    selected_year = request.args.get('year', type=int, default=current_year)
+    class_code     = request.args.get("class_code", type=str, default='all')
+    selected_year  = request.args.get('year', type=int, default=current_year)
     selected_month = 'all'
 
     # Lista de todos los meses y nombres traducidos

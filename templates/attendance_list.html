@@ -3,16 +3,16 @@
 
 {% block head %}
 <script>
-
   // Función para enviar el formulario al cambiar el valor de un select
   function submitForm() {
     document.getElementById('filterForm').submit();
   }
   function clearFilters() {
-    //document.getElementById("filterForm").reset();
-    //document.getElementById("filterForm").submit();
-    // Eliminar todos los parámetros de la URL (filtros)
-    window.location.href = "{{ url_for('routes.attendances') }}";
+    document.getElementById("filterForm").reset();
+    document.getElementById("perpageSelect").reset();
+    document.getElementById("filterForm").submit();
+    //Eliminar todos los parámetros de la URL (filtros)
+    //window.location.href = "{{ url_for('routes.attendances') }}";
   }
 
 </script>
@@ -30,9 +30,7 @@
   <div class="col-xl-8">
     <p class="mb-3"></p>
   </div>
-  {% if session['role'] == 'Owner' %}
 
-  {% endif %}
   {% if session['role'] == 'Admin' or session['role'] == 'Owner' %}
 
   <div class="col-auto mb-2">
@@ -44,7 +42,8 @@
   <div class="mb-5">
 
     <form id="filterForm" method="GET" action="/attendance/list" class="card mb-3 p-3">
-      <p>{{ _('Total Attendance Records') }}: <b>{{ total_registros }} </b></p>
+      <input type="hidden" name="per_page" id="hidden_per_page" value="{{ request.args.get('per_page', 10) }}">
+      <p>{{ _('Total Attendance Records') }}: <b id="total-records">{{ total_registros }}</b></p>
       <div class="row mb-2">
         <div class="input-group col-md">
           <span class="input-group-text"><i class="bi bi-person-check-fill"></i></span>
@@ -120,45 +119,64 @@
       </div>
     </form>
     <!-- Actions Form -->
-    <form method="POST" action="/attendance/list" class="pb-2">
+    <form id="perpageSelect" method="POST" action="/attendance/list" class="pb-2">
       <!-- Agregar un menú desplegable para seleccionar el número de elementos por página -->
-      <!-- <label for="per_page">Records per page</label>
-      <select id="per_page_select" name="per_page">
-        <option value="10" {% if per_page==10 %}selected{% endif %}>10</option>
-        <option value="25" {% if per_page==25 %}selected{% endif %}>25</option>
-        <option value="50" {% if per_page==50 %}selected{% endif %}>50</option>
-        <option value="100" {% if per_page==100 %}selected{% endif %}>100</option>
-        <option value="150" {% if per_page==150 %}selected{% endif %}>150</option>
-      </select> -->
-      <nav aria-label="Page navigation">
-        <ul class="pagination">
-          {% if pagination.has_prev %}
-          <li class="page-item"><a class="page-link"
-              href="{{ url_for('routes.attendances', page=pagination.prev_num, per_page=pagination.per_page, class_name=request.args.get('class_name'), student_name=request.args.get('student_name'), sunday_date=request.args.get('sunday_date')) }}">{{_('Previous')}}</a>
-          </li>
-          {% endif %}
-          {% for page_num in pagination.iter_pages() %}
-          {% if page_num %}
-          <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
-            <a class="page-link"
-              href="{{ url_for('routes.attendances', page=page_num, per_page=pagination.per_page, class_name=request.args.get('class_name'), student_name=request.args.get('student_name'), sunday_date=request.args.get('sunday_date')) }}">{{
-              page_num }}</a>
-          </li>
-          {% else %}
-          <li class="page-item disabled"><span class="page-link">…</span></li>
-          {% endif %}
-          {% endfor %}
-          {% if pagination.has_next %}
-          <li class="page-item"><a class="page-link"
-              href="{{ url_for('routes.attendances', page=pagination.next_num, per_page=pagination.per_page, class_name=request.args.get('class_name'), student_name=request.args.get('student_name'), sunday_date=request.args.get('sunday_date')) }}">{{_('Next')}}</a>
-          </li>
-          {% endif %}
-        </ul>
-      </nav>
+      <div class="d-flex justify-content-between">
+        <div class="d-flex align-items-center mb-3">
+          <label for="per_page_select" class="me-2">Records per page:</label>
+          <select id="per_page_select" name="per_page" class="form-select" style="width: auto;">
+            <option value="10" {% if request.args.get('per_page', '10' )|int==10 %}selected{% endif %}>10</option>
+            <option value="25" {% if request.args.get('per_page', '25' )|int==25 %}selected{% endif %}>25</option>
+            <option value="50" {% if request.args.get('per_page', '50' )|int==50 %}selected{% endif %}>50</option>
+            <option value="100" {% if request.args.get('per_page', '100' )|int==100 %}selected{% endif %}>100</option>
+            <option value="150" {% if request.args.get('per_page', '150' )|int==150 %}selected{% endif %}>150</option>
+          </select>
+        </div>
+        <nav aria-label="Page navigation">
+          <ul class="pagination">
+            {% if pagination.has_prev %}
+            <li class="page-item"><a class="page-link"
+                href="{{ url_for('routes.attendances', page=pagination.prev_num, per_page=pagination.per_page, class_name=request.args.get('class_name'), student_name=request.args.get('student_name'), sunday_date=request.args.get('sunday_date')) }}">{{_('Previous')}}</a>
+            </li>
+            {% endif %}
+            {% for page_num in pagination.iter_pages() %}
+            {% if page_num %}
+            <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+              <a class="page-link" href="{{ url_for('routes.attendances', page=page_num, per_page=request.args.get('per_page', 10), class_name=request.args.get('class_name'), student_name=request.args.get('student_name'), sunday_date=request.args.get('sunday_date'), year=request.args.get('year'), month=request.args.get('month')) }}">
+                {{ page_num }}
+              </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+            {% endfor %}
 
-
+            {% if pagination.has_next %}
+            <li class="page-item"><a class="page-link"
+                href="{{ url_for('routes.attendances', page=pagination.next_num, per_page=pagination.per_page, class_name=request.args.get('class_name'), student_name=request.args.get('student_name'), sunday_date=request.args.get('sunday_date')) }}">{{_('Next')}}</a>
+            </li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+    </form>
+    <div class="attendanceContainer">
       {% include 'partials/attendance_list_table.html' %}
-
+    </div>
+    <div class="d-flex justify-content-between flex-row-reverse">
+      {% if session['role'] == 'Owner' %}
+      <form id="deleteAllForm" method="POST" action="/attendances" class="mb-5">
+        <input type="hidden" name="delete_all" value="true">
+        <button id="delete_all" class="btn btn-danger mb-5" type="button" data-toggle="tooltip"
+          title="{{ _('Delete all attendance records in the database') }}" {% if not has_records %}disabled{% endif %}>
+          {% if not has_records %}
+          {{ _('No Attendances to show') }}
+          {% else %}
+          <i class="bi bi-eraser-fill"></i> {{ _('Delete all records') }}
+          {% endif %}
+        </button>
+      </form>
+      {% endif %}
       <!-- Agregar la paginación -->
       <nav aria-label="Page navigation">
         <ul class="pagination">
@@ -170,7 +188,7 @@
           {% for page_num in pagination.iter_pages() %}
           {% if page_num %}
           <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
-            <a class="page-link"
+            <a class="page-link" data-page="{{ page_num }}"
               href="{{ url_for('routes.attendances', page=page_num, per_page=pagination.per_page, class_name=request.args.get('class_name'), student_name=request.args.get('student_name'), sunday_date=request.args.get('sunday_date')) }}">{{
               page_num }}</a>
           </li>
@@ -185,61 +203,71 @@
           {% endif %}
         </ul>
       </nav>
-    </form>
-    {% if session['role'] == 'Owner' %}
-    <form id="deleteAllForm" method="POST" action="/attendances" class="mb-5">
-      <input type="hidden" name="delete_all" value="true">
-      <button id="delete_all" class="btn btn-danger mb-5" type="button" data-toggle="tooltip"
-        title="{{ _('Delete all attendance records in the database') }}" {% if not has_records %}disabled{% endif %}>
-        {% if not has_records %}
-        {{ _('No Attendances to show') }}
-        {% else %}
-        <i class="bi bi-eraser-fill"></i> {{ _('Delete all records') }}
-        {% endif %}
-      </button>
-    </form>
-    <!-- Script para manejar la selección de elementos por página -->
+    </div>
+    <script>
+      const sessionRole = "{{ session['role'] }}";
+      const correctedNames = {{ corrected_names| tojson | safe }};
+    </script>
     <script>
       document.addEventListener('DOMContentLoaded', function () {
-        const perPageSelect = document.getElementById('per_page_select');
+        const perPageSelect       = document.getElementById('per_page_select');
+        const filterForm          = document.getElementById('filterForm');
+        const attendanceContainer = document.getElementById("attendance-container");
+        const totalRecordsElement = document.getElementById("total-records");
+
         const className = document.getElementById("class_name");
-
-
         const options = Array.from(className.options);
 
         // Elimina la opción "All" para no incluirla en el orden
         const allOption = options.shift();
-
         // Ordena las opciones por el atributo "data-class-name"
         options.sort((a, b) => a.getAttribute('data-class-name').localeCompare(b.getAttribute('data-class-name')));
-
         // Añade la opción "All" nuevamente en la parte superior
         options.unshift(allOption);
-
         // Limpia el <className> y agrega las opciones ordenadas
         className.innerHTML = '';
         options.forEach(option => className.appendChild(option));
 
-
-        // Restaurar selección previa desde localStorage
-        const savedPerPage = localStorage.getItem('per_page');
-        if (savedPerPage) {
-          perPageSelect.value = savedPerPage;
+        function submitForm() {
+          document.getElementById('hidden_per_page').value = document.getElementById('per_page_select').value;
+          document.getElementById('filterForm').submit();
         }
 
-        // Cuando el usuario cambia el número de registros por página
-        perPageSelect.addEventListener('change', function () {
-          localStorage.setItem('per_page', this.value);
+        function loadData(url) {
+          fetch(`/attendance/list?${urlParams.toString()}`, {
+            method: "GET",
+            headers: { "X-Requested-With": "XMLHttpRequest" }
+          })
+          .then(response => {
+            if (!response.ok) throw new Error("Server response error");
+            return response.text();
+          })
+          .then(html => {
+              // Update the table container
+              attendanceContainer.innerHTML = html;
+              window.history.pushState({}, '', `?${urlParams.toString()}`);
 
-          // Agregar el valor al formulario y enviarlo
+              localStorage.setItem('per_page', perPage);
+          })
+            .catch(error => {
+              console.error('Error loading data:', error);
+              // If AJAX fails, fall back to regular page load
+              window.location.href = url;
+            });
+        }
+
+        // Handle per_page changes
+        perPageSelect.addEventListener('change', function () {
           const urlParams = new URLSearchParams(window.location.search);
+
           urlParams.set('per_page', this.value);
-          window.location.search = urlParams.toString();
+          urlParams.set('page', '1');
+          localStorage.setItem('per_page', this.value);
+          const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+          window.location.href = newUrl;
         });
       });
     </script>
 
-
-    {% endif %}
 
     {% endblock %}

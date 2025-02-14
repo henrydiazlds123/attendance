@@ -239,22 +239,3 @@ function getUrlParameter(name) {
 function removeAccents(str) {
   return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
-
-function ordenarSelect(selectId) {
-  // Paso 1: Obtener el select y las opciones
-  const select = document.getElementById(selectId);
-  const options = Array.from(select.getElementsByTagName('option'));
-
-  // Paso 2: Ordenar las opciones por el texto visible
-  options.sort((a, b) => {
-      const textA = a.textContent.trim();
-      const textB = b.textContent.trim();
-      return textA.localeCompare(textB);  // Compara alfabéticamente
-  });
-
-  // Paso 3: Limpiar el select y reinsertar las opciones ordenadas
-  select.innerHTML = ''; // Limpiar todas las opciones del select
-  options.forEach(option => {
-      select.appendChild(option);  // Agregar las opciones ordenadas
-  });
-}
