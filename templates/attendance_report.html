@@ -3,6 +3,8 @@
 {% block title %}{{ _('Attendance | Report') }}{% endblock %}
 
 {% block pageTitle %}<i class="bi bi-file-earmark-spreadsheet"></i> {{ _('Attendance Report') }}{% endblock %}
+
+
 {% block content %}
 
 <div class="row">
@@ -75,6 +77,9 @@
         {% include "partials/attendance_table.html" %}
     </div>
 </div>
+<script>
+    const availableQuarters   = {{ quarters_with_data|tojson }};
+</script>
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
@@ -85,21 +90,14 @@
         const reportContainer     = document.getElementById("report-container");
         const totalMembersElement = document.getElementById("total-members");  // Suponiendo que tienes un elemento con este ID en tu HTML.
         const quarterSelect       = document.getElementById("quarter-select");
-        const availableQuarters   = {{ quarters_with_data|tojson }};   // Pasamos la información desde Flask
+        const rows                = document.querySelectorAll("table tbody tr");
+           // Pasamos la información desde Flask
 
-
+        // Ordena el select
         const options = Array.from(classSelect.options);
-        
-        // Elimina la opción "All" para no incluirla en el orden
         const allOption = options.shift(); 
-
-        // Ordena las opciones por el atributo "data-translated-name"
         options.sort((a, b) => a.getAttribute('data-translated-name').localeCompare(b.getAttribute('data-translated-name')));
-
-        // Añade la opción "All" nuevamente en la parte superior
         options.unshift(allOption);
-
-        // Limpia el <classSelect> y agrega las opciones ordenadas
         classSelect.innerHTML = '';
         options.forEach(option => classSelect.appendChild(option));
 
@@ -146,27 +144,45 @@
         classSelect.addEventListener("change", applyFilters);
     
         clearFilters.addEventListener("click", function () {
+        
             // Obtener la fecha actual
             const currentDate = new Date();
-            const currentMonth = currentDate.getMonth() + 1; // Los meses van de 0 a 11, así que sumamos 1
+            const currentMonth = currentDate.getMonth() + 1;
             const currentYear = currentDate.getFullYear();
-
+        
             fetch("/attendance/report", {
                 method: "GET",
                 headers: { "X-Requested-With": "XMLHttpRequest" }
             })
-                .then(response => {
-                    if (!response.ok) throw new Error("Error en la respuesta del servidor");
-                    return response.text();
-                })
-                .then(html => {
-                    reportContainer.innerHTML = html;
-                    monthSelect.value = currentMonth;
-                    yearSelect.value = currentYear;
-                    classSelect.value = "all"; // Restablecer a la opción predeterminada
-                })
-                .catch(error => console.error("Error al limpiar los filtros:", error));
+            .then(response => {
+                if (!response.ok) throw new Error("Error en la respuesta del servidor");
+                return response.text();
+            })
+            .then(html => {
+                // Crear un elemento temporal para extraer datos
+                const tempDiv = document.createElement("div");
+                tempDiv.innerHTML = html;
+        
+                // Buscar el total de miembros en la respuesta
+                const updatedTotalMembers = tempDiv.querySelector("#total-members-count");
+        
+                if (updatedTotalMembers) {
+                    document.getElementById("total-members").innerText = updatedTotalMembers.innerText;
+                } else {
+                    console.log("No se encontró el elemento #total-members-count en la respuesta del servidor");
+                }
+        
+                // Reemplazar el contenido del contenedor
+                reportContainer.innerHTML = html;
+                
+                // Restablecer selectores a los valores predeterminados
+                monthSelect.value = currentMonth;
+                yearSelect.value = currentYear;
+                classSelect.value = "all";
+            })
+            .catch(error => console.error("Error al limpiar los filtros:", error));
         });
+        
     });
     
 </script>

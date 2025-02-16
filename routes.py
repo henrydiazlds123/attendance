@@ -86,8 +86,8 @@ def reset_name():
 # =============================================================================================
 @bp.route('/')
 def index():
-    return render_template('index.html')
-    # return redirect('/login', code=302)
+    #return render_template('index.html')
+    return redirect('/login', code=302)
 
 # =============================================================================================
 @bp.route('/users')
@@ -107,26 +107,45 @@ def users():
     ).join(MeetingCenter, User.meeting_center_id == MeetingCenter.id) \
      .join(Organization, User.organization_id == Organization.id)
 
+    # if role == 'Owner':
+    #     if meeting_center_id != 'all':  # Filtra solo si hay un meeting_center_id seleccionado
+    #         query = query.filter(User.meeting_center_id == meeting_center_id)
+    # elif role == 'Admin':
+    #     query = query.filter(User.role != 'Owner')
+
+    # elif role != 'Admin':
+    #     query = query.filter(User.role != 'Owner') \
+    #                  .filter(User.organization_id == session.get('organization_id'))
+    # else:
+    #      # Regular users can only see their own user
+    #      users = User.query.filter_by(username=session.get('username')).all()
+    
+    # # Asegurar que solo los Owners puedan ver otros Owners
+    # if role != 'Owner':
+    #     query = query.filter(User.role != 'Owner')
+
+    # users = query.all()
     if role == 'Owner':
         if meeting_center_id != 'all':  # Filtra solo si hay un meeting_center_id seleccionado
             query = query.filter(User.meeting_center_id == meeting_center_id)
-    elif role == 'Admin':
-        query = query.filter(User.role != 'Owner')
 
-    elif role != 'Admin':
-        query = query.filter(User.role != 'Owner') \
-                     .filter(User.organization_id == session.get('organization_id'))
-    else:
-         # Regular users can only see their own user
-         users = User.query.filter_by(username=session.get('username')).all()
-    
-    # Asegurar que solo los Owners puedan ver otros Owners
-    if role != 'Owner':
-        query = query.filter(User.role != 'Owner')
+    else:  # Si el rol no es 'Owner'
+        query = query.filter(User.role != 'Owner')  # Asegurar que no vea Owners
 
+        if role == 'Admin':
+            # Admins pueden ver usuarios de su mismo meeting_center_id
+            query = query.filter(User.meeting_center_id == session.get('meeting_center_id'))
+        else:
+            # Usuarios regulares solo pueden ver su propia cuenta
+            query = User.query.filter_by(username=session.get('username'))
+
+    # Ejecutar la consulta
     users = query.all()
+
     
-    return render_template('users.html', users=users, admin_count=admin_count)
+    return render_template('users.html', 
+                           users       = users,
+                           admin_count = admin_count)
 
 
 # =============================================================================================
@@ -153,7 +172,11 @@ def create_user():
         db.session.add(user)
         db.session.commit()
         return redirect(url_for('routes.users'))
-    return render_template('form.html', form=form, title=_('New User'), submit_button_text=_('Create'), clas='warning')
+    return render_template('form.html', 
+                           form               = form,
+                           title              = _('New User'),
+                           submit_button_text = _('Create'),
+                           clas               = 'warning')
 
 
 # =============================================================================================
@@ -177,7 +200,11 @@ def update_user(id):
         db.session.commit()
         flash(_('User updated successfully.'), 'success')
         return redirect(url_for('routes.users'))
-    return render_template('form.html', form=form, title=_('Edit User'), submit_button_text=_('Update'), clas='warning')
+    return render_template('form.html',
+                           form               = form,
+                           title              = _('Edit User'),
+                           submit_button_text = _('Update'),
+                           clas               = 'warning')
 
 
 # =============================================================================================
@@ -229,14 +256,22 @@ def reset_password(id):
     if form.validate_on_submit():
         if not user.check_password(form.current_password.data):
             flash(_('Current password is incorrect.'), 'danger')
-            return render_template('form.html', form=form, title="Reset Password", submit_button_text="Update", clas="danger")
+            return render_template('form.html', 
+                                   form               = form,
+                                   title              = "Reset Password",
+                                   submit_button_text = "Update",
+                                   clas               = "danger")
 
         user.set_password(form.new_password.data)
         db.session.commit()
         flash(_('Password updated successfully.'), 'success')
         return redirect(url_for('routes.users'))
 
-    return render_template('form.html', form=form, title="Change Password", submit_button_text="Update", clas="danger")
+    return render_template('form.html', 
+                           form               = form,
+                           title              = "Change Password",
+                           submit_button_text = "Update",
+                           clas               = "danger")
 
 
 # =============================================================================================
@@ -263,19 +298,35 @@ def attendance():
     
     # if not class_code or not sunday_code or class_code not in CLASES:
     if not class_code or not sunday_code or not unit_number:
-        return render_template('4xx.html', page_title=_('400 Invalid URL'), error_number='400', error_title=_(_('Check what you wrote!')), error_message=_('The address you entered is incomplete!')), 400
+        return render_template('4xx.html', 
+                               page_title    = _('400 Invalid URL'),
+                               error_number  = '400',
+                               error_title   = _(_('Check what you wrote!')),
+                               error_message = _('The address you entered is incomplete!')), 400
 
     code_verification_setting = Setup.query.filter_by(key='code_verification').first()
     code_verification_enabled = code_verification_setting.value if code_verification_setting else 'true'
 
     if code_verification_enabled == 'false':
-        return render_template('attendance.html', class_code=class_code, sunday_code=sunday_code, sunday=get_next_sunday(),unit_number=unit_number)
+        return render_template('attendance.html', 
+                               class_code  = class_code,
+                               sunday_code = sunday_code,
+                               sunday      = get_next_sunday(),
+                               unit_number = unit_number)
     
     expected_code = get_next_sunday_code(get_next_sunday())
     if int(sunday_code) == expected_code:
-        return render_template('attendance.html', class_code=class_code, sunday_code=sunday_code, sunday=get_next_sunday(),unit_number=unit_number)
+        return render_template('attendance.html', 
+                               class_code  = class_code,
+                               sunday_code = sunday_code,
+                               sunday      = get_next_sunday(),
+                               unit_number = unit_number)
     else:
-        return render_template('4xx.html', page_title='403 Incorrect QR', error_number='403', error_title=_('It seems that you are lost!'), error_message=_("Wrong QR for this week's classes!")), 403
+        return render_template('4xx.html', 
+                               page_title    = '403 Incorrect QR',
+                               error_number  = '403',
+                               error_title   = _('It seems that you are lost!'),
+                               error_message = _("Wrong QR for this week's classes!")), 403
     
 
 # =============================================================================================
@@ -391,27 +442,27 @@ def attendances():
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return render_template(
             'partials/attendance_list_table.html',
-            attendances=attendances_formatted,
-            has_records=has_records,
-            total_registros=total_registros,
-            corrected_names=corrected_names,
-            pagination=attendances
+            attendances     = attendances_formatted,
+            has_records     = has_records,
+            total_registros = total_registros,
+            corrected_names = corrected_names,
+            pagination      = attendances
         )
     else:
         # Si no es AJAX, renderizar la plantilla completa
         return render_template(
             'attendance_list.html',
-            attendances=attendances_formatted,
-            has_records=has_records,
-            classes=classes,
-            students=students,
-            sundays=sundays_formatted,
-            months=months,
-            years=years,
-            total_registros=total_registros,
-            months_abr=months_abr,
-            corrected_names=corrected_names,
-            pagination=attendances
+            attendances     = attendances_formatted,
+            has_records     = has_records,
+            classes         = classes,
+            students        = students,
+            sundays         = sundays_formatted,
+            months          = months,
+            years           = years,
+            total_registros = total_registros,
+            months_abr      = months_abr,
+            corrected_names = corrected_names,
+            pagination      = attendances
         )
 # =============================================================================================
 @bp.route('/attendance/new', methods=['GET', 'POST'])
@@ -437,7 +488,11 @@ def create_attendance():
         # Check if no name was provided in either field
         if not student_name:
             flash(_('Please select an existing student or provide a new name.'), 'danger')
-            return render_template('form.html', form=form, title=_('Create manual attendance'), submit_button_text=_('Create'), clas='warning')
+            return render_template('form.html', 
+                                   form               = form,
+                                   title              = _('Create manual attendance'),
+                                   submit_button_text = _('Create'),
+                                   clas               = 'warning')
 
         # Calculate sunday_code based on the provided sunday date
         # sunday_code = get_next_sunday_code(form.sunday_date.data)
@@ -447,7 +502,11 @@ def create_attendance():
         selected_class = Classes.query.filter_by(id=form.class_id.data).first()
         if not selected_class:
             flash(_('The selected class is invalid.'), 'danger')
-            return render_template('form.html', form=form, title=_('Create attendance'), submit_button_text=_('Create'), clas='warning')
+            return render_template('form.html', 
+                                   form               = form,
+                                   title              = _('Create attendance'),
+                                   submit_button_text = _('Create'),
+                                   clas               = 'warning')
 
         attendance = Attendance(
             student_name     = student_name,
@@ -462,7 +521,11 @@ def create_attendance():
         flash(_('Attendance registered successfully!'))
         return redirect(url_for('routes.attendances'))
 
-    return render_template('form.html', form=form, title=_('Create manual attendance'), submit_button_text=_('Create'), clas='warning')
+    return render_template('form.html', 
+                           form               = form,
+                           title              = _('Create manual attendance'),
+                           submit_button_text = _('Create'),
+                           clas               = 'warning')
 
 
 # =============================================================================================
@@ -652,17 +715,17 @@ def attendance_report():
 
     return render_template(
         'attendance_report.html',
-        students=students,
-        dates=sunday_dates_formatted,
-        available_years=available_years,
-        available_months=month_names,
-        selected_year=selected_year,
-        selected_month=selected_month,
-        total_miembros=total_miembros,
-        quarters_with_data=quarters_with_data,  # Pasar los trimestres con datos
-        disable_month=len(available_months) == 1,
-        disable_year=len(available_years) == 1,
-        available_classes=available_classes  # Pasar clases disponibles a la plantilla
+        students           = students ,
+        dates              = sunday_dates_formatted ,
+        available_years    = available_years ,
+        available_months   = month_names ,
+        selected_year      = selected_year ,
+        selected_month     = selected_month ,
+        total_miembros     = total_miembros ,
+        quarters_with_data = quarters_with_data ,     # Pasar los trimestres con datos
+        disable_month      = len(available_months)  == 1,
+        disable_year       = len(available_years)   == 1,
+        available_classes  = available_classes  # Pasar clases disponibles a la plantilla
     )
     
 # =============================================================================================
@@ -728,7 +791,6 @@ def export_attendance():
             "Content-Disposition": f"attachment; filename={filename}"
         }
     ) 
-
 
 # =============================================================================================
 @bp.route('/attendance/monthly/<student_name>')
@@ -1470,6 +1532,12 @@ def get_swal_texts():
         'cleared'                 : _("Cleared!"),
         'confirm'                 : _("Confirm"),
         'confirmDelete'           : _("You \'re sure?"),
+        'confirmRegisterTitle'    : _("Confirm Attendance Registration?"),
+        'confirmRegisterText'     : _("Do you want to register attendance for the selected students?"),
+        'confirmRegisterYes'      : _("Yes, register it!"),
+        'confirmRegisterCancel'   : _("No, cancel!"),
+        'confirmRegSuccessTitle'  : _("Success"),
+        'confirmRegSuccessText'   : _("Attendance has been registered successfully."),
         'connectionError'         : _("There was a problem connecting to the server."),
         'confirmSave'             : _("Confirm"),
         'classesNumber'           : _("Number of Classes"),
@@ -1497,8 +1565,10 @@ def get_swal_texts():
         'promotionTitle'          : _("You 're sure?"),
         'resetStudentName'        : _("Reset Student Name"),
         'revertTitle'             : _("Are you sure you want to revert this correction?"),
-        'savedNameText'           : _("The saved name is: \'{name}\'. Do you want to clear it?"),
         'revertConfirmButton'     : _("Revert"),
+        'registrationError'       : _("There was an error registering attendance."),
+        'registrationCancel'      : _("Attendance registration cancelled."),
+        'savedNameText'           : _("The saved name is: \'{name}\'. Do you want to clear it?"),
         'selectDateExtraClasses'  : _("Select a date for Extra classes"),
         'successMessage'          : _("The name has been corrected"),
         'sundayClassRestriction'  : _("You cannot register a \'Sunday Class\' outside of Sunday."),
@@ -1710,10 +1780,10 @@ def admin():
     verification_enabled = code_verification_setting.value if code_verification_setting else 'true'
 
     return render_template('admin.html', 
-                           verification_enabled=verification_enabled, 
-                           bypass_enabled=bypass_enabled, 
-                           name_corrections=name_corrections,
-                           meeting_center_id=meeting_center_id)
+                           verification_enabled = verification_enabled,
+                           bypass_enabled       = bypass_enabled,
+                           name_corrections     = name_corrections,
+                           meeting_center_id    = meeting_center_id)
 
 
 # ============================================================================================= 
@@ -1837,21 +1907,17 @@ def admin_data():
     return jsonify(meeting_center)
 
 
-
+# =============================================================================================
 @bp.route('/stats')
 @role_required('Owner', 'Admin')
 def render_stats():
-    # Obtener el centro de reunión
-    meeting_center_id = get_meeting_center_id()
 
-    #Current year
-    current_year = (datetime.now()).year
-    
-    # Obtener año de la query string (si no se pasa, por defecto 2025)
-    year = request.args.get('year', type=int, default=current_year)
+    meeting_center_id = get_meeting_center_id()
+    current_year      = (datetime.now()).year
+    year              = request.args.get('year', type=int, default=current_year)
 
     # Consultar años y meses disponibles
-    year_query = db.session.query(func.extract('year', Attendance.sunday_date)).distinct().order_by(func.extract('year', Attendance.sunday_date))
+    year_query  = db.session.query(func.extract('year', Attendance.sunday_date)).distinct().order_by(func.extract('year', Attendance.sunday_date))
     month_query = db.session.query(func.extract('month', Attendance.sunday_date)).distinct().order_by(func.extract('month', Attendance.sunday_date))
     
     # Obtener clases disponibles
@@ -1866,9 +1932,9 @@ def render_stats():
 
     # Datos disponibles para clases, años y meses
     available_classes = class_query.order_by(Classes.class_name).all()    
-    available_years = [y[0] for y in year_query.all() if y[0] is not None]
-    available_months = [m[0] for m in month_query.all() if m[0] is not None]
-    month_names = [{"num": m, "name": _(datetime(2000, m, 1).strftime('%b'))} for m in available_months]
+    available_years   = [y[0] for y in year_query.all() if y[0] is not None]
+    available_months  = [m[0] for m in month_query.all() if m[0] is not None]
+    month_names       = [{"num": m, "name": _(datetime(2000, m, 1).strftime('%b'))} for m in available_months]
 
     # Consultar los estudiantes con mejor asistencia
     students = (db.session.query(Attendance.student_name)
@@ -1895,7 +1961,6 @@ def render_stats():
         .order_by(func.count().desc())  # Ordenado de mayor a menor
         .all()
     )
-
     # Procesar la lista de estudiantes con mejor y peor asistencia
     if not student_attendance:
         top_students = []
@@ -1940,22 +2005,22 @@ def render_stats():
 
     # Convertir los resultados de estudiantes y años
     student_names = [student[0] for student in students]
-    years = [year[0] for year in years]
+    years         = [year[0] for year in years]
 
     # Retornar la plantilla con todos los datos
     return render_template('stats.html',
-                           available_years=available_years,
-                           available_months=month_names,
-                           available_classes=available_classes,
-                           students=student_names,
-                           years=years,
-                           meeting_center_id=meeting_center_id,
-                           top_students=top_students,
-                           disable_year=len(available_years) == 1,
-                           bottom_students=bottom_students,
-                           current_year=current_year)
+                           available_years   = available_years ,
+                           available_months  = month_names ,
+                           available_classes = available_classes ,
+                           students          = student_names ,
+                           years             = years ,
+                           meeting_center_id = meeting_center_id ,
+                           top_students      = top_students ,
+                           disable_year      = len(available_years) == 1,
+                           bottom_students   = bottom_students ,
+                           current_year      = current_year)
 
-
+# =============================================================================================
 @bp.route("/classes_stats/data")
 def get_classes_stats():
     """Devuelve los datos de asistencia filtrados para la gráfica."""
@@ -1970,7 +2035,7 @@ def get_classes_stats():
     selected_month = 'all'
 
     # Lista de todos los meses y nombres traducidos
-    all_months = list(range(1, 13))
+    all_months        = list(range(1, 13))
     months_translated = [_('Jan'), _('Feb'), _('Mar'), _('Apr'), _('May'), _('Jun'),
                          _('Jul'), _('Aug'), _('Sep'), _('Oct'), _('Nov'), _('Dec')]
 
@@ -1996,7 +2061,7 @@ def get_classes_stats():
     if selected_month == "all":
         month_filter = all_months  # Todos los meses
     elif selected_month.startswith("Q"):
-        quarter_map = {"Q1": [1, 2, 3], "Q2": [4, 5, 6], "Q3": [7, 8, 9], "Q4": [10, 11, 12]}
+        quarter_map  = {"Q1": [1, 2, 3], "Q2": [4, 5, 6], "Q3": [7, 8, 9], "Q4": [10, 11, 12]}
         month_filter = quarter_map.get(selected_month, [])
     else:
         month_filter = [int(selected_month)]  # Mes específico
@@ -2022,4 +2087,205 @@ def get_classes_stats():
 
     return jsonify({
         "chart_data": chart_data,
+    })
+
+# =============================================================================================
+@bp.route("/attendance/check", methods=['POST', 'GET'])
+def register_attendance():
+    meeting_center_id = get_meeting_center_id()
+    sunday_date_str = get_last_sunday()  # Retorna una cadena, e.g. "2025-02-09"
+    sunday_date = datetime.strptime(sunday_date_str, "%Y-%m-%d").date()
+
+    time_range = request.args.get('time_range', 'last_two_weeks')
+
+    if time_range == 'last_two_weeks':
+        start_date = sunday_date - timedelta(weeks=2)
+    elif time_range == 'last_month':
+        start_date = sunday_date - timedelta(days=30)  # Aproximado a 30 días
+    elif time_range == 'year_to_date':
+        start_date = datetime(sunday_date.year, 1, 1)
+    else:
+        # Valor por defecto: últimas dos semanas
+        start_date = sunday_date - timedelta(weeks=2)
+
+    # Obtener clases activas filtradas por meeting_center_id
+    class_query = db.session.query(Classes).filter(Classes.is_active == True)
+    if meeting_center_id is not None:
+        class_query = class_query.filter(Classes.meeting_center_id == meeting_center_id)
+    available_classes = class_query.order_by(Classes.class_name).all()
+
+    if request.method == 'POST':
+        data = request.get_json()
+        print(f"Received data: {data}")
+
+        student_names = data.get("student_names", [])
+        class_code = data.get("class_code")
+
+        # Buscar la clase usando class_code y meeting_center_id
+        cls = Classes.query.filter_by(class_code=class_code, meeting_center_id=meeting_center_id).first()
+        if not cls:
+            return jsonify({"error": "Class not found."}), 404
+
+        # Registrar asistencia si no existe
+        for student_name in student_names:
+            existing = Attendance.query.filter_by(
+                student_name=student_name,
+                class_id=cls.id,
+                sunday_date=sunday_date,
+                meeting_center_id=meeting_center_id
+            ).first()
+            if not existing:
+                new_attendance = Attendance(
+                    student_name=student_name,
+                    class_id=cls.id,
+                    class_code=class_code,
+                    sunday_date=sunday_date,  # Objeto date
+                    sunday_code=1111,
+                    meeting_center_id=meeting_center_id,
+                    submit_date=datetime.now(),
+                )
+                db.session.add(new_attendance)
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"error": str(e)}), 500
+        
+        # Obtener los registros de asistencia para la clase seleccionada, en el meeting_center y fecha indicados
+        attendance_members = (
+            db.session.query(Attendance.student_name)
+            .filter(
+                Attendance.meeting_center_id == meeting_center_id,
+                Attendance.class_code == class_code,
+                Attendance.sunday_date == sunday_date
+            )
+            .distinct()
+            .order_by(Attendance.student_name)
+            .all()
+        )
+
+        expected_student_names = (
+            db.session.query(Attendance.student_name)
+            .filter(
+                Attendance.meeting_center_id == meeting_center_id,
+                Attendance.class_code == class_code,
+                Attendance.sunday_date >= start_date,  # Filtramos por el rango de tiempo
+                ~Attendance.student_name.in_(
+                    db.session.query(Attendance.student_name)
+                    .filter(
+                        Attendance.meeting_center_id == meeting_center_id,
+                        Attendance.class_code == class_code,
+                        Attendance.sunday_date == sunday_date
+                    )
+                )
+            )
+            .distinct()
+            .order_by(Attendance.student_name)
+            .all()
+        )
+        # Extraemos los nombres que ya tienen asistencia registrada
+        attendance_student_names = [record.student_name for record in attendance_members]
+
+        # Calculamos los estudiantes que no han registrado asistencia
+        non_attendance_students = [name for name in expected_student_names if name not in attendance_student_names]
+
+        # Renderizamos los fragmentos HTML para cada tabla utilizando templates parciales.
+        non_attendance_html = render_template(
+            "partials/non_attendance_table.html",
+            non_attendance_students=non_attendance_students
+        )
+        with_attendance_html = render_template(
+            "partials/with_attendance_table.html",
+            attendance_students=attendance_members
+        )
+       
+        return jsonify({
+            "non_attendance_html": non_attendance_html,
+            "attendance_html": with_attendance_html,
+            "message": "Attendance has been registered successfully."
+        })
+    # Para GET, renderizamos la plantilla principal
+    return render_template('attendance_check.html', available_classes=available_classes)
+
+
+# =============================================================================================
+@bp.route("/attendance/filter", methods=['GET'])
+def filter_attendance():
+
+    meeting_center_id = get_meeting_center_id()
+    sunday_date = get_last_sunday()
+    
+
+    # Si sunday_date es una cadena, conviértela a date
+    if isinstance(sunday_date, str):
+        sunday_date = datetime.strptime(sunday_date, "%Y-%m-%d").date()
+
+    time_range = request.args.get('time_range', 'last_two_weeks')
+
+    if time_range == 'last_two_weeks':
+        start_date = sunday_date - timedelta(weeks=2)
+    elif time_range == 'last_month':
+        start_date = sunday_date - timedelta(days=30)  # Aproximado a 30 días
+    elif time_range == 'year_to_date':
+        start_date = datetime(sunday_date.year, 1, 1)
+    else:
+        # Valor por defecto: últimas dos semanas
+        start_date = sunday_date - timedelta(weeks=2)
+
+    selected_class = request.args.get('class_code')
+
+    if not selected_class:
+        return jsonify({"error": "class_code parameter is missing."}), 400
+
+    # Obtener los registros de asistencia para la clase seleccionada, en el meeting_center y fecha indicados
+    attendance_members = (
+        db.session.query(Attendance.student_name)
+        .filter(
+            Attendance.meeting_center_id == meeting_center_id,
+            Attendance.class_code == selected_class,
+            Attendance.sunday_date == sunday_date
+        )
+        .distinct()
+        .order_by(Attendance.student_name)
+        .all()
+    )
+
+    expected_student_names = (
+        db.session.query(Attendance.student_name)
+        .filter(
+            Attendance.meeting_center_id == meeting_center_id,
+            Attendance.class_code == selected_class,
+            Attendance.sunday_date >= start_date,  # Filtramos por el rango de tiempo
+            ~Attendance.student_name.in_(
+                db.session.query(Attendance.student_name)
+                .filter(
+                    Attendance.meeting_center_id == meeting_center_id,
+                    Attendance.class_code == selected_class,
+                    Attendance.sunday_date == sunday_date
+                )
+            )
+        )
+        .distinct()
+        .order_by(Attendance.student_name)
+        .all()
+    )
+    # Extraemos los nombres que ya tienen asistencia registrada
+    attendance_student_names = [record.student_name for record in attendance_members]
+
+    # Calculamos los estudiantes que no han registrado asistencia
+    non_attendance_students = [name for name in expected_student_names if name not in attendance_student_names]
+
+    # Renderizamos los fragmentos HTML para cada tabla utilizando templates parciales.
+    non_attendance_html = render_template(
+        "partials/non_attendance_table.html",
+        non_attendance_students=non_attendance_students
+    )
+    attendance_html = render_template(
+        "partials/with_attendance_table.html",
+        attendance_students=attendance_members
+    )
+
+    return jsonify({
+        "non_attendance_html": non_attendance_html,
+        "attendance_html": attendance_html
     })

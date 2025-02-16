@@ -1,0 +1,10 @@
+{% for st in non_attendance_students %}
+<tr>
+  <td scope="row">{{ loop.index }}</td>
+  <td scope="row"><input type="checkbox" name="attendance" value="{{ st.student_name }}" id="select_student">
+    <label class="form-check-label" for="select_student">
+      {{ st.student_name }}
+    </label>
+  </td>
+</tr>
+{% endfor %}

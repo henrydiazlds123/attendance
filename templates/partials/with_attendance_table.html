@@ -1,0 +1,6 @@
+{% for record in attendance_students %}
+<tr>
+  <td scope="row">{{ loop.index }}</td>
+  <td scope="row">{{ record.student_name }}</td>
+</tr>
+{% endfor %}

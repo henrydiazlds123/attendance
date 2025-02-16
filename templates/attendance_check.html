@@ -1,0 +1,221 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ _('Attendance | Check') }}{% endblock %}
+
+{% block pageTitle %}<i class="bi bi-calendar2-check"></i> {{ _('Attendance Check') }}{% endblock %}
+{% block content %}
+
+<div class="row">
+  <div class="">
+    <p class="mb-3">
+      {{ _("Falta agregar Contenido Descriptivo") }}
+    </p>
+  </div>
+
+
+  <!-- Filtro de clases -->
+  <div class="col-md-3 mb-3">
+    <div class="input-group">
+      <span class="input-group-text"><i class="bi bi-mortarboard-fill"></i></span>
+      <select id="class_filter" class="form-select">
+        <option value="">{{_('Select a class')}}</option>
+        <!-- Se utiliza el class_code para el value y se incluye meeting_center_id en un data attribute -->
+        {% for clase in available_classes %}
+        <option value="{{ clase.class_code }}" data-meeting-center="{{ clase.meeting_center_id }}">
+          {{ clase.translated_name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <!-- Filtro de Range -->
+  <div class="col-md-3 mb-3">
+    <div class="input-group">
+      <span class="input-group-text"><i class="bi bi-mortarboard-fill"></i></span>
+      <select id="time_range" class="form-select">
+        <option value="last_two_weeks" default>{{ _('Last Two Weeks') }}</option>
+        <option value="last_month">{{ _('Last Month') }}</option>
+        <option value="year_to_date">{{ _('Year to Date') }}</option>
+      </select>
+    </div>
+  </div>
+</div>
+  <div class="col-md-6 mb-3">
+  <div class="d-flex justify-content-between mb-5">
+    <!-- Tabla de estudiantes CON asistencia -->
+    <div>
+      <h4>{{ _('Members with Attendance') }}</h4>
+      <table id="with_attendance_table" class="table table-striped table-sm">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">{{ _('Name') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for student in attendance_students %}
+          <tr>
+            <td scope="row">{{ loop.index }}</td>
+            <td scope="row">{{ student.student_name }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Tabla de estudiantes SIN asistencia (con checkbox) -->
+    <div>
+      <h4>{{ _('Members without Attendance') }}</h4>
+      <form id="attendance_form">
+        <table id="non_attendance_table" class="table table-striped table-sm">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">{{ _('Name') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for student in non_attendance_students %}
+            <tr>
+              <td scope="row">{{ loop.index }}</td>
+              <td scope="row"><input type="checkbox" name="attendance" value="{{ student_name }}" id="select_student">
+                <label class="form-check-label" for="select_student">
+                  {{ student.student_name }}
+                </label>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <button type="button" class="btn btn-success form-control" id="submit_attendance">{{ _('Register Attendance')
+          }}</button>
+      </form>
+    </div>
+
+    </class=>
+  </div>
+</div>
+
+  <script>
+    // Esperamos a que el DOM se cargue completamente
+    document.addEventListener('DOMContentLoaded', async function () {
+
+      const classFilter        = document.getElementById('class_filter');
+      const rangeFilter        = document.getElementById('time_range');
+      const nonAttendanceTbody = document.querySelector('#non_attendance_table tbody');
+      const attendanceTbody    = document.querySelector('#with_attendance_table tbody');
+      const submitButton       = document.getElementById('submit_attendance');
+
+
+      // Obtener textos antes de cualquier acción
+      try {
+          texts = await fetch('/get_swal_texts').then(res => res.json());
+      } catch (error) {
+          console.error("Error fetching texts:", error);
+      }
+
+      // Si no hay una clase seleccionada, seleccionamos la primera opción válida
+      if (!classFilter.value && classFilter.options.length > 1) {
+        classFilter.selectedIndex = 1;
+      }
+      
+
+      // Función para actualizar las tablas según la clase y meeting_center_id seleccionados
+      function updateTables() {
+        const selectedClass = classFilter.value;
+        const timeRange     = rangeFilter.value;
+
+        
+
+        // Si no hay clase seleccionada, detenemos la actualización.
+        if (!selectedClass) return;
+
+        const meetingCenter = classFilter.options[classFilter.selectedIndex].dataset.meetingCenter;
+
+        const params = new URLSearchParams({
+          class_code       : selectedClass,
+          time_range       : timeRange,
+          meeting_center_id: meetingCenter
+        });
+
+        fetch("{{ url_for('routes.filter_attendance') }}?" + params.toString(), {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+          .then(response => response.json())
+          .then(data => {
+            // Se espera que el backend retorne:
+            nonAttendanceTbody.innerHTML = data.non_attendance_html;
+            attendanceTbody.innerHTML = data.attendance_html;
+          })
+          .catch(error => console.error("Error updating tables:", error));
+      }
+
+      // Actualización automática al cambiar el filtro de clase
+      classFilter.addEventListener('change', updateTables);
+      rangeFilter.addEventListener('change', updateTables);
+      
+
+      // Acción al presionar el botón "Register Attendance"
+      submitButton.addEventListener('click', function () {
+        Swal.fire({
+          title: texts.confirmRegisterTitle,
+          text: texts.confirmRegisterText,
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonText: texts.confirmRegisterYes,
+          cancelButtonText: texts.confirmRegisterCancel
+        }).then((result) => {
+          if (result.isConfirmed) {
+            // Recolectar los IDs de los estudiantes marcados
+            const checkboxes = document.querySelectorAll('input[name="attendance"]:checked');
+            const selectedNames = Array.from(checkboxes).map(checkbox => checkbox.value);
+
+            const selectedClass = classFilter.value;
+            const meetingCenter = classFilter.options[classFilter.selectedIndex].dataset.meetingCenter;
+
+            fetch("{{ url_for('routes.register_attendance') }}", {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                student_names    : selectedNames,
+                class_code       : selectedClass,
+                meeting_center_id: meetingCenter
+              })
+            })
+              .then(response => response.json())
+              .then(data => {
+                // Actualizamos las tablas con la respuesta del servidor
+                nonAttendanceTbody.innerHTML = data.non_attendance_html;
+                attendanceTbody.innerHTML = data.attendance_html;
+                Swal.fire(
+                  texts.confirmRegSuccessTitle,
+                  texts.confirmRegSuccessText,
+                  'success'
+                );
+              })
+              .catch(error => {
+                console.error("Error registering attendance:", error);
+                Swal.fire(
+                  texts.errorTitle,
+                  texts.registrationError,
+                  'error'
+                );
+              });
+          } else {
+            Swal.fire(
+              texts.cancelled,
+              texts.registrationCancel,
+              'info'
+            );
+          }
+        });
+      });
+    });
+  </script>
+
+  {% endblock %}

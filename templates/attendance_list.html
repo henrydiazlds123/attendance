@@ -8,11 +8,11 @@
     document.getElementById('filterForm').submit();
   }
   function clearFilters() {
-    document.getElementById("filterForm").reset();
-    document.getElementById("perpageSelect").reset();
-    document.getElementById("filterForm").submit();
+    //document.getElementById("filterForm").reset();
+    //document.getElementById("perpageSelect").reset();
+    //document.getElementById("filterForm").submit();
     //Eliminar todos los parámetros de la URL (filtros)
-    //window.location.href = "{{ url_for('routes.attendances') }}";
+    window.location.href = "{{ url_for('routes.attendances') }}";
   }
 
 </script>
