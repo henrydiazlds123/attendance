@@ -2096,10 +2096,13 @@ def get_classes_stats():
 
 # =============================================================================================
 @bp.route("/attendance/check", methods=['POST', 'GET'])
+@login_required
 def register_attendance():
     meeting_center_id = get_meeting_center_id()
-    sunday_date_str = get_last_sunday()  # Retorna una cadena, e.g. "2025-02-09"
-    sunday_date = datetime.strptime(sunday_date_str, "%Y-%m-%d").date()
+    sunday_date_str   = get_last_sunday()  # Retorna una cadena, e.g. "2025-02-09"
+    sunday_date       = datetime.strptime(sunday_date_str, "%Y-%m-%d").date()
+    sunday_week       = (get_next_sunday().day - 1) // 7 + 1
+    role              = session.get('role')
 
     time_range = request.args.get('time_range', 'last_two_weeks')
 
@@ -2117,7 +2120,14 @@ def register_attendance():
     class_query = db.session.query(Classes).filter(Classes.is_active == True)
     if meeting_center_id is not None:
         class_query = class_query.filter(Classes.meeting_center_id == meeting_center_id)
-    available_classes = class_query.order_by(Classes.class_name).all()
+   
+    if role == 'Owner' or role == 'Admin':
+        available_classes = class_query.order_by(Classes.class_name).all()
+    else:
+        available_classes = list({
+            c for c in Classes.query.filter_by(is_active=True, meeting_center_id=meeting_center_id)
+                    if str(sunday_week) in c.schedule.split(',')
+        })
 
     if request.method == 'POST':
         data = request.get_json()

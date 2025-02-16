@@ -29,7 +29,6 @@ def role_required(*roles):
     return decorator
 
 
-
 # ================================================================
 def login_required(f):
     @wraps(f)

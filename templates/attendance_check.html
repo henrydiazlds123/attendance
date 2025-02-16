@@ -31,7 +31,7 @@
   <!-- Filtro de Range -->
   <div class="col-md-3 mb-3">
     <div class="input-group">
-      <span class="input-group-text"><i class="bi bi-mortarboard-fill"></i></span>
+      <span class="input-group-text"><i class="bi bi-hourglass-split"></i></span>
       <select id="time_range" class="form-select">
         <option value="last_two_weeks" default>{{ _('Last Two Weeks') }}</option>
         <option value="last_month">{{ _('Last Month') }}</option>
@@ -99,7 +99,6 @@
   <script>
     // Esperamos a que el DOM se cargue completamente
     document.addEventListener('DOMContentLoaded', async function () {
-
       const classFilter        = document.getElementById('class_filter');
       const rangeFilter        = document.getElementById('time_range');
       const nonAttendanceTbody = document.querySelector('#non_attendance_table tbody');
@@ -115,9 +114,9 @@
       }
 
       // Si no hay una clase seleccionada, seleccionamos la primera opción válida
-      if (!classFilter.value && classFilter.options.length > 1) {
-        classFilter.selectedIndex = 1;
-      }
+      //if (!classFilter.value && classFilter.options.length > 1) {
+        //classFilter.selectedIndex = 1;
+      //}
       
 
       // Función para actualizar las tablas según la clase y meeting_center_id seleccionados
