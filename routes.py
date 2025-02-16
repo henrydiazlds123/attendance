@@ -914,6 +914,10 @@ def registrar():
                 "success": False,
                 "message": _('The church unit is invalid.'),
             }), 409
+        
+        correction = NameCorrections.query.filter_by(wrong_name=formatted_name, meeting_center_id=meeting_center.id).first()
+        if correction:
+            formatted_name = correction.correct_name
 
         # Obtener el estado del bypass desde la tabla Setup
         bypass_entry  = Setup.query.filter_by(key='allow_weekday_attendance').first()
@@ -1749,7 +1753,7 @@ def admin():
     if meeting_center_id != 'all':
         name_corrections_query = name_corrections_query.filter_by(meeting_center_id=meeting_center_id)
 
-    name_corrections = name_corrections_query.all()
+    name_corrections = name_corrections_query.order_by(None).order_by(NameCorrections.wrong_name.asc()).all()
 
     code_verification_setting = Setup.query.filter_by(
         key='code_verification', meeting_center_id=meeting_center_id if meeting_center_id != 'all' else None
@@ -2022,6 +2026,7 @@ def render_stats():
 
 # =============================================================================================
 @bp.route("/classes_stats/data")
+@role_required('Owner', 'Admin')
 def get_classes_stats():
     """Devuelve los datos de asistencia filtrados para la gráfica."""
     meeting_center_id = get_meeting_center_id()
@@ -2210,12 +2215,12 @@ def register_attendance():
 
 # =============================================================================================
 @bp.route("/attendance/filter", methods=['GET'])
+@login_required
 def filter_attendance():
 
     meeting_center_id = get_meeting_center_id()
     sunday_date = get_last_sunday()
     
-
     # Si sunday_date es una cadena, conviértela a date
     if isinstance(sunday_date, str):
         sunday_date = datetime.strptime(sunday_date, "%Y-%m-%d").date()

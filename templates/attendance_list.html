@@ -218,13 +218,9 @@
         const className = document.getElementById("class_name");
         const options = Array.from(className.options);
 
-        // Elimina la opción "All" para no incluirla en el orden
         const allOption = options.shift();
-        // Ordena las opciones por el atributo "data-class-name"
         options.sort((a, b) => a.getAttribute('data-class-name').localeCompare(b.getAttribute('data-class-name')));
-        // Añade la opción "All" nuevamente en la parte superior
         options.unshift(allOption);
-        // Limpia el <className> y agrega las opciones ordenadas
         className.innerHTML = '';
         options.forEach(option => className.appendChild(option));
 

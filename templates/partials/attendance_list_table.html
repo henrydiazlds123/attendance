@@ -7,8 +7,8 @@
       <th scope="col">{{ _('Class') }}</th>
       <th scope="col">{{ _('Date') }}</th>
       {% if session['role'] == 'Owner' %}
-      <th scope="col">{{ _('Unit') }}</th>
-      <th scope="col">{{ _('Code') }}</th>
+      <th scope="col" class="d-none d-md-table-cell">{{ _('Unit') }}</th>
+      <th scope="col" class="d-none d-md-table-cell">{{ _('Code') }}</th>
       {% endif %}
       {% if session['role'] == 'Admin' or session['role'] == 'Owner' %}
       <th scope="col" class="d-none d-md-table-cell">{{ _('Submited') }}</th>
@@ -36,8 +36,8 @@
       <td>{{_(attendance.class_short_name)}}</td>
       <td>{{ attendance.sunday_date_formatted }}</td>
       {% if session['role'] == 'Owner' %}
-      <td>{{_(attendance.meeting_short_name)}}</td>
-      <td>{{_(attendance.sunday_code)}}</td>
+      <td class="d-none d-md-table-cell">{{_(attendance.meeting_short_name)}}</td>
+      <td class="d-none d-md-table-cell">{{_(attendance.sunday_code)}}</td>
       {% endif %}
       {% if session['role'] == 'Admin' or session['role'] == 'Owner' %}
       <!-- <td class="d-none d-md-table-cell">{{ attendance.submit_date.strftime("%b %d, %I:%M %p")}}</td> -->
