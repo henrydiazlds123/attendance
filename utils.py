@@ -180,17 +180,20 @@ def translations():
         {'id': 6, 'name': _('Sunday School')},
         {'id': 7, 'name': _('Primary')},
         {'id': 8, 'name': _('Other')}
-
     ]
 
+    
+# ================================================================
 def remove_accents(input_str):
     nfkd_form = unicodedata.normalize('NFKD', input_str)
     return ''.join([c for c in nfkd_form if not unicodedata.combining(c) or c == 'ñ' or c == 'Ñ'])
 
+
+# ================================================================
 def get_last_sunday():
     """Sets default sunday_date to last Sunday if today is not Sunday, otherwise uses today."""
     today = datetime.now().date()
-    # Calculate the most recent Sunday
-    days_since_sunday       = today.weekday()  # 0 = Monday, 6 = Sunday
-    last_sunday             = today - timedelta(days=days_since_sunday + 1) if today.weekday() != 6 else today
+    days_since_sunday = today.weekday()  # 0 = Monday, 6 = Sunday
+    last_sunday       = today - timedelta(days=days_since_sunday + 1) if today.weekday() != 6 else today
     return last_sunday.strftime('%Y-%m-%d')
+

@@ -31,7 +31,7 @@
                 <span class="input-group-text"><i class="bi bi-calendar-week"></i></span>
                 <select class="form-select" id="yearSelect" {% if disable_year %}disabled{% endif %}>
                     {% for year in years %}
-                    <option value="{{ year }}" {% if year == current_year %}selected{% endif %}>{{ year }}</option>
+                    <option value="{{ year }}" {% if year==current_year %}selected{% endif %}>{{ year }}</option>
                     {% endfor %}
                 </select>
 
@@ -53,9 +53,9 @@
         </div>
     </div>
 </div>
-
+<!-- ======================================================================= -->
 <div class="card mb-5 p-3">
-    <h3 class="text-center py-4">{{_('Monthly Attendance per Classes')}}</h3>
+    <h3 class="text-center py-4">{{_('Attendance per Classes')}}</h3>
     <div class="row justify-content-center">
         <div class="col-md-4">
             <div class="input-group">
@@ -67,7 +67,7 @@
                         clase.translated_name }}</option>
                     {% endfor %}
                 </select>
-                
+
             </div>
         </div>
         <div class="col-md-1"></div>
@@ -76,7 +76,7 @@
                 <span class="input-group-text"><i class="bi bi-calendar3"></i></span>
                 <select id="year-select" class="form-select" {% if disable_year %}disabled{% endif %}>
                     {% for year in available_years %}
-                    <option value="{{ year }}" {% if year == current_year %}selected{% endif %}>{{ year }}</option>
+                    <option value="{{ year }}" {% if year==current_year %}selected{% endif %}>{{ year }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -86,6 +86,74 @@
         <div class="col-md-10">
             <div class="chart-container">
                 <canvas id="classChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================================= -->
+
+    <div class="row justify-content-center mt-3">
+        <div class="col-md-10">
+            <div class="chart-container">
+                <canvas id="lineChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="row justify-content-center mt-3">
+        <div class="col-md-10">
+            <div class="chart-container">
+                <canvas id="barChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-5 p-3">
+    <h3 class="text-center py-4">{{_('Monthly Attendance Percentage per Classes')}}</h3>
+    <div class="row justify-content-center mb-3">
+        <div class="col-md-4">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-mortarboard-fill"></i></span>
+                <select id="class-select1" class="form-select">
+                    <option value="all" selected>{{ _('All') }}</option>
+                    {% for clase in available_classes %}
+                    <option value="{{ clase.class_code }}" data-translated-name="{{ clase.translated_name }}">
+                        {{ clase.translated_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-mortarboard-fill"></i></span>
+                <select id="class-select-compare" class="form-select">
+                    <option value="none" selected>{{ _('None') }}</option>
+                    {% for clase in available_classes %}
+                    <option value="{{ clase.class_code }}" data-translated-name="{{ clase.translated_name }}">
+                        {{ clase.translated_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-calendar3"></i></span>
+                <select id="year-select1" class="form-select" {% if disable_year %}disabled{% endif %}>
+                    {% for year in available_years %}
+                    <option value="{{ year }}" {% if year==current_year %}selected{% endif %}>
+                        {{ year }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="row justify-content-center mb-4">
+        <div class="col-md-10">
+            <div class="chart-container">
+                <canvas id="percentageChart"></canvas>
             </div>
         </div>
     </div>
@@ -139,7 +207,7 @@
 
 
 
-<script> 
+<script>
     document.addEventListener('DOMContentLoaded', function () {
         //const monthSelect = document.getElementById("month-select");
         const studentSelect          = document.getElementById('studentSelect');
@@ -149,17 +217,32 @@
         const ctxAttendance          = document.getElementById('attendanceChart').getContext('2d');
         const ctxClassFrequency      = document.getElementById('classFrequencyChart').getContext('2d');
         const meeting_center_id      = "{{ meeting_center_id }}";
+        const classSelect1           = document.getElementById("class-select1");
+        const classSelectCompare     = document.getElementById("class-select-compare");
+        const yearCompare            = document.getElementById("year-select1");
         let   attendance_counts      = [];
         let   attendance_percentages = [];
-        let   classChart;
-        
+        let classChart, percentageChart, lineChart, barChart;
+
         ordenarSelect('class-select');
+        ordenarSelect('class-select1');
+        ordenarSelect('class-select-compare');
 
         const colors = [
-            'rgba(255, 99, 132, 0.2)', 'rgba(54, 162, 235, 0.2)', 'rgba(255, 206, 86, 0.2)',
-            'rgba(75, 192, 192, 0.2)', 'rgba(153, 102, 255, 0.2)', 'rgba(255, 159, 64, 0.2)'
+            'rgba(75, 192, 192, 0.4)',   // Color original 1
+            'rgba(255, 206, 86, 0.4)',   // Color original 2
+            'rgba(255, 99, 132, 0.4)',   // Color original 3
+            'rgba(255, 159, 64, 0.4)',   // Color original 4
+            'rgba(54, 162, 235, 0.4)',   // Color original 5
+            'rgba(153, 102, 255, 0.4)',  // Color original 6
+            'rgba(201, 203, 207, 0.4)',  // Color adicional 7 (gris claro)
+            'rgba(255, 99, 71, 0.4)',    // Color adicional 8 (tomate)
+            'rgba(60, 179, 113, 0.4)',   // Color adicional 9 (verde mar)
+            'rgba(138, 43, 226, 0.4)',   // Color adicional 10 (violeta)
+            'rgba(255, 20, 147, 0.4)',   // Color adicional 11 (rosa fuerte)
+            'rgba(100, 149, 237, 0.4)'   // Color adicional 12 (azul cornflower)
         ];
-        const borderColors = colors.map(color => color.replace('0.2', '1'));
+        const borderColors = colors.map(color => color.replace('0.4', '1'));
 
         // Crear gráficos vacíos
         async function loadTranslationsAndCreateChart() {
@@ -296,9 +379,6 @@
             }
         };
 
-        // Llamada a la función para cargar las traducciones y crear el gráfico
-        loadTranslationsAndCreateChart();
-
         // Función para obtener los datos desde el servidor
         async function fetchClassData() {
             const classCode = document.getElementById("class-select").value;
@@ -333,7 +413,7 @@
 
                     attendance_counts = data.attendance_counts;
                     attendance_percentages = data.attendance_percentages;
-                    
+
                     updateAttendanceChart(data.months, data.attendance_percentages, data.attendance_counts, data.total_weeks);
                     updateClassFrequencyChart(data.months, data.class_frequencies);
                 })
@@ -359,18 +439,18 @@
                 data: {
                     labels: months,
                     datasets: [
-                    {
-                        type: 'line',
-                        label: texts.weeks_label,
-                        data: totalWeeks,
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        backgroundColor: 'rgba(255, 99, 132, 0.3)',
-                        borderWidth: 2,
-                        pointStyle: 'circle',
-                        pointRadius: 4,
-                        pointBackgroundColor: 'rgba(255, 99, 132, 1)',
-                        datalabels: { display: false }
-                    },
+                        {
+                            type: 'line',
+                            label: texts.weeks_label,
+                            data: totalWeeks,
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.3)',
+                            borderWidth: 2,
+                            pointStyle: 'circle',
+                            pointRadius: 4,
+                            pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+                            datalabels: { display: false }
+                        },
                         {
                             type: 'bar',
                             label: texts.attendance_label,
@@ -387,7 +467,7 @@
                                 color: '#333'
                             }
                         }
-                        
+
                     ]
                 },
                 options: {
@@ -584,44 +664,242 @@
             });
         }
 
-        // Escuchar cambios en los filtros
-        studentSelect.addEventListener('change', fetchAttendanceData);
-        yearSelect.addEventListener('change', fetchAttendanceData);
-        classSelect.addEventListener("change", fetchClassData);
-        //monthSelect.addEventListener("change", fetchClassData);
-        year_Select.addEventListener("change", fetchClassData);
+        async function fetchPercentageData() {
+            const classCode1 = document.getElementById("class-select1").value;
+            const classCode2 = document.getElementById("class-select-compare").value;
+            const year = document.getElementById("year-select1").value;
 
-        // Llamar a la función al cargar la página
-        fetchClassData();
-        
-        if (studentSelect.value) {
-            fetchAttendanceData();
+            // Construir la URL con los filtros
+            const url = `/classes_stats/percentage_data?class_code1=${classCode1}&class_code2=${classCode2}&year=${year}`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                updatePercentageChart(data);
+            } catch (error) {
+                console.error("Error obteniendo datos de porcentaje:", error);
+            }
         }
 
-        
+        async function updatePercentageChart(data) {
+            const ctx = document.getElementById("percentageChart").getContext("2d");
+            // Etiquetas de meses (puedes obtener la traducción si lo necesitas)
+            const monthLabels = data.months ? data.months.map(item => item.label) : [];
+
+            // Generar un dataset por cada clase
+            const datasets = data.chart_data.map((clase, index) => {
+                const dataPoints = monthLabels.map((_, i) => {
+                    const monthData = clase.chart_data.find(m => m.month === i + 1);
+                    return monthData ? monthData.percentage : null;
+                });
+                // Definir colores distintos para cada línea
+                //const colors = ['red', 'blue', 'green', 'purple', 'orange', 'brown'];
+                return {
+                    label: clase.translated_name,
+                    data: dataPoints,
+                    backgroundColor: colors[index % colors.length],
+                    borderColor: borderColors[index % borderColors.length], //'rgba(0, 0, 0, 0)', // sin relleno
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                };
+            });
+
+            // Destruir el gráfico anterior si existe
+            if (percentageChart) {
+                percentageChart.destroy();
+            }
+
+            percentageChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: monthLabels,
+                    datasets: datasets,
+                },
+                options: {
+                    layout: {
+                        padding: {
+                            top: 50  // Ajusta este valor (en píxeles) según lo necesites
+                        }
+                    },
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) label += ': ';
+                                    if (context.raw !== null) {
+                                        label += context.raw + '%';
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Monthly Attendance Percentage',
+                            font: { size: 18 }
+                        },
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Month' }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            max: 110,
+                            ticks: { stepSize: 10 },
+                            title: { display: true, text: 'Attendance (%)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function checkSelectCompareStatus() {
+            if (classSelect1.value === "all") {
+                classSelectCompare.disabled = true;
+            } else {
+                classSelectCompare.disabled = false;
+            }
+        }
+       
+        function fetchJSON(url) {
+            return fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                });
+        }
+
+        function updateCharts() {
+            const selectedClass = classSelect.value || "all";
+            const selectedYear = yearCompare.value || new Date().getFullYear();
+            const url = `/stats2/?class_code=${selectedClass}&year=${selectedYear}`;
+
+            fetchJSON(url)
+                .then(data => {
+                    updateChartData(data.labels, data.datasets);
+                })
+                .catch(error => console.error("Error al actualizar las gráficas:", error));
+        }
+      
+        function updateChartData(labels, datasets) {
+
+            const lineDatasets = datasets.map((dataset, index) => ({
+                ...dataset,
+                backgroundColor: colors[index % colors.length],
+                borderColor: borderColors[index % borderColors.length],
+                borderWidth: 2,
+                pointBackgroundColor: borderColors[index % borderColors.length],
+                pointBorderColor: "#fff",
+                pointHoverBackgroundColor: "#fff",
+                pointHoverBorderColor: borderColors[index % borderColors.length],
+                fill: false,
+                tension: 0.2
+            }));
+            datasets.forEach((ds, i) => {
+                console.log(`Dataset ${i}:`, ds.data);
+            });
+            const barDatasets = datasets.map((dataset, index) => ({
+                ...dataset,
+                backgroundColor: colors[index % colors.length],
+                borderColor: borderColors[index % borderColors.length],
+                borderWidth: 2,
+                hoverBackgroundColor: borderColors[index % borderColors.length],
+                hoverBorderColor: "#000"
+            }));
+
+            const ctx1 = document.getElementById("lineChart").getContext("2d");
+            if (lineChart) {
+                lineChart.destroy();
+            }
+            lineChart = new Chart(ctx1, {
+                type: "line",
+                data: { labels: labels, datasets: lineDatasets },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: "top" },
+                        title: {
+                            display: "true",
+                            text: "Attendance per Period",
+                            font: { size: 18 }
+                        },
+                    },
+                    elements: { line: { tension: 0.3 } }
+                }
+            });
+
+            const ctx2 = document.getElementById("barChart").getContext("2d");
+            if (barChart) {
+                barChart.destroy();
+            }
+            barChart = new Chart(ctx2, {
+                type: "bar",
+                data: { labels: labels, datasets: barDatasets },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: "top" },
+                        title: {
+                            display: "true",
+                            text: "Attendance per Period",
+                            font: { size: 18 }
+                        },
+                    },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
         function ordenarSelect(selectId) {
             // Obtener el select y las opciones
             const select = document.getElementById(selectId);
             const options = Array.from(select.getElementsByTagName('option'));
         
-            // Separar la primera opción si su valor es ""
-            const firstOption = options[0].value === "all" ? options.shift() : null;
+            // Separar las opciones con valores "all" y "none" si existen
+            const firstOptions = options.filter(option => option.value === "all" || option.value === "none");
+            const sortableOptions = options.filter(option => option.value !== "all" && option.value !== "none");
         
             // Ordenar las opciones restantes alfabéticamente
-            options.sort((a, b) => a.textContent.trim().localeCompare(b.textContent.trim()));
+            sortableOptions.sort((a, b) => a.textContent.trim().localeCompare(b.textContent.trim()));
         
             // Limpiar el select
             select.innerHTML = '';
         
-            // Volver a agregar la primera opción (si existía)
-            if (firstOption) {
-                select.appendChild(firstOption);
-            }
+            // Volver a agregar las opciones excluidas del ordenamiento
+            firstOptions.forEach(option => select.appendChild(option));
         
             // Agregar las opciones ordenadas
-            options.forEach(option => select.appendChild(option));
+            sortableOptions.forEach(option => select.appendChild(option));
         }
         
+        loadTranslationsAndCreateChart();
+        fetchPercentageData();
+        fetchClassData();
+        if (studentSelect.value) {
+            fetchAttendanceData();
+        }
+        checkSelectCompareStatus();
+        updateCharts();
+
+        // Escuchar cambios en los filtros
+        studentSelect.addEventListener('change', fetchAttendanceData);
+        yearSelect.addEventListener('change', fetchAttendanceData);
+
+        classSelect.addEventListener("change", () => { fetchClassData(); checkSelectCompareStatus(); updateCharts(); fetchPercentageData();});
+        year_Select.addEventListener("change", () => { fetchClassData(); checkSelectCompareStatus(); updateCharts(); fetchPercentageData();});
+
+        classSelect1.addEventListener('change', () => {fetchPercentageData(); checkSelectCompareStatus();});
+        classSelectCompare.addEventListener('change', fetchPercentageData);
+        yearCompare.addEventListener('change', fetchPercentageData);
     });
 </script>
 

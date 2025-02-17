@@ -15,6 +15,7 @@ from reportlab.pdfgen        import canvas
 from urllib.parse            import unquote
 from utils                   import *
 from datetime                import datetime, timedelta
+from collections             import defaultdict
 
 
 
@@ -2091,7 +2092,7 @@ def get_classes_stats():
     ]
 
     return jsonify({
-        "chart_data": chart_data,
+        "chart_data": chart_data       
     })
 
 # =============================================================================================
@@ -2304,3 +2305,135 @@ def filter_attendance():
         "non_attendance_html": non_attendance_html,
         "attendance_html": attendance_html
     })
+
+
+# =============================================================================================
+@bp.route("/classes_stats/percentage_data")
+@role_required('Owner', 'Admin')
+def get_classes_percentage_stats():
+    meeting_center_id = get_meeting_center_id()
+    current_year  = datetime.now().year
+    selected_year = request.args.get('year', type=int, default=current_year)
+    class_code1   = request.args.get("class_code1", default="all")
+    class_code2   = request.args.get("class_code2", default="none")
+    
+    classes_to_compute = set()
+    if class_code1 == "all":
+        query = db.session.query(Attendance.class_code).distinct().filter(
+            Attendance.meeting_center_id == meeting_center_id
+        )
+        for row in query.all():
+            classes_to_compute.add(row.class_code)
+    else:
+        classes_to_compute.add(class_code1)
+        if class_code2 != "none":
+            classes_to_compute.add(class_code2)
+    
+    # Ordenar las clases para que el JS las asigne el mismo color siempre
+    sorted_classes = sorted(classes_to_compute)
+    
+    result_data = []
+    
+    for code in sorted_classes:
+        records = db.session.query(Attendance).filter(
+            Attendance.class_code == code,
+            Attendance.meeting_center_id == meeting_center_id,
+            func.extract("year", Attendance.sunday_date) == selected_year
+        ).order_by(Attendance.sunday_date).all()
+        
+        sessions = defaultdict(set)
+        for rec in records:
+            session_date = rec.sunday_date
+            sessions[session_date].add(rec.student_name)
+        
+        sessions_by_month = defaultdict(list)
+        for session_date, students in sessions.items():
+            sessions_by_month[session_date.month].append((session_date, students))
+        
+        monthly_data = []
+        for m in range(1, 13):
+            if m in sessions_by_month and sessions_by_month[m]:
+                sorted_sessions = sorted(sessions_by_month[m], key=lambda x: x[0])
+                baseline = sorted_sessions[0][1]
+                baseline_count = len(baseline)
+                if baseline_count == 0:
+                    monthly_data.append({"month": m, "percentage": None})
+                    continue
+                
+                percentages = []
+                for sess in sorted_sessions:
+                    present = len(baseline.intersection(sess[1]))
+                    percent = (present / baseline_count) * 100
+                    percentages.append(percent)
+                monthly_avg = round(sum(percentages) / len(percentages), 2)
+                monthly_data.append({"month": m, "percentage": monthly_avg})
+            else:
+                monthly_data.append({"month": m, "percentage": None})
+    
+        translated_name = _(code)
+        result_data.append({
+            "class_code": code,
+            "translated_name": translated_name,
+            "chart_data": monthly_data
+        })
+    
+    months = [{"value": value, "label": label} for value, label in get_months()]
+    result_data = [r for r in result_data if any(item["percentage"] not in (None, 0) for item in r["chart_data"])]
+    
+    return jsonify({
+        "chart_data": result_data,
+        "months": months
+    })
+
+
+# =============================================================================================
+@bp.route('/stats2/')
+def stats():
+    class_code = request.args.get('class_code', 'all')
+    year = request.args.get('year', datetime.now().year)
+    meeting_center_id = get_meeting_center_id()
+
+    query = db.session.query(
+        Attendance.sunday_date, Classes.class_code, db.func.count(Attendance.id)
+    ).join(Classes).filter(Attendance.meeting_center_id == meeting_center_id)
+
+    if class_code != 'all':
+        query = query.filter(Attendance.class_code == class_code)
+
+    year_start = datetime.strptime(f"{year}-01-01", "%Y-%m-%d")
+    year_end = datetime.strptime(f"{year}-12-31", "%Y-%m-%d")
+    query = query.filter(Attendance.sunday_date >= year_start, Attendance.sunday_date <= year_end)
+
+    data = query.group_by(Attendance.sunday_date, Classes.class_code).all()
+
+    chart_data = {}
+
+    for date, class_code, count in data:
+        date_str = date.strftime('%Y-%m-%d')
+        if class_code not in chart_data:
+            chart_data[class_code] = {}
+        chart_data[class_code][date_str] = count
+
+    # Obtener las fechas (labels) en orden
+    labels = sorted(set(d for counts in chart_data.values() for d in counts))
+    
+    datasets = []
+    # Iterar sobre las clases en orden alfabético
+    for class_code in sorted(chart_data.keys()):
+        date_counts = chart_data[class_code]
+        data_points = [date_counts.get(label) for label in labels]
+        datasets.append({
+            "label": _(class_code),
+            "data": data_points,
+            "fill": False,
+            "borderWidth": 1,
+            "spanGaps": True
+        })
+
+    formatted_labels = [datetime.strptime(label, "%Y-%m-%d").strftime("%b %d") for label in labels]
+
+    return jsonify({
+        'labels': formatted_labels,
+        'datasets': datasets
+    })
+
