@@ -1,30 +1,48 @@
-<span id="total-members-count" style="display: none;">{{ total_miembros }}</span>
 <table class="table table-bordered table-striped table-sm table-hover">
-    <thead class="table-dark sticky-top" >
-        <tr>
-            <th scope="col">#</th>
-            <th class="text-start">{{ _('Name') }}</th>
-            {% for date in dates %}
-            <th class="text-center">{{ date['formatted'] }}</th>
-            {% endfor %}
-        </tr>
+    <thead class="table-dark sticky-top">
+      <tr>
+        <th scope="col">#</th>
+        <th class="text-start">{{ _('Name') }}</th>
+        {% for date in dates %}
+        <th class="text-center" data-column="{{ loop.index0 }}">
+          <input type="checkbox" class="toggle-column" data-column="{{ loop.index0 }}" checked>
+          {{ date['formatted'] }}
+        </th>
+        {% endfor %}
+      </tr>
     </thead>
     <tbody>
-        {% for student, attendance in students.items() %}
-        <tr>
-            <td scope="row">{{ loop.index }}</td>
-            <td>{{ student }}</td>
-            {% for date in dates %}
-            <td class="text-center">
-                {% if attendance[date['date']] %}
-                <span class="text-success"><i class="bi bi-check-circle-fill"></i></span>
-                {% else %}
-                <span class="text-danger"><i class="bi bi-dash-circle"></i></span>
-                {% endif %}
-            </td>
-            {% endfor %}
-        </tr>
+      {% for student, attendance in students.items() %}
+      <tr>
+        <td scope="row">{{ loop.index }}</td>
+        <td>{{ student }}</td>
+        {% for date in dates %}
+        <td class="text-center" data-column="{{ loop.index0 }}">
+          {% if attendance[date['date']] %}
+          <span class="text-success"><i class="bi bi-check-circle-fill"></i></span>
+          {% else %}
+          <span class="text-danger"><i class="bi bi-dash-circle"></i></span>
+          {% endif %}
+        </td>
         {% endfor %}
+      </tr>
+      {% endfor %}
     </tbody>
-</table>
-
+  </table>
+  
+  <script>
+  document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".toggle-column").forEach(function (checkbox) {
+      checkbox.addEventListener("change", function () {
+        let columnIndex = this.dataset.column;
+        let isChecked = this.checked;
+        
+        // Oculta o muestra tanto los encabezados (<th>) como las celdas (<td>)
+        document.querySelectorAll(`[data-column='${columnIndex}']`).forEach(function (cell) {
+          cell.style.display = isChecked ? "" : "none";
+        });
+      });
+    });
+  });
+  </script>
+  

@@ -687,22 +687,14 @@ def attendance_report():
  
     # Obtener registros de asistencia por trimestre
     quarters_with_data = {
-        "Q1": db.session.query(Attendance).filter(
-            extract('month', Attendance.sunday_date).in_([1, 2, 3]),
-            Attendance.meeting_center_id == meeting_center_id
-        ).count() > 0,
-        "Q2": db.session.query(Attendance).filter(
-            extract('month', Attendance.sunday_date).in_([4, 5, 6]),
-            Attendance.meeting_center_id == meeting_center_id
-        ).count() > 0,
-        "Q3": db.session.query(Attendance).filter(
-            extract('month', Attendance.sunday_date).in_([7, 8, 9]),
-            Attendance.meeting_center_id == meeting_center_id
-        ).count() > 0,
-        "Q4": db.session.query(Attendance).filter(
-            extract('month', Attendance.sunday_date).in_([10, 11, 12]),
-            Attendance.meeting_center_id == meeting_center_id
-        ).count() > 0
+        "Q1": db.session.query(Attendance).filter(extract('month', Attendance.sunday_date).in_([1, 2, 3]),
+            Attendance.meeting_center_id == meeting_center_id).count() > 0,
+        "Q2": db.session.query(Attendance).filter(extract('month', Attendance.sunday_date).in_([4, 5, 6]),
+            Attendance.meeting_center_id == meeting_center_id).count() > 0,
+        "Q3": db.session.query(Attendance).filter(extract('month', Attendance.sunday_date).in_([7, 8, 9]),
+            Attendance.meeting_center_id == meeting_center_id).count() > 0,
+        "Q4": db.session.query(Attendance).filter(extract('month', Attendance.sunday_date).in_([10, 11, 12]),
+            Attendance.meeting_center_id == meeting_center_id).count() > 0
     }
 
     # Respuesta AJAX parcial
@@ -2430,7 +2422,11 @@ def stats():
             "spanGaps": True
         })
 
-    formatted_labels = [datetime.strptime(label, "%Y-%m-%d").strftime("%b %d") for label in labels]
+    
+    formatted_labels = [
+        format_date(datetime.strptime(label, "%Y-%m-%d"), format='MMM dd')
+        for label in labels
+    ]
 
     return jsonify({
         'labels': formatted_labels,
