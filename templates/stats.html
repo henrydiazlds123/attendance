@@ -780,7 +780,7 @@
 
         function updateCharts() {
             const selectedClass = classSelect.value || "all";
-            const selectedYear = yearCompare.value || new Date().getFullYear();
+            const selectedYear = year_Select.value || new Date().getFullYear();
             const url = `/stats2/?class_code=${selectedClass}&year=${selectedYear}`;
 
             fetchJSON(url)

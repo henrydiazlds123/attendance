@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-02-15 15:04-0700\n"
+"POT-Creation-Date: 2025-02-17 20:28-0700\n"
 "PO-Revision-Date: 2025-01-25 23:00-0700\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -37,8 +37,8 @@ msgstr "confirmar Contraseña"
 
 #: forms.py:17 forms.py:55 templates/attendance_check.html:52
 #: templates/attendance_check.html:74
-#: templates/partials/attendance_table.html:22 templates/stats.html:105
-#: templates/stats.html:124
+#: templates/partials/attendance_table.html:5 templates/stats.html:172
+#: templates/stats.html:191
 msgid "Name"
 msgstr "Nombre"
 
@@ -181,8 +181,8 @@ msgstr "Código de clase"
 msgid "Class Type"
 msgstr "Tipo de clase"
 
-#: forms.py:142 routes.py:1603 routes.py:1612 routes.py:1621 routes.py:1630
-#: routes.py:1639 routes.py:1648 routes.py:1657
+#: forms.py:142 routes.py:1600 routes.py:1609 routes.py:1618 routes.py:1627
+#: routes.py:1636 routes.py:1645 routes.py:1654
 msgid "Main"
 msgstr "Dominical"
 
@@ -214,277 +214,277 @@ msgstr "No se puede eliminar una unidad de la iglesia con asistencia registrada.
 msgid "Cannot delete a class with registered attendance."
 msgstr "No se puede eliminar una clase con asistencia registrada."
 
-#: routes.py:62
+#: routes.py:63
 msgid "Login successful!"
 msgstr "¡Sesión iniciada exitosamente!"
 
-#: routes.py:66
+#: routes.py:67
 msgid "Invalid credentials. Please check your username and password."
 msgstr ""
 "Credenciales inválidas. Por favor verifique su nombre de usuario y "
 "contraseña."
 
-#: routes.py:75
+#: routes.py:76
 msgid "Logout successful!"
 msgstr "¡Sesión cerrada correctamente!"
 
-#: routes.py:177
+#: routes.py:178
 msgid "New User"
 msgstr "Nuevo usuario"
 
-#: routes.py:178 routes.py:494 routes.py:508 routes.py:527 routes.py:1277
-#: routes.py:1405 routes.py:1481
+#: routes.py:179 routes.py:495 routes.py:509 routes.py:528 routes.py:1274
+#: routes.py:1402 routes.py:1478
 msgid "Create"
 msgstr "Crear"
 
-#: routes.py:201
+#: routes.py:202
 msgid "User updated successfully."
 msgstr "Usuario actualizado exitosamente."
 
-#: routes.py:205
+#: routes.py:206
 msgid "Edit User"
 msgstr "Editar usuario"
 
-#: routes.py:206 routes.py:558 routes.py:1291 routes.py:1432 routes.py:1499
+#: routes.py:207 routes.py:559 routes.py:1288 routes.py:1429 routes.py:1496
 msgid "Update"
 msgstr "Actualizar"
 
-#: routes.py:224
+#: routes.py:225
 msgid "Cannot delete last admin."
 msgstr "No se puede eliminar el último administrador."
 
-#: routes.py:229 routes.py:246
+#: routes.py:230 routes.py:247
 msgid "User deleted successfully"
 msgstr "Usuario eliminado exitosamente"
 
-#: routes.py:234
+#: routes.py:235
 msgid "You cannot delete another administrator."
 msgstr "No puede eliminar otro administrador."
 
-#: routes.py:241
+#: routes.py:242
 msgid "You have successfully eliminated yourself."
 msgstr "Te has eliminado con éxito."
 
-#: routes.py:258
+#: routes.py:259
 msgid "Current password is incorrect."
 msgstr "La contraseña actual es incorrecta."
 
-#: routes.py:267
+#: routes.py:268
 msgid "Password updated successfully."
 msgstr "¡Contraseña actualizada exitosamente!"
 
-#: routes.py:283
+#: routes.py:284
 msgid "The user is already an Super User."
 msgstr "El usuario ya es Super usuario."
 
-#: routes.py:288
+#: routes.py:289
 #, python-format
 msgid "User %(username)s has been promoted to Super User."
 msgstr "El usuario %(username)s ahora es un Super Usuario."
 
-#: routes.py:302
+#: routes.py:303
 msgid "400 Invalid URL"
 msgstr "URL Inválida"
 
-#: routes.py:304
+#: routes.py:305
 msgid "Check what you wrote!"
 msgstr "Revisa lo que escribiste"
 
-#: routes.py:305
+#: routes.py:306
 msgid "The address you entered is incomplete!"
 msgstr "La dirección esta incompleta o es incorrecta"
 
-#: routes.py:328
+#: routes.py:329
 msgid "It seems that you are lost!"
 msgstr "Parece que estas perdido"
 
-#: routes.py:329
+#: routes.py:330
 msgid "Wrong QR for this week's classes!"
 msgstr "¡QR incorrecto para las clases de esta semana!"
 
-#: routes.py:490
+#: routes.py:491
 msgid "Please select an existing student or provide a new name."
 msgstr "Seleccione un nombre del alumno o provea un nuevo"
 
-#: routes.py:493 routes.py:526
+#: routes.py:494 routes.py:527
 msgid "Create manual attendance"
 msgstr "Crear asistencia manualmente"
 
-#: routes.py:504
+#: routes.py:505
 msgid "The selected class is invalid."
 msgstr "La clase seleccionada no es válida."
 
-#: routes.py:507
+#: routes.py:508
 msgid "Create attendance"
 msgstr "Crear asistencia"
 
-#: routes.py:521
+#: routes.py:522
 msgid "Attendance registered successfully!"
 msgstr "¡Asistencia registrada exitosamente!"
 
-#: routes.py:555
+#: routes.py:556
 msgid "Attendance record updated successfully."
 msgstr "Registro de asistencia actualizado exitosamente."
 
-#: routes.py:558
+#: routes.py:559
 msgid "Edit Attendance"
 msgstr "Editar asistencia"
 
-#: routes.py:569
+#: routes.py:570
 msgid "Attendance record deleted successfully."
 msgstr "Registro de asistencia eliminado exitosamente."
 
-#: routes.py:839 routes.py:2039 utils.py:135
+#: routes.py:832 routes.py:2037 utils.py:134
 msgid "Jan"
 msgstr "Ene"
 
-#: routes.py:839 routes.py:2039 utils.py:136
+#: routes.py:832 routes.py:2037 utils.py:135
 msgid "Feb"
 msgstr "Feb"
 
-#: routes.py:839 routes.py:2039 utils.py:137
+#: routes.py:832 routes.py:2037 utils.py:136
 msgid "Mar"
 msgstr "Mar"
 
-#: routes.py:839 routes.py:2039 utils.py:138
+#: routes.py:832 routes.py:2037 utils.py:137
 msgid "Apr"
 msgstr "Abr"
 
-#: routes.py:839 routes.py:2039 utils.py:139
+#: routes.py:832 routes.py:2037 utils.py:138
 msgid "May"
 msgstr "May"
 
-#: routes.py:839 routes.py:2039 utils.py:140
+#: routes.py:832 routes.py:2037 utils.py:139
 msgid "Jun"
 msgstr "Jun"
 
-#: routes.py:840 routes.py:2040 utils.py:141
+#: routes.py:833 routes.py:2038 utils.py:140
 msgid "Jul"
 msgstr "Jul"
 
-#: routes.py:840 routes.py:2040 utils.py:142
+#: routes.py:833 routes.py:2038 utils.py:141
 msgid "Aug"
 msgstr "Ago"
 
-#: routes.py:840 routes.py:2040 utils.py:143
+#: routes.py:833 routes.py:2038 utils.py:142
 msgid "Sep"
 msgstr "Sep"
 
-#: routes.py:840 routes.py:2040 utils.py:144
+#: routes.py:833 routes.py:2038 utils.py:143
 msgid "Oct"
 msgstr "Oct"
 
-#: routes.py:840 routes.py:2040 utils.py:145
+#: routes.py:833 routes.py:2038 utils.py:144
 msgid "Nov"
 msgstr "Nov"
 
-#: routes.py:840 routes.py:2040 utils.py:146
+#: routes.py:833 routes.py:2038 utils.py:145
 msgid "Dec"
 msgstr "Dic"
 
-#: routes.py:907
+#: routes.py:900
 msgid "The selected class is not valid."
 msgstr "La clase seleccionada no es válida."
 
-#: routes.py:915
+#: routes.py:908
 msgid "The church unit is invalid."
 msgstr "La unidad de la iglesia no es válida."
 
-#: routes.py:947
+#: routes.py:944
 msgid "Attendance can only be recorded during the grace period or meeting time."
 msgstr "Su asistencia solo puede ser registrada dentro del horario de clases"
 
-#: routes.py:961
+#: routes.py:958
 #, python-format
 msgid "%(name)s! You have already registered for a Sunday class today!"
 msgstr ""
 "%(name)s! Ya tienes una asistencia registrada para una clase dominical el"
 " dia de hoy."
 
-#: routes.py:976
+#: routes.py:973
 #, python-format
 msgid ""
 "%(name)s! You already have an attendance registered for this class on "
 "Sunday %(date)s!"
 msgstr "%(name)s! ¡Ya tienes una asistencia registrada para el domingo %(date)s!"
 
-#: routes.py:996
+#: routes.py:993
 msgid "Attendance recorded successfully."
 msgstr "Asistencia registrada exitosamente."
 
-#: routes.py:1005
+#: routes.py:1002
 #, python-format
 msgid "There was an error recording attendance: %(error)s"
 msgstr "Hubo un error al registrar la asistencia: %(error)s"
 
-#: routes.py:1060
+#: routes.py:1057
 msgid "You must provide a date for this class."
 msgstr "Debe proporcionar una fecha para esta clase."
 
-#: routes.py:1085
+#: routes.py:1082
 msgid "The date must be today or in the future."
 msgstr "La fecha debe ser hoy o en el futuro."
 
-#: routes.py:1090
+#: routes.py:1087
 msgid "Invalid date for extra class."
 msgstr "Fecha no válida para clase extra."
 
-#: routes.py:1140
+#: routes.py:1137
 msgid "Attendance Sheet"
 msgstr "Hoja de Asistencia"
 
-#: routes.py:1178 templates/attendance_check.html:90
+#: routes.py:1175 templates/attendance_check.html:90
 msgid "Register Attendance"
 msgstr "Registrar asistencia"
 
-#: routes.py:1216
+#: routes.py:1213
 msgid "Teacher's Attendance Class"
 msgstr "Registrar Asistencia del Maestro "
 
-#: routes.py:1224
+#: routes.py:1221
 msgid "QR Codes generated successfully."
 msgstr "Códigos QR generados exitosamente."
 
-#: routes.py:1275
+#: routes.py:1272
 msgid "Meeting center created successfully!"
 msgstr "¡Centro de reuniones creado con éxito!"
 
-#: routes.py:1277
+#: routes.py:1274
 msgid "Create new Meeting center"
 msgstr "Crear nuevo centro de reuniones"
 
-#: routes.py:1289
+#: routes.py:1286
 msgid "Meeting Center updated successfully."
 msgstr "Centro de reuniones actualizado correctamente."
 
-#: routes.py:1291
+#: routes.py:1288
 msgid "Edit Meeting Center"
 msgstr "Editar centro de reuniones"
 
-#: routes.py:1300
+#: routes.py:1297
 msgid "The meeting center cannot be deleted because it has registered attendance."
 msgstr ""
 "El centro de reuniones no se puede eliminar porque tiene asistencia "
 "registrada."
 
-#: routes.py:1305
+#: routes.py:1302
 msgid "Meeting Center successfully removed."
 msgstr "El Centro de reuniones se eliminó correctamente."
 
-#: routes.py:1320 routes.py:1897 templates/admin.html:12
+#: routes.py:1317 routes.py:1894 templates/admin.html:12
 #: templates/admin.html:167
 msgid "All Meeting Centers"
 msgstr "Todas las Unidads"
 
-#: routes.py:1329
+#: routes.py:1326
 msgid "Unknown"
 msgstr "Desconocido"
 
-#: routes.py:1400
+#: routes.py:1397
 msgid "Class created successfully!"
 msgstr "¡Clase creada exitosamente!"
 
-#: routes.py:1404 routes.py:1431
+#: routes.py:1401 routes.py:1428
 msgid ""
 "A class with this name, short name, or code already exists in the same "
 "church unit."
@@ -492,180 +492,180 @@ msgstr ""
 "Ya existe una clase con este nombre, nombre corto o código en la misma "
 "unidad de la iglesia."
 
-#: routes.py:1405 templates/classes.html:46
+#: routes.py:1402 templates/classes.html:46
 msgid "Create New Class"
 msgstr "Crear nueva clase"
 
-#: routes.py:1427
+#: routes.py:1424
 msgid "Class updated successfully!"
 msgstr "¡Clase actualizada exitosamente!"
 
-#: routes.py:1432
+#: routes.py:1429
 msgid "Edit Class"
 msgstr "Editar clase"
 
-#: routes.py:1441
+#: routes.py:1438
 msgid "The class cannot be deleted because it has attendance recorded."
 msgstr "La clase no se puede eliminar porque tiene registrada la asistencia."
 
-#: routes.py:1444
+#: routes.py:1441
 msgid "Cannot delete a main class."
 msgstr "No se puede eliminar una clase principal."
 
-#: routes.py:1449
+#: routes.py:1446
 msgid "Class deleted successfully!"
 msgstr "¡Clase eliminada exitosamente!"
 
-#: routes.py:1452
+#: routes.py:1449
 #, python-format
 msgid "Error deleting class: %(error)s"
 msgstr "Error eliminando la clase: %(error)s"
 
-#: routes.py:1475
+#: routes.py:1472
 msgid "Organization created successfully!"
 msgstr "¡Organización creada exitosamente!"
 
-#: routes.py:1479 routes.py:1498
+#: routes.py:1476 routes.py:1495
 msgid "Error: Organization name must be unique."
 msgstr "Error: el nombre de la organización debe ser único."
 
-#: routes.py:1481
+#: routes.py:1478
 msgid "Create new Organization"
 msgstr "Crear nueva organización"
 
-#: routes.py:1494
+#: routes.py:1491
 msgid "Organization updated successfully!"
 msgstr "¡Organización actualizada exitosamente!"
 
-#: routes.py:1499 templates/organizations.html:20
+#: routes.py:1496 templates/organizations.html:20
 msgid "Edit Organization"
 msgstr "Editar organización"
 
-#: routes.py:1510
+#: routes.py:1507
 msgid "Organization deleted successfully!"
 msgstr "¡Organización eliminada exitosamente!"
 
-#: routes.py:1513
+#: routes.py:1510
 msgid "Error: Could not delete organization."
 msgstr "Error: no se pudo eliminar la organización."
 
-#: routes.py:1521
+#: routes.py:1518
 msgid "Action canceled"
 msgstr "Acción cancelada"
 
-#: routes.py:1522
+#: routes.py:1519
 msgid "You already have registered assistance on {sunday_date}."
 msgstr "Ya has registrado asistencia el {sunday_date}."
 
-#: routes.py:1523 routes.py:1526
+#: routes.py:1520 routes.py:1523
 msgid "Attendance"
 msgstr "Asistencia"
 
-#: routes.py:1524
+#: routes.py:1521
 msgid "attendance(s)"
 msgstr "asistencia(s)"
 
-#: routes.py:1525
+#: routes.py:1522
 msgid "Attention"
 msgstr "Atención"
 
-#: routes.py:1527
+#: routes.py:1524
 msgid "¡{student_name}, your attendance was recorded!"
 msgstr "¡{student_name}, tu asistencia fue registrada!"
 
-#: routes.py:1528 templates/form.html:20
+#: routes.py:1525 templates/form.html:20
 msgid "Cancel"
 msgstr "Cancelar"
 
-#: routes.py:1529
+#: routes.py:1526
 msgid "Cancelled"
 msgstr "Cancelado"
 
-#: routes.py:1530
+#: routes.py:1527
 msgid "No correction has been made."
 msgstr "No se ha hecho ninguna corrección."
 
-#: routes.py:1531
+#: routes.py:1528
 msgid "Choose a Class"
 msgstr "Escoja una Clase"
 
-#: routes.py:1532
+#: routes.py:1529
 msgid "Cleared!"
 msgstr "¡Borrado!"
 
-#: routes.py:1533 routes.py:1542
+#: routes.py:1530 routes.py:1539
 msgid "Confirm"
 msgstr "Confirmar"
 
-#: routes.py:1534 routes.py:1565
+#: routes.py:1531 routes.py:1562
 msgid "You 're sure?"
 msgstr "¿Estás seguro?"
 
-#: routes.py:1535
+#: routes.py:1532
 msgid "Confirm Attendance Registration?"
 msgstr "¿Confirmar Registro de Asistencia?"
 
-#: routes.py:1536
+#: routes.py:1533
 msgid "Do you want to register attendance for the selected students?"
 msgstr "¿Quieres registrar la asistencia de los estudiantes seleccionados?"
 
-#: routes.py:1537
+#: routes.py:1534
 msgid "Yes, register it!"
 msgstr "¡Si, Regístralo!"
 
-#: routes.py:1538
+#: routes.py:1535
 msgid "No, cancel!"
 msgstr "No, Cancela"
 
-#: routes.py:1539
+#: routes.py:1536
 msgid "Success"
 msgstr "¡Grandioso!"
 
-#: routes.py:1540
+#: routes.py:1537
 msgid "Attendance has been registered successfully."
 msgstr "¡Asistencia registrada exitosamente!"
 
-#: routes.py:1541
+#: routes.py:1538
 msgid "There was a problem connecting to the server."
 msgstr "Hubo un problema al conectarse al servidor."
 
-#: routes.py:1543
+#: routes.py:1540
 msgid "Number of Classes"
 msgstr "Número de Clases"
 
-#: routes.py:1544 templates/partials/navbar.html:35
+#: routes.py:1541 templates/partials/navbar.html:35
 msgid "Classes"
 msgstr "Clases"
 
-#: routes.py:1545
+#: routes.py:1542
 msgid "Frequency of Classes per Month"
 msgstr "Frecuencia de Clases por Mes"
 
-#: routes.py:1546
+#: routes.py:1543
 msgid "This action will delete all records and cannot be undone."
 msgstr "Esta acción borrará todos los registros y es irreversible"
 
-#: routes.py:1547
+#: routes.py:1544
 msgid "This record will be deleted."
 msgstr "Este registro será eliminado"
 
-#: routes.py:1548
+#: routes.py:1545
 msgid "Error"
 msgstr "Error"
 
-#: routes.py:1549
+#: routes.py:1546
 msgid "There was a problem saving the correction"
 msgstr "Hubo un problema al guardando la corrección."
 
-#: routes.py:1550
+#: routes.py:1547
 msgid "Great!"
 msgstr "¡Excelente!"
 
-#: routes.py:1551
+#: routes.py:1548
 msgid "Incorrect format"
 msgstr "Formato incorrecto"
 
-#: routes.py:1552
+#: routes.py:1549
 msgid ""
 "The name must be in the format 'Last Name, First Name', separated by a "
 "comma."
@@ -673,261 +673,262 @@ msgstr ""
 "El nombre debe estar en el formato 'Apellido, Nombre', separados por una "
 "coma"
 
-#: routes.py:1553
+#: routes.py:1550
 msgid "Months"
 msgstr "Meses"
 
-#: routes.py:1554
+#: routes.py:1551
 msgid "members"
 msgstr "miembros"
 
-#: routes.py:1555
+#: routes.py:1552
 msgid "Monthly Attendance"
 msgstr "Asistencia Mensual"
 
-#: routes.py:1556
+#: routes.py:1553
 msgid "You must select a date!"
 msgstr "¡Debes seleccionar una fecha!"
 
-#: routes.py:1557
+#: routes.py:1554
 msgid "Please enter your name in 'First Name Last Name' format."
 msgstr "Ingrese su nombre en el formato '\\Nombre Apellido\\'."
 
-#: routes.py:1558
+#: routes.py:1555
 msgid "Your name was not removed."
 msgstr "Su nombre no fue eliminado."
 
-#: routes.py:1559
+#: routes.py:1556
 msgid "The name has been removed."
 msgstr "El nombre ha sido eliminado."
 
-#: routes.py:1560
+#: routes.py:1557
 msgid "No Name Found"
 msgstr "No se encontró ningún nombre"
 
-#: routes.py:1561
+#: routes.py:1558
 msgid "No name is currently saved."
 msgstr "Actualmente no hay ningún nombre guardado."
 
-#: routes.py:1562
+#: routes.py:1559
 msgid "QR codes were not generated"
 msgstr "No se generaron códigos QR"
 
-#: routes.py:1563
+#: routes.py:1560
 msgid "Yes, Do it!"
 msgstr "¡Si, Bórralo!"
 
-#: routes.py:1564
+#: routes.py:1561
 msgid "Do you want to promote '{user_name}' as a Power User?"
 msgstr "Quieres promover a '{user_name}' a Power User?"
 
-#: routes.py:1566
+#: routes.py:1563
 msgid "Reset Student Name"
 msgstr "Restablecer nombre de estudiante"
 
-#: routes.py:1567
+#: routes.py:1564
 msgid "Are you sure you want to revert this correction?"
 msgstr "¿Estás seguro de que quieres revertir esta corrección?"
 
-#: routes.py:1568
+#: routes.py:1565
 msgid "Revert"
 msgstr "Revertir"
 
-#: routes.py:1569
+#: routes.py:1566
 msgid "There was an error registering attendance."
 msgstr "Hubo un error al registrar la asistencia."
 
-#: routes.py:1570
+#: routes.py:1567
 msgid "Attendance registration cancelled."
 msgstr "Registro de Asistencia cancelado."
 
-#: routes.py:1571
+#: routes.py:1568
 msgid "The saved name is: '{name}'. Do you want to clear it?"
 msgstr "El nombre guardado es: \\'{name}\\'. ¿Quieres borrarlo?"
 
-#: routes.py:1572
+#: routes.py:1569
 msgid "Select a date for Extra classes"
 msgstr "Selecciona una fecha para clases extra"
 
-#: routes.py:1573
+#: routes.py:1570
 msgid "The name has been corrected"
 msgstr "El nombre ha sido corregido."
 
-#: routes.py:1574
+#: routes.py:1571
 msgid "You cannot register a 'Sunday Class' outside of Sunday."
 msgstr "No puede registrar una 'Clase dominical' fuera del domingo."
 
-#: routes.py:1575
+#: routes.py:1572
 msgid "¡Success"
 msgstr "¡Grandioso!"
 
-#: routes.py:1576 templates/admin.html:24 templates/admin.html:37
+#: routes.py:1573 templates/admin.html:24 templates/admin.html:37
 #: templates/classes.html:53
 msgid "Yes"
 msgstr "Sí"
 
-#: routes.py:1577
+#: routes.py:1574
 msgid "Yes, delete everything"
 msgstr "Sí, borra todo"
 
-#: routes.py:1578
+#: routes.py:1575
 msgid "Yes, clear it!"
 msgstr "¡Sí, límpialo!"
 
-#: routes.py:1579
+#: routes.py:1576
 msgid "Yes, Delete it!"
 msgstr "¡Si, Bórralo!"
 
-#: routes.py:1580
+#: routes.py:1577
 msgid "Error, There was a problem validating the attendance."
 msgstr "Error, Hubo un error al validar la asistencia."
 
-#: routes.py:1581
+#: routes.py:1578
 msgid "warning"
 msgstr "Aviso"
 
-#: routes.py:1582
+#: routes.py:1579
 msgid "Please enter the correct name"
 msgstr "Entre el nombre correcto"
 
-#: routes.py:1583
+#: routes.py:1580
 msgid "Please enter the correct name for "
 msgstr "Entre el nombre correcto para "
 
-#: routes.py:1584
+#: routes.py:1581
 msgid "Correct Format: Last Name, First Name"
 msgstr "Formato de nombre correcto: Appellido, Nombre"
 
-#: routes.py:1585
+#: routes.py:1582
 msgid "Enter the new name"
 msgstr "Ingrese el nuevo nombre"
 
-#: routes.py:1586
+#: routes.py:1583
 msgid "Weeks with attendance"
 msgstr "Semanas con Asistencias"
 
-#: routes.py:1600 utils.py:177
+#: routes.py:1597 utils.py:176
 msgid "Elders Quorum"
 msgstr "Cuórum de Élderes"
 
-#: routes.py:1601
+#: routes.py:1598
 msgid "Elders_Q"
 msgstr "Q_Élderes"
 
-#: routes.py:1602
+#: routes.py:1599
 msgid "EQ"
 msgstr "QE"
 
-#: routes.py:1609
+#: routes.py:1606
 msgid "Aaronic Priesthood"
 msgstr "Sacerdocio Aarónico"
 
-#: routes.py:1610
+#: routes.py:1607
 msgid "Aaronic_P"
 msgstr "S_Aarónico"
 
-#: routes.py:1611
+#: routes.py:1608
 msgid "AP"
 msgstr "SA"
 
-#: routes.py:1618 utils.py:178
+#: routes.py:1615 utils.py:177
 msgid "Relief Society"
 msgstr "Sociedad de Socorro"
 
-#: routes.py:1619
+#: routes.py:1616
 msgid "Relief_S"
 msgstr "S_Socorro"
 
-#: routes.py:1620
+#: routes.py:1617
 msgid "RS"
 msgstr "SS"
 
-#: routes.py:1627
+#: routes.py:1624
 msgid "Young Woman"
 msgstr "Mujeres Jóvenes"
 
-#: routes.py:1628
+#: routes.py:1625
 msgid "Young_W"
 msgstr "Mujeres_J"
 
-#: routes.py:1629
+#: routes.py:1626
 msgid "YW"
 msgstr "MJ"
 
-#: routes.py:1636
+#: routes.py:1633
 msgid "Sunday School Adults"
 msgstr "Esc. Dom. Adultos"
 
-#: routes.py:1637
+#: routes.py:1634
 msgid "S_S_Adults"
 msgstr "E_D_Adultos"
 
-#: routes.py:1638
+#: routes.py:1635
 msgid "SSA"
 msgstr "EDA"
 
-#: routes.py:1645
+#: routes.py:1642
 msgid "Sunday School Youth"
 msgstr "Esc. Dom. Jóvenes"
 
-#: routes.py:1646
+#: routes.py:1643
 msgid "S_S_Youth"
 msgstr "E_D_Jóvenes"
 
-#: routes.py:1647
+#: routes.py:1644
 msgid "SSY"
 msgstr "EDJ"
 
-#: routes.py:1654
+#: routes.py:1651
 msgid "Fifth Sunday"
 msgstr "Quinto Domingo"
 
-#: routes.py:1655
+#: routes.py:1652
 msgid "F_Sunday"
 msgstr "5_Domingo"
 
-#: routes.py:1656
+#: routes.py:1653
 msgid "FS"
 msgstr "QD"
 
-#: routes.py:1668
+#: routes.py:1665
 msgid "Classes already exist for this meeting center"
 msgstr "Esta Unidad ya tiene clases agregadas"
 
-#: routes.py:1687
+#: routes.py:1684
 msgid "Main classes successfully populated."
 msgstr "Clases dominicales copiadas exitosamente"
 
-#: routes.py:1692
+#: routes.py:1689
 #, python-format
 msgid "Unique constraint error:  %(error)s"
 msgstr "Error de unicidad:  %(error)s"
 
-#: routes.py:1695
+#: routes.py:1692
 #, python-format
 msgid "Error duplicating main classes for new meeting center: %(error)s"
 msgstr ""
 "Error al copiar clases dominicales para el nuevo centro de reuniones: "
 "%(error)s"
 
-#: routes.py:1713
+#: routes.py:1710
 msgid "Missing required fields"
 msgstr "Faltan campos requeridos"
 
-#: routes.py:1826
+#: routes.py:1823
 msgid "Bypass restriction updated successfully!"
 msgstr "¡La restricción de omisión se actualizó correctamente!"
 
-#: routes.py:1837
+#: routes.py:1834
 msgid "Name correction deleted successfully!"
 msgstr "¡La corrección de nombre se eliminó exitosamente!"
 
-#: routes.py:1866
+#: routes.py:1863
 msgid "Name correction reverted successfully!"
 msgstr "¡La corrección de nombre se revirtió exitosamente!"
 
-#: routes.py:1898 templates/attendance_report.html:31
+#: routes.py:1895 templates/attendance_report.html:31
 #: templates/attendance_report.html:43 templates/stats.html:64
+#: templates/stats.html:118
 msgid "All"
 msgstr "Todos"
 
@@ -935,27 +936,27 @@ msgstr "Todos"
 msgid "You do not have permission to perform this action."
 msgstr "No tienes permiso para realizar esta acción"
 
-#: utils.py:176
+#: utils.py:175
 msgid "Bishopric"
 msgstr "Obispado"
 
-#: utils.py:179
+#: utils.py:178
 msgid "Aaronic Priesthood Quorums"
 msgstr "Cuórums del Sacerdocio Aarónico"
 
-#: utils.py:180
+#: utils.py:179
 msgid "Young Women"
 msgstr "Mujeres Jóvenes"
 
-#: utils.py:181
+#: utils.py:180
 msgid "Sunday School"
 msgstr "Escuela Dominical"
 
-#: utils.py:182
+#: utils.py:181
 msgid "Primary"
 msgstr "Primaria"
 
-#: utils.py:183
+#: utils.py:182
 msgid "Other"
 msgstr "Otra"
 
@@ -1342,22 +1343,30 @@ msgid "Monthly Attendance per Member"
 msgstr "Asistencia Mensual por Miembro"
 
 #: templates/stats.html:58
-msgid "Monthly Attendance per Classes"
-msgstr "Asistencia Mensual por Clases"
+msgid "Attendance per Classes"
+msgstr "Asistencia por Clases"
 
-#: templates/stats.html:96
+#: templates/stats.html:112
+msgid "Monthly Attendance Percentage per Classes"
+msgstr "Porcentaje de Asistencia Mensual por Clases"
+
+#: templates/stats.html:131
+msgid "None"
+msgstr "Ninguno"
+
+#: templates/stats.html:163
 msgid "List of Members with Attendances"
 msgstr "Lista de Miembros con Asistencia"
 
-#: templates/stats.html:99
+#: templates/stats.html:166
 msgid "Member with high attendance"
 msgstr "Miembros con asistencia alta"
 
-#: templates/stats.html:106 templates/stats.html:125
+#: templates/stats.html:173 templates/stats.html:192
 msgid "Percentage"
 msgstr "Porcentaje"
 
-#: templates/stats.html:120
+#: templates/stats.html:187
 msgid "Member with Low Attendance"
 msgstr "Miembros con asistencia baja"
 
@@ -1441,15 +1450,19 @@ msgstr "Verificar Asistencia"
 msgid "Users"
 msgstr "Usuarios"
 
-#: templates/partials/navbar.html:39
+#: templates/partials/navbar.html:38
+msgid "Chuch Units"
+msgstr "Centro de Reuniones"
+
+#: templates/partials/navbar.html:43
 msgid "Attendance Stats"
 msgstr "Estadísticas de Asistencia"
 
-#: templates/partials/navbar.html:52
+#: templates/partials/navbar.html:55
 msgid "Logout"
 msgstr "Salir"
 
-#: templates/partials/navbar.html:55
+#: templates/partials/navbar.html:58
 msgid "Login"
 msgstr "Iniciar sesión"
 
@@ -1480,8 +1493,8 @@ msgstr "Iniciar sesión"
 #~ msgid "Organizations"
 #~ msgstr "Organizaciones"
 
-#~ msgid "Chuch Units"
-#~ msgstr "Unidades"
+msgid "Chuch Units"
+msgstr "Unidades"
 
 #~ msgid "A ver que hacemos aqui"
 #~ msgstr ""
