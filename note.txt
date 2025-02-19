@@ -19,7 +19,7 @@ Para aplicar los cambios:
 
 flask db upgrade
 win: python -m flask db upgrade
-
+flask db upgrade
 
 Si es necesario deshacer una migración, usa:
 

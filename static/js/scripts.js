@@ -126,7 +126,6 @@ async function confirmDelete(entityType, entityId) {
   });
 }
 
-
 //----------------------------------------------------------------------------------
 function changeLanguage(lang) {
   const currentUrl = window.location.href.split('?')[0];
@@ -213,7 +212,6 @@ async function confirmRevert(id) {
 }
 
 //----------------------------------------------------------------------------------
-
 async function confirmPromotion(userId, username) {
   const texts = await fetch('/get_swal_texts').then(response => response.json());
   Swal.fire({

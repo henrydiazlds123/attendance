@@ -9,8 +9,8 @@ class Config:
 
     
     # BASE_URL configuration
-    BASE_URL  = "https://attendance.indicegenealogico.com" #Production
-    #BASE_URL = "http://127.0.0.1:5000" #local
+    #BASE_URL  = "https://attendance.indicegenealogico.com" #Production
+    BASE_URL = "http://127.0.0.1:5000" #local
 
     # Output directory for QR codes
     # OUTPUT_DIR    = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'qr_codes') #Production

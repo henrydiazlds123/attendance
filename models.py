@@ -45,6 +45,7 @@ class Attendance(db.Model):
     sunday_date         = db.Column(db.Date, nullable=False)
     sunday_code         = db.Column(db.String(10), nullable=True)
     submit_date         = db.Column(db.DateTime, default=lambda: datetime.now(Config.MOUNTAIN_TZ), nullable=False)
+    created_by          = db.Column(db.String(15), nullable=True)
     meeting_center_id   = db.Column(db.Integer, db.ForeignKey('meeting_center.id'), nullable=False)
     fix_name            = db.Column(db.Boolean, default=False) # Nuevo campo para definir si student_name necesita cambiar
     

@@ -90,6 +90,7 @@ def index():
     #return render_template('index.html')
     return redirect('/login', code=302)
 
+
 # =============================================================================================
 @bp.route('/users')
 @role_required('Admin', 'Super', 'Owner')
@@ -108,24 +109,6 @@ def users():
     ).join(MeetingCenter, User.meeting_center_id == MeetingCenter.id) \
      .join(Organization, User.organization_id == Organization.id)
 
-    # if role == 'Owner':
-    #     if meeting_center_id != 'all':  # Filtra solo si hay un meeting_center_id seleccionado
-    #         query = query.filter(User.meeting_center_id == meeting_center_id)
-    # elif role == 'Admin':
-    #     query = query.filter(User.role != 'Owner')
-
-    # elif role != 'Admin':
-    #     query = query.filter(User.role != 'Owner') \
-    #                  .filter(User.organization_id == session.get('organization_id'))
-    # else:
-    #      # Regular users can only see their own user
-    #      users = User.query.filter_by(username=session.get('username')).all()
-    
-    # # Asegurar que solo los Owners puedan ver otros Owners
-    # if role != 'Owner':
-    #     query = query.filter(User.role != 'Owner')
-
-    # users = query.all()
     if role == 'Owner':
         if meeting_center_id != 'all':  # Filtra solo si hay un meeting_center_id seleccionado
             query = query.filter(User.meeting_center_id == meeting_center_id)
@@ -143,7 +126,6 @@ def users():
     # Ejecutar la consulta
     users = query.all()
 
-    
     return render_template('users.html', 
                            users       = users,
                            admin_count = admin_count)
@@ -975,6 +957,12 @@ def registrar():
                         'date': sunday_date.strftime('%b %d, %Y')
                     }
                 }), 400
+            
+        created_by = nombre # Usa el nombre del estudiante para este campo
+
+        if session['user_id']:
+            created_by = session['user_name'] # Si el usuario esta autenticado, se usa su nombre
+        
 
         # Registrar la asistencia
         new_attendance = Attendance(
@@ -983,7 +971,8 @@ def registrar():
             class_code          = class_code,
             sunday_date         = sunday_date,
             sunday_code         = sunday_code,
-            meeting_center_id   = meeting_center.id
+            meeting_center_id   = meeting_center.id,
+            created_by          = created_by
         )
         db.session.add(new_attendance)
         db.session.commit()

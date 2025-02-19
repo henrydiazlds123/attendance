@@ -41,11 +41,11 @@
                     const texts = await response.json();
 
                     if (className) {
-                        document.getElementById("classNameDisplay").textContent = className;
                         document.getElementById("className").value = decodeURIComponent(className);
-                        document.getElementById("classCode").value = classCode;
-                        document.getElementById("sundayCode").value = sundayCode;
-                        document.getElementById("unitNumber").value = unitNumber;
+                        document.getElementById("classNameDisplay").textContent = className;
+                        document.getElementById("classCode").value              = classCode;
+                        document.getElementById("sundayCode").value             = sundayCode;
+                        document.getElementById("unitNumber").value             = unitNumber;
 
                         const listGroupItems = document.querySelectorAll('.list-group-item');
                         listGroupItems.forEach(item => {
