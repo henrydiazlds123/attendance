@@ -1,0 +1,148 @@
+<script>
+    document.addEventListener("DOMContentLoaded", async () => {      
+        await initializePage();        
+        initAttendanceForm();
+        autoSubmitIfNameExists();  // Nueva función para enviar automáticamente
+      });
+      
+      async function initializePage() {
+        const urlParams   = new URLSearchParams(window.location.search);
+        const class_name  = urlParams.get("className");
+        const class_code  = urlParams.get("classCode");
+        const sunday_code = urlParams.get("sundayCode");
+        const unit_number = urlParams.get("unitNumber");
+        
+        try {
+            const texts = await fetch('/get_swal_texts').then(res => res.json());
+            const classNameDisplay = document.getElementById("classNameDisplay");
+            
+            if (class_name) {
+                classNameDisplay.textContent                = decodeURIComponent(class_name);
+                document.getElementById("className").value  = decodeURIComponent(class_name);
+                document.getElementById("classCode").value  = class_code;
+                document.getElementById("sundayCode").value = sunday_code;
+                document.getElementById("unitNumber").value = unit_number;
+            } else {
+                classNameDisplay.textContent = texts.chooseClass;
+                document.getElementById("button-addon2").disabled = true;
+                document.getElementById("studentName").disabled   = true;
+            }
+            
+            document.getElementById("date").value = new Date().toISOString().split("T")[0];
+      
+            // Autocompletar el nombre si está en localStorage
+            const savedName = localStorage.getItem("studentName");
+            if (savedName) {
+                document.getElementById("studentName").value = savedName;
+                document.getElementById("studentName").disabled = true;  // Deshabilitar el campo
+            }
+        } catch (error) {
+            console.error("Error fetching texts:", error);
+        }
+      }
+      
+      function initAttendanceForm() {
+        document.getElementById("attendanceForm").addEventListener("submit", async (event) => {
+            event.preventDefault();
+            
+            const studentName = document.getElementById("studentName").value.trim();
+            const regex = /^[^\s]+(?:\s+[^\s]+)\s*$/;
+            
+            if (!regex.test(studentName)) {
+                const texts = await fetch('/get_swal_texts').then(res => res.json());
+                Swal.fire(texts.warningTitle, texts.nameFormatText, "warning");
+                return;
+            }
+            
+            if (!document.body.classList.contains("logged-in")) {
+                localStorage.setItem("studentName", studentName);
+            }
+            
+            sendAttendanceForm(new FormData(event.target));
+        });
+      }
+      
+      async function sendAttendanceForm(formData) {
+        console.log("Datos enviados al servidor:");
+        for (let pair of formData.entries()) {
+            console.log(pair[0] + ": " + pair[1]);
+        }
+      
+        try {
+            const response = await fetch("/registrar", { method: "POST", body: formData });
+            const texts = await fetch('/get_swal_texts').then(res => res.json());
+      
+            let data;
+            try {
+                data = await response.json();
+            } catch (jsonError) {
+                throw new Error("El servidor devolvió una respuesta inesperada.");
+            }
+      
+            if (response.ok && data.success) {
+                Swal.fire({
+                    title: texts.great,
+                    text: texts.attendanceRecorded.replace("{student_name}", data.student_name),
+                    icon: "success",
+                    confirmButtonText: "OK"
+                }).then(() => handleSuccessResponse(data.student_name));
+            } else {
+                handleErrorResponse(data, texts);
+            }
+        } catch (error) {
+            Swal.fire(texts.errorTitle, texts.connectionError, "error");
+            console.error("Error al procesar la respuesta:", error);
+        }
+      }
+      
+      function autoSubmitIfNameExists() {
+        const saveName = localStorage.getItem("studentName");
+      
+        if (saveName) {            
+            const formElement = document.getElementById("attendanceForm");
+            const formData = new FormData(formElement);
+      
+            // 💡 Asegurar que el nombre se agregue manualmente
+            formData.set("studentName", saveName);
+            console.log("🚀 Auto-submit activado. Datos a enviar:");
+      
+            for (let pair of formData.entries()) {
+                console.log(pair[0] + ": " + pair[1]);
+            }
+      
+      
+            sendAttendanceForm(formData); // Enviar usando la función AJAX
+      
+        }
+      }
+      
+      function handleSuccessResponse(studentName) {
+        if (!document.body.classList.contains("logged-in")) {
+            if (!localStorage.getItem("studentName")) {
+                localStorage.setItem("studentName", studentName);
+            }
+            window.location.href = "https://www.churchofjesuschrist.org";
+        } else {
+            document.getElementById("studentName").value = "";
+        }
+      }
+      
+      function handleErrorResponse(data, texts) {
+        const errorMsg = data.message || (data.error_type === "main_class_restriction"
+            ? texts.sundayClassRestriction
+            : texts.alreadyRegistered.replace("{sunday_date}", data.sunday_date || "unknown"));
+      
+        Swal.fire({
+            title: texts.errorTitle,
+            text: errorMsg,
+            icon: "error",
+            confirmButtonText: "OK"
+        }).then(() => {
+            if (!document.body.classList.contains("logged-in") && localStorage.getItem("studentName")) {
+                window.location.href = "https://www.churchofjesuschrist.org/";
+            } else {
+                document.getElementById("studentName").value = "";
+            }
+        });
+      }
+</script>

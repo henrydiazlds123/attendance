@@ -857,6 +857,7 @@ def get_monthly_attendance(student_name):
 # =============================================================================================
 @bp.route('/registrar', methods=['POST'])
 def registrar():
+    usuario       = session.get('user_name')
     # 🔍 Depurar: Ver qué datos llegan al servidor
     print("Datos recibidos en el servidor:", request.form.to_dict())
     try:
@@ -960,8 +961,8 @@ def registrar():
             
         created_by = nombre # Usa el nombre del estudiante para este campo
 
-        if session['user_id']:
-            created_by = session['user_name'] # Si el usuario esta autenticado, se usa su nombre
+        if usuario:
+            created_by = usuario # Si el usuario esta autenticado, se usa su nombre
         
 
         # Registrar la asistencia
