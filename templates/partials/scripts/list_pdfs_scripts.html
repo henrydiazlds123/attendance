@@ -1,0 +1,39 @@
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+      const generateButton = document.getElementById('generate-extra-pdfs-btn');
+      const extraClassForm = document.getElementById('extra-class-form');
+      const dateInput = document.getElementById('extra-class-date');
+
+      generateButton.addEventListener('click', async (event) => {
+          event.preventDefault(); // Evitar el envío automático del formulario
+
+          const texts = await fetch('/get_swal_texts').then(response => response.json());
+
+          // Mostrar SweetAlert2 para seleccionar la fecha
+          const { value: selectedDate } = await Swal.fire({
+              title: texts.selectDateExtraClasses,
+              input: 'date',
+              inputAttributes: {
+                  min: new Date().toISOString().split('T')[0] // Fechas desde hoy en adelante
+              },
+              showCancelButton: true,
+              confirmButtonText: texts.confirm,
+              cancelButtonText: texts.cancel,
+              inputValidator: (value) => {
+                  if (!value) {
+                      return texts.mustSelectDate;
+                  }
+              }
+          });
+
+          if (selectedDate) {
+              // Guardar la fecha en el campo oculto del formulario y enviarlo
+              dateInput.value = selectedDate;
+              extraClassForm.submit();
+          } else {
+              // Mostrar mensaje de cancelación
+              Swal.fire(texts.actionCanceled, texts.noQrGenerated, 'info');
+          }
+      });
+  });
+</script>

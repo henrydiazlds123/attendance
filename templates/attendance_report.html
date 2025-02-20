@@ -4,7 +4,6 @@
 
 {% block pageTitle %}<i class="bi bi-file-earmark-spreadsheet"></i> {{ _('Attendance Report') }}{% endblock %}
 
-
 {% block content %}
 
 <div class="row">
@@ -74,117 +73,10 @@
 
     <!-- Tabla de Asistencia -->
     <div id="report-container" class="table-responsive mb-4" style="max-height: 600px; overflow-y: auto;">
-        {% include "partials/attendance_table.html" %}
+        {% include "partials/tables/attendance_table.html" %}
     </div>
 </div>
-<script>
-    const availableQuarters   = {{ quarters_with_data|tojson }};
-</script>
 
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const monthSelect         = document.getElementById("month-select");
-        const classSelect         = document.getElementById("class-select");
-        const yearSelect          = document.getElementById("year-select");
-        const clearFilters        = document.getElementById("clear-filters");
-        const reportContainer     = document.getElementById("report-container");
-        const totalMembersElement = document.getElementById("total-members");  // Suponiendo que tienes un elemento con este ID en tu HTML.
-        const quarterSelect       = document.getElementById("quarter-select");
-        const rows                = document.querySelectorAll("table tbody tr");
-           // Pasamos la información desde Flask
-
-        // Ordena el select
-        const options = Array.from(classSelect.options);
-        const allOption = options.shift(); 
-        options.sort((a, b) => a.getAttribute('data-translated-name').localeCompare(b.getAttribute('data-translated-name')));
-        options.unshift(allOption);
-        classSelect.innerHTML = '';
-        options.forEach(option => classSelect.appendChild(option));
-
-
-        function disableUnavailableQuarters() {
-            for (const option of monthSelect.options) {
-                const quarter = option.value; // El valor de la opción es Q1, Q2, Q3, Q4
-                if (availableQuarters[quarter] === false) {
-                    option.disabled = true; // Deshabilitar la opción si no hay datos
-                } else {
-                    option.disabled = false; // Habilitar la opción si hay datos
-                }
-            }
-        }
-        // Llamar a la función para deshabilitar los trimestres sin datos
-        disableUnavailableQuarters();
-    
-        function applyFilters() {
-            const selectedMonth = monthSelect.value;
-            const selectedYear  = yearSelect.value;
-            const selectedClass = classSelect.value;
-    
-            fetch(`/attendance/report?year=${selectedYear}&month=${selectedMonth}&class=${selectedClass}`, {
-                method: "GET",
-                headers: { "X-Requested-With": "XMLHttpRequest" }
-            })
-                .then(response => {
-                    if (!response.ok) throw new Error("Error en la respuesta del servidor");
-                    return response.text();
-                })
-                .then(html => {
-                    // Actualizar la tabla
-                    reportContainer.innerHTML = html;
-    
-                    // Actualizar el total de miembros
-                    const totalMiembros = document.getElementById("total-members-count").textContent;  // Asegúrate de que el total se pase como parte de la respuesta
-                    totalMembersElement.textContent = totalMiembros; // Actualiza el total de miembros en la página
-                })
-                .catch(error => console.error("Error al cargar los datos:", error));
-        }
-    
-        monthSelect.addEventListener("change", applyFilters);
-        yearSelect.addEventListener("change", applyFilters);
-        classSelect.addEventListener("change", applyFilters);
-    
-        clearFilters.addEventListener("click", function () {
-        
-            // Obtener la fecha actual
-            const currentDate = new Date();
-            const currentMonth = currentDate.getMonth() + 1;
-            const currentYear = currentDate.getFullYear();
-        
-            fetch("/attendance/report", {
-                method: "GET",
-                headers: { "X-Requested-With": "XMLHttpRequest" }
-            })
-            .then(response => {
-                if (!response.ok) throw new Error("Error en la respuesta del servidor");
-                return response.text();
-            })
-            .then(html => {
-                // Crear un elemento temporal para extraer datos
-                const tempDiv = document.createElement("div");
-                tempDiv.innerHTML = html;
-        
-                // Buscar el total de miembros en la respuesta
-                const updatedTotalMembers = tempDiv.querySelector("#total-members-count");
-        
-                if (updatedTotalMembers) {
-                    document.getElementById("total-members").innerText = updatedTotalMembers.innerText;
-                } else {
-                    console.log("No se encontró el elemento #total-members-count en la respuesta del servidor");
-                }
-        
-                // Reemplazar el contenido del contenedor
-                reportContainer.innerHTML = html;
-                
-                // Restablecer selectores a los valores predeterminados
-                monthSelect.value = currentMonth;
-                yearSelect.value = currentYear;
-                classSelect.value = "all";
-            })
-            .catch(error => console.error("Error al limpiar los filtros:", error));
-        });
-        
-    });
-    
-</script>
+{% include 'partials/scripts/attendance_report_scripts.html' %}
 
 {% endblock %}

@@ -1,0 +1,160 @@
+<script>
+    const availableQuarters = {{ quarters_with_data| tojson }};
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const monthSelect         = document.getElementById("month-select");
+        const classSelect         = document.getElementById("class-select");
+        const yearSelect          = document.getElementById("year-select");
+        const clearFilters        = document.getElementById("clear-filters");
+        const reportContainer     = document.getElementById("report-container");
+        const quarterSelect       = document.getElementById("quarter-select");
+        const rows                = document.querySelectorAll("table tbody tr");
+        const totalMembersElement = document.getElementById("total-members");
+        const totalMembersHidden  = document.getElementById("total-members-hidden");
+        const checkboxes          = document.querySelectorAll('.toggle-column');
+        // Pasamos la información desde Flask
+
+        // Ordena el select
+        const options = Array.from(classSelect.options);
+        const allOption = options.shift();
+        options.sort((a, b) => a.getAttribute('data-translated-name').localeCompare(b.getAttribute('data-translated-name')));
+        options.unshift(allOption);
+        classSelect.innerHTML = '';
+        options.forEach(option => classSelect.appendChild(option));
+
+
+        function disableUnavailableQuarters() {
+            for (const option of monthSelect.options) {
+                const quarter = option.value; // El valor de la opción es Q1, Q2, Q3, Q4
+                if (availableQuarters[quarter] === false) {
+                    option.disabled = true; // Deshabilitar la opción si no hay datos
+                } else {
+                    option.disabled = false; // Habilitar la opción si hay datos
+                }
+            }
+        }
+        // Llamar a la función para deshabilitar los trimestres sin datos
+        disableUnavailableQuarters();
+
+        function applyFilters() {
+            const selectedMonth = monthSelect.value;
+            const selectedYear = yearSelect.value;
+            const selectedClass = classSelect.value;
+
+            fetch(`/attendance/report?year=${selectedYear}&month=${selectedMonth}&class=${selectedClass}`, {
+                method: "GET",
+                headers: { "X-Requested-With": "XMLHttpRequest" }
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error("Error en la respuesta del servidor");
+                    return response.text();
+                })
+                .then(html => {
+                    // Actualizar la tabla
+                    reportContainer.innerHTML = html;
+
+                    // Asegúrate de que el campo oculto esté en el DOM después de actualizar
+                    const totalMembersHidden = document.getElementById("total-members-hidden");
+
+                    if (totalMembersHidden) {
+                        const totalMiembros = totalMembersHidden.value;
+
+                        // Actualizar el total de miembros en la plantilla principal
+                        totalMembersElement.textContent = totalMiembros;
+                    } else {
+                        console.log("No se encontró el campo total-members-hidden");
+                    }
+                })
+                .catch(error => console.error("Error al cargar los datos:", error));
+        };
+        monthSelect.addEventListener("change", applyFilters);
+        yearSelect.addEventListener("change", applyFilters);
+        classSelect.addEventListener("change", applyFilters);
+
+        clearFilters.addEventListener("click", function () {
+            // Obtener la fecha actual
+            const currentDate = new Date();
+            const currentMonth = currentDate.getMonth() + 1;
+            const currentYear = currentDate.getFullYear();
+        
+            // Determinar el trimestre actual basado en el mes
+            let currentQuarter;
+            if (currentMonth >= 1 && currentMonth <= 3) {
+                currentQuarter = "Q1";
+            } else if (currentMonth >= 4 && currentMonth <= 6) {
+                currentQuarter = "Q2";
+            } else if (currentMonth >= 7 && currentMonth <= 9) {
+                currentQuarter = "Q3";
+            } else {
+                currentQuarter = "Q4";
+            }
+        
+            fetch("/attendance/report", {
+                method: "GET",
+                headers: { "X-Requested-With": "XMLHttpRequest" }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error("Error en la respuesta del servidor");
+                return response.text();
+            })
+            .then(html => {
+                console.log(html);  // Agrega esto para ver el contenido de la respuesta
+        
+                const tempDiv = document.createElement("div");
+                tempDiv.innerHTML = html;
+        
+                // Obtener el valor de total-members-hidden
+                const updatedTotalMembers = tempDiv.querySelector("#total-members-hidden");
+        
+                if (updatedTotalMembers) {
+                    // Obtener el valor y actualizar el total de miembros en la plantilla principal
+                    const totalMiembros = updatedTotalMembers.value;
+                    document.getElementById("total-members").innerText = totalMiembros;
+                } else {
+                    console.log("No se encontró el elemento #total-members-hidden en la respuesta del servidor");
+                }
+        
+                // Actualizar el contenedor de la tabla
+                reportContainer.innerHTML = html;
+        
+                // Restablecer selectores a los valores predeterminados
+                monthSelect.value = currentQuarter;  // Cambiar mes actual por el trimestre actual
+                yearSelect.value  = currentYear;
+                classSelect.value = "all";
+            })
+            .catch(error => console.error("Error al limpiar los filtros:", error));
+        });
+        
+        // Delegación de eventos para los checkboxes
+        document.querySelector("#report-container").addEventListener("change", function(event) {
+            if (event.target && event.target.classList.contains('toggle-column')) {
+                const checkbox = event.target;
+                const columnIndex = checkbox.getAttribute('data-column');
+        
+                // Obtener las celdas de esa columna (th y td)
+                const ths = document.querySelectorAll('th[data-column="' + columnIndex + '"], td[data-column="' + columnIndex + '"]');
+        
+                // Alternar la visibilidad de las celdas
+                ths.forEach(function (th) {
+                    th.style.display = checkbox.checked ? '' : 'none';
+                });
+            }
+        });
+        
+
+        rows.forEach(row => {
+            row.addEventListener("click", function () {
+                // Quitar la clase 'table-active' de todas las filas
+                rows.forEach(r => r.classList.remove("table-active", "custom-active"));
+                // Agregar la clase 'table-active' a la fila clicada
+                this.classList.add("table-active", "custom-active");
+            });
+        });
+
+        
+
+    });
+
+</script>

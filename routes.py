@@ -424,7 +424,7 @@ def attendances():
    # For AJAX requests, return only the table partial
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return render_template(
-            'partials/attendance_list_table.html',
+            'partials/tables/attendance_list_table.html',
             attendances     = attendances_formatted,
             has_records     = has_records,
             total_registros = total_registros,
@@ -592,10 +592,14 @@ def attendance_report():
         class_query = class_query.filter(Classes.meeting_center_id == meeting_center_id)
 
     available_classes = class_query.order_by(Classes.class_name).filter(Classes.meeting_center_id == meeting_center_id).all()
-    # print(f"Available classes: {available_classes}")
 
     selected_year = request.args.get('year', type=int, default=current_year)
-    selected_month = request.args.get('month', default=str(current_month))
+    
+    # Calcular el trimestre actual
+    current_quarter = f"Q{(current_month - 1) // 3 + 1}"
+
+    # Si no se selecciona un trimestre, por defecto usar el trimestre actual
+    selected_month = request.args.get('month', default=current_quarter)
 
     # Determinar el filtro de mes o trimestre
     month_filter = []
@@ -627,7 +631,7 @@ def attendance_report():
     query        = query.filter(extract('year', Attendance.sunday_date) == selected_year)
     query        = query.filter(extract('month', Attendance.sunday_date).in_(month_filter))
     sundays      = query.all()
-    sunday_dates = [s[0] for s in sundays][-5:]  # Limitar a las últimas 5 semanas
+    sunday_dates = [s[0] for s in sundays][-14:]  # Limitar a los últimos 14 domingo en un trimestre
 
     # Formatear fechas
     sunday_dates_formatted = [
@@ -663,10 +667,11 @@ def attendance_report():
         students[record.student_name][record.sunday_date] = True
 
     total_miembros = len(students)
+
     # Si el usuario no ha seleccionado nada, debe coincidir con el mes actual
     if selected_month == "all" or selected_month not in ["Q1", "Q2", "Q3", "Q4"] + [str(m["num"]) for m in month_names]:
-        selected_month = str(current_month)  # Asegurar que el select refleje el mes actual
- 
+        selected_month = current_quarter  # Asegurar que el select refleje el trimestre actual
+
     # Obtener registros de asistencia por trimestre
     quarters_with_data = {
         "Q1": db.session.query(Attendance).filter(extract('month', Attendance.sunday_date).in_([1, 2, 3]),
@@ -682,10 +687,10 @@ def attendance_report():
     # Respuesta AJAX parcial
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
         return render_template(
-            "partials/attendance_table.html", 
-            students=students, 
-            dates=sunday_dates_formatted,
-            total_miembros=total_miembros
+            "partials/tables/attendance_table.html", 
+            students       = students,
+            dates          = sunday_dates_formatted,
+            total_miembros = total_miembros
         )
 
     return render_template(
@@ -702,7 +707,8 @@ def attendance_report():
         disable_year       = len(available_years)   == 1,
         available_classes  = available_classes  # Pasar clases disponibles a la plantilla
     )
-    
+
+
 # =============================================================================================
 @bp.route('/attendance/export', methods=['GET'])
 @role_required('Owner')
@@ -960,11 +966,9 @@ def registrar():
                 }), 400
             
         created_by = nombre # Usa el nombre del estudiante para este campo
-
         if usuario:
             created_by = usuario # Si el usuario esta autenticado, se usa su nombre
         
-
         # Registrar la asistencia
         new_attendance = Attendance(
             student_name        = formatted_name,
@@ -997,21 +1001,17 @@ def registrar():
 @bp.route('/pdf/list', methods=['GET'])
 @login_required
 def list_pdfs():
+    meeting_center_id = get_meeting_center_id()
     OUTPUT_DIR = get_output_dir()
     
-    meeting_center_id = get_meeting_center_id()
     # Verificar si hay clases asociadas al meeting center
     has_classes       = Classes.query.filter_by(meeting_center_id=meeting_center_id, is_active=True).first() is not None
-    # print(f"Has Classes (Meeting Center {meeting_center_id}): {has_classes}")
     
-    # Verificar si hay clases 'Main' activas
+    # Verificar si hay clases 'Main' o 'Extra' activas
     has_main_classes  = Classes.query.filter_by(meeting_center_id=meeting_center_id, is_active=True, class_type='Main').first() is not None
-    # print(f"Has Main Classes (Meeting Center {meeting_center_id}): {has_main_classes}")
-    
-    # Verificar si hay clases 'Extra' activas
+
     has_extra_classes = Classes.query.filter_by(meeting_center_id=meeting_center_id, is_active=True, class_type='Extra').first() is not None
-    # print(f"Has Extra Classes (Meeting Center {meeting_center_id}): {has_extra_classes}")
-    
+     
     if not os.path.exists(OUTPUT_DIR):
       os.makedirs(OUTPUT_DIR)  # Crea el directorio si no existe
       
@@ -1040,7 +1040,6 @@ def generate_week_pdfs():
 @login_required
 def generate_extra_pdfs():
     selected_date = request.form.get('date')  # Obtener la fecha desde el formulario
-    # print(f'Date: {selected_date}')
 
     # Validar si la fecha fue proporcionada
     if not selected_date:
@@ -1162,7 +1161,7 @@ def generate_pdfs():
         manual_img.save(manual_qr_filename)
 
         reset_qr_image = ImageReader(manual_qr_filename)
-        c.drawCentredString(page_width / 2, 605, _('Register Attendance'))
+        c.drawCentredString(page_width / 2, 605, _('Register Manual Attendance'))
         c.drawImage(reset_qr_image, page_width / 2 - 50, 500, width=100, height=100)
 
         # Verificar si el QR del maestro ya existe
@@ -1401,14 +1400,14 @@ def update_class(id):
     form.meeting_center_id.choices = [(mc.id, mc.name) for mc in MeetingCenter.query.all()]
     
     if form.validate_on_submit():
-        class_instance.class_name           = form.class_name.data
-        class_instance.short_name           = form.short_name.data
-        class_instance.class_code           = form.class_code.data
-        class_instance.class_type           = form.class_type.data
-        class_instance.schedule             = form.schedule.data
-        class_instance.is_active            = form.is_active.data
-        class_instance.class_color          = form.class_color.data
-        class_instance.meeting_center_id    = form.meeting_center_id.data
+        class_instance.class_name        = form.class_name.data
+        class_instance.short_name        = form.short_name.data
+        class_instance.class_code        = form.class_code.data
+        class_instance.class_type        = form.class_type.data
+        class_instance.schedule          = form.schedule.data
+        class_instance.is_active         = form.is_active.data
+        class_instance.class_color       = form.class_color.data
+        class_instance.meeting_center_id = form.meeting_center_id.data
         try:
             db.session.commit()
             flash(_('Class updated successfully!'), 'success')
@@ -1540,6 +1539,7 @@ def get_swal_texts():
         'months_label'            : _("Months"),
         'members_label'           : _("members"),
         'monthly_attendance'      : _("Monthly Attendance"),
+        'monthlyAttendancePerc'   : _("Monthly Attendance Percentage"),
         'mustSelectDate'          : _("You must select a date!"),
         'nameFormatText'          : _("Please enter your name in \'First Name Last Name\' format."),
         'nameNotRemoved'          : _("Your name was not removed."),
@@ -1570,8 +1570,7 @@ def get_swal_texts():
         'wrongNameText'           : _("Please enter the correct name for "),
         'wrongNameLabel'          : _("Correct Format: Last Name, First Name"),
         'wrongNamePlaceholder'    : _("Enter the new name"),
-        'weeks_label'             : _("Weeks with attendance"),
-        
+        'weeks_label'             : _("Weeks with attendance"),       
     }
     
     
@@ -1865,7 +1864,7 @@ def filter_name_corrections():
     else:
         name_corrections = NameCorrections.query.filter_by(meeting_center_id=meeting_center_id).all()
     
-    return render_template('partials/name_correction_table.html', name_corrections=name_corrections)
+    return render_template('partials/tables/name_correction_table.html', name_corrections=name_corrections)
 
 
 # =============================================================================================
@@ -2189,11 +2188,11 @@ def register_attendance():
 
         # Renderizamos los fragmentos HTML para cada tabla utilizando templates parciales.
         non_attendance_html = render_template(
-            "partials/non_attendance_table.html",
+            "partials/tables/non_attendance_table.html",
             non_attendance_students=non_attendance_students
         )
         with_attendance_html = render_template(
-            "partials/with_attendance_table.html",
+            "partials/tables/with_attendance_table.html",
             attendance_students=attendance_members
         )
        
@@ -2275,11 +2274,11 @@ def filter_attendance():
 
     # Renderizamos los fragmentos HTML para cada tabla utilizando templates parciales.
     non_attendance_html = render_template(
-        "partials/non_attendance_table.html",
+        "partials/tables/non_attendance_table.html",
         non_attendance_students=non_attendance_students
     )
     attendance_html = render_template(
-        "partials/with_attendance_table.html",
+        "partials/tables/with_attendance_table.html",
         attendance_students=attendance_members
     )
 

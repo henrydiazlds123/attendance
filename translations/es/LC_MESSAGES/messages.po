@@ -1062,11 +1062,11 @@ msgstr "Hasta hoy"
 
 #: templates/attendance_check.html:47
 msgid "Members with Attendance"
-msgstr "Miembros con Asistencia"
+msgstr "Miembros Presentes"
 
 #: templates/attendance_check.html:68
 msgid "Members without Attendance"
-msgstr "Miembros sin asistencia"
+msgstr "Miembros Ausentes"
 
 #: templates/attendance_list.html:2
 msgid "Attendance | List"

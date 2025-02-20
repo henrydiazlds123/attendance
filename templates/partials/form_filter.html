@@ -1,11 +1,9 @@
 {% block head %}
-<style>
-    div.input-group {
-        margin-bottom: .2rem !important;
-    }
-
-</style>
-
+    <style>
+        div.input-group {
+            margin-bottom: .2rem !important;
+        }
+    </style>
 {% endblock %}
 
 <p>{{ _('Total Attendance Records') }}: <b>{{ total_registros }} </b></p>
@@ -20,8 +18,7 @@
             </option>
             {% endfor %}
         </select>
-    </div>
-    
+    </div>    
     <div class="input-group col-md">
         <span class="input-group-text"><i class="bi bi-mortarboard-fill"></i></span>
         <select name="class_name" id="class_name" onchange="submitForm()" class="form-select">

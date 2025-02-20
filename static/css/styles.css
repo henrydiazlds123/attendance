@@ -186,6 +186,7 @@ table th {
 
 .table-hover tbody tr:hover td, .table-hover tbody tr:hover th {
   background-color: #b5b5ac;
+  
 }
 
 /* Establecer un tamaño máximo y centrado para los gráficos */
@@ -199,4 +200,28 @@ table th {
 
 .langSelector {
   color: #b5b5ac;
+}
+
+/* Aumenta la especificidad usando tu propia clase */
+.table-active.custom-active {
+  --bs-table-color-state: var(--bs-table-active-color);
+  --bs-table-bg-state: #b5b5ac; /* Color personalizado */
+}
+
+input[type="checkbox"] {
+  -webkit-appearance: none;  /* Elimina el estilo predeterminado en navegadores como Safari */
+  -moz-appearance: none;     /* Elimina el estilo predeterminado en Firefox */
+  appearance: none;          /* Elimina el estilo predeterminado en otros navegadores */
+    /* Borde del checkbox */
+  border-radius: 4px;        /* Bordes redondeados */
+  cursor: pointer;          /* Cambia el cursor al pasar sobre el checkbox */
+}
+
+/* Estilo del icono del checkbox (como el 'checkmark') */
+input[type="checkbox"]:checked::before {
+  content: '\2713';           /* El símbolo del 'checkmark' */
+
+  line-height: 20px;
+  color: white;               /* Color blanco para el 'checkmark' */
+
 }

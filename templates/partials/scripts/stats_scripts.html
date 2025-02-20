@@ -1,0 +1,695 @@
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+      //const monthSelect = document.getElementById("month-select");
+      const studentSelect          = document.getElementById('studentSelect');
+      const yearSelect             = document.getElementById('yearSelect');
+      const classSelect            = document.getElementById("class-select");
+      const year_Select            = document.getElementById("year-select");
+      const ctxAttendance          = document.getElementById('attendanceChart').getContext('2d');
+      const ctxClassFrequency      = document.getElementById('classFrequencyChart').getContext('2d');
+      const meeting_center_id      = "{{ meeting_center_id }}";
+      const classSelect1           = document.getElementById("class-select1");
+      const classSelectCompare     = document.getElementById("class-select-compare");
+      const yearCompare            = document.getElementById("year-select1");
+      let   attendance_counts      = [];
+      let   attendance_percentages = [];
+      let classChart, percentageChart, lineChart, barChart;
+
+      ordenarSelect('class-select');
+      ordenarSelect('class-select1');
+      ordenarSelect('class-select-compare');
+
+      const colors = [
+          'rgba(75, 192, 192, 0.4)',   // Color original 1
+          'rgba(255, 206, 86, 0.4)',   // Color original 2
+          'rgba(255, 99, 132, 0.4)',   // Color original 3
+          'rgba(255, 159, 64, 0.4)',   // Color original 4
+          'rgba(54, 162, 235, 0.4)',   // Color original 5
+          'rgba(153, 102, 255, 0.4)',  // Color original 6
+          'rgba(201, 203, 207, 0.4)',  // Color adicional 7 (gris claro)
+          'rgba(255, 99, 71, 0.4)',    // Color adicional 8 (tomate)
+          'rgba(60, 179, 113, 0.4)',   // Color adicional 9 (verde mar)
+          'rgba(138, 43, 226, 0.4)',   // Color adicional 10 (violeta)
+          'rgba(255, 20, 147, 0.4)',   // Color adicional 11 (rosa fuerte)
+          'rgba(100, 149, 237, 0.4)'   // Color adicional 12 (azul cornflower)
+      ];
+      const borderColors = colors.map(color => color.replace('0.4', '1'));
+
+      // Crear gráficos vacíos
+      async function loadTranslationsAndCreateChart() {
+          try {
+              const texts = await fetch('/get_swal_texts').then(response => response.json());
+
+              // Ahora que las traducciones están disponibles, crea el gráfico
+              window.attendanceChart = new Chart(ctxAttendance, {
+                  type: 'bar',
+                  data: {
+                      labels: [],
+                      datasets: [
+                          {
+                              type: 'bar',
+                              label: texts.attendance_label,
+                              data: [],
+                              backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                              borderColor: 'rgba(54, 162, 235, 1)',
+                              borderWidth: 1,
+                              yAxisID: 'y',
+                              datalabels: {
+                                  anchor: 'end',
+                                  align: 'top',
+                                  formatter: () => '',
+                                  font: { weight: 'bold' },
+                                  color: '#333'
+                              }
+                          },
+                          {
+                              type: 'line',
+                              label: texts.weeks_label,
+                              data: [],
+                              borderColor: 'rgba(255, 99, 132, 1)',
+                              backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                              borderWidth: 2,
+                              pointStyle: 'circle',
+                              pointRadius: 5,
+                              pointBackgroundColor: 'rgba(255, 99, 132, 1)'
+                          }
+                      ]
+                  },
+                  options: {
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                          tooltip: {
+                              callbacks: {
+                                  label: function (context) {
+                                      if (context.dataset.label === texts.attendance_label) {
+                                          return ` ${context.raw}%`;
+                                      }
+                                      return ` ${context.dataset.label}: ${context.raw}`;
+                                  }
+                              }
+                          },
+                          title: {
+                              display: true,
+                              text: texts.monthly_attendance,
+                              font: { size: 18 }
+                          },
+                      },
+                      scales: {
+                          x: {
+                              title: { display: true, text: texts.monthly_attendance, }
+                          },
+                          y: {
+                              beginAtZero: true,
+                              min: 0,
+                              suggestedMax: 5,
+                              ticks: { stepSize: 1 },
+                              title: { display: true, text: texts.attendance_value_label }
+                          }
+                      }
+                  },
+                  plugins: [ChartDataLabels]
+              });
+
+              window.classFrequencyChart = new Chart(ctxClassFrequency, {
+                  type: 'bar',
+                  data: {
+                      labels: [],
+                      datasets: [
+                          {
+                              type: 'bar',
+                              label: texts.classesLabel,
+                              data: [],
+                              backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                              borderColor: 'rgba(54, 162, 235, 1)',
+                              borderWidth: 1,
+                              yAxisID: 'y',
+                              datalabels: {
+                                  anchor: 'end',
+                                  align: 'top',
+                                  formatter: () => '',
+                                  font: { weight: 'bold' },
+                                  color: '#333'
+                              }
+                          },
+                      ]
+                  },
+                  options: {
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                          legend: {
+                              position: 'top',
+                              labels: { font: { size: 14 } }
+                          },
+                          title: {
+                              display: true,
+                              text: texts.classesTitle,
+                              font: { size: 18 }
+                          },
+                          tooltip: { mode: 'index', intersect: false }
+                      },
+                      scales: {
+                          x: {
+                              title: { display: true, text: texts.months_label }
+                          },
+                          y: {
+                              beginAtZero: true,
+                              min: 0,
+                              max: 3,
+                              title: { display: true, text: texts.classesNumber },
+                              ticks: { stepSize: 1 }
+                          }
+                      }
+                  }
+              });
+
+          } catch (error) {
+              console.error('Error fetching texts:', error);
+          }
+      };
+
+      // Función para obtener los datos desde el servidor
+      async function fetchClassData() {
+          const classCode = document.getElementById("class-select").value;
+          const year = document.getElementById("year-select").value;
+          //const month = document.getElementById("month-select").value;
+
+          console.log('Fetching class data for:', { classCode, year });
+
+          // Construir la URL con los filtros
+          const url = `/classes_stats/data?class_code=${classCode}&year=${year}`;
+
+          try {
+              const response = await fetch(url);
+              const data = await response.json();
+              //console.log('Class data fetched:', data);
+              updateClassChart(data);
+          } catch (error) {
+              console.error("Error obteniendo datos de asistencia:", error);
+          }
+      }
+
+      function fetchAttendanceData() {
+          const studentName = studentSelect.value;
+          const year = yearSelect.value;
+
+          //console.log('Fetching attendance data for student:', studentName, 'Year:', year);
+
+          fetch(`/attendance/monthly/${encodeURIComponent(studentName)}?year=${year}&meeting_center_id=${meeting_center_id}`)
+              .then(response => response.json())
+              .then(data => {
+                  //console.log('Attendance data received:', data);
+
+                  attendance_counts = data.attendance_counts;
+                  attendance_percentages = data.attendance_percentages;
+
+                  updateAttendanceChart(data.months, data.attendance_percentages, data.attendance_counts, data.total_weeks);
+                  updateClassFrequencyChart(data.months, data.class_frequencies);
+              })
+              .catch(error => console.error('Error fetching data:', error));
+      }
+
+      // Funciones para actualizar los gráficos
+      async function updateAttendanceChart(months, attendance_percentages, attendance_counts, totalWeeks) {
+          console.log('Updating attendance chart...');
+          // Destruir el gráfico anterior si existe
+          if (window.attendanceChart) {
+              //console.log("Destroying the previous chart...");
+              window.attendanceChart.destroy();
+          } else {
+              //console.log("No previous chart to destroy.");
+          }
+
+          const texts = await fetch('/get_swal_texts').then(response => response.json());
+
+          // Crear el nuevo gráfico
+          window.attendanceChart = new Chart(ctxAttendance, {
+              type: 'bar',
+              data: {
+                  labels: months,
+                  datasets: [
+                      {
+                          type: 'line',
+                          label: texts.weeks_label,
+                          data: totalWeeks,
+                          borderColor: 'rgba(255, 99, 132, 1)',
+                          backgroundColor: 'rgba(255, 99, 132, 0.3)',
+                          borderWidth: 2,
+                          pointStyle: 'circle',
+                          pointRadius: 4,
+                          pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+                          datalabels: { display: false }
+                      },
+                      {
+                          type: 'bar',
+                          label: texts.attendance_label,
+                          data: attendance_counts,
+                          backgroundColor: 'rgba(54, 162, 235, 0.3)',
+                          borderColor: 'rgba(54, 162, 235, 1)',
+                          borderWidth: 1,
+                          yAxisID: 'y',
+                          datalabels: {
+                              anchor: 'end',
+                              align: 'top',
+                              formatter: (value, context) => `${attendance_percentages[context.dataIndex] || 0}%`,
+                              font: { weight: 'bold' },
+                              color: '#333'
+                          }
+                      }
+
+                  ]
+              },
+              options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                      tooltip: {
+                          callbacks: {
+                              label: function (context) {
+                                  if (context.dataset.label === texts.attendance_label) {
+                                      return ` ${context.raw} ` + texts.attendance_unit;
+                                  }
+                                  return ` ${context.dataset.label}: ${context.raw}`;
+                              }
+                          }
+                      },
+                      title: {
+                          display: true,
+                          text: texts.monthly_attendance,
+                          font: { size: 18 }
+                      },
+                  },
+                  scales: {
+                      x: {
+                          title: { display: true, text: texts.monthly_attendance }
+                      },
+                      y: {
+                          beginAtZero: true,
+                          min: 0,
+                          suggestedMax: 5,
+                          ticks: { stepSize: 1 },
+                          title: { display: true, text: texts.attendance_value_label }
+                      }
+                  }
+              },
+              plugins: [ChartDataLabels]
+          });
+      }
+
+      async function updateClassFrequencyChart(months, class_frequencies) {
+          //console.log('Updating class frequency chart...');
+          if (window.classFrequencyChart) {
+              //console.log("Destroying the previous class frequency chart...");
+              window.classFrequencyChart.destroy();
+          }
+
+          const texts = await fetch('/get_swal_texts').then(response => response.json());
+
+          const allClasses = new Set();
+          Object.values(class_frequencies).forEach(monthData => {
+              Object.keys(monthData).forEach(classCode => allClasses.add(classCode));
+          });
+
+          const classList = Array.from(allClasses);
+          const datasets  = classList.map((classCode, index) => {
+              const data  = months.map((_, i) => class_frequencies[i + 1]?.[classCode]);
+
+              return {
+                  label: classCode,
+                  data: data,
+                  backgroundColor: colors[index % colors.length],
+                  borderColor: borderColors[index % borderColors.length],
+                  borderWidth: 1
+              };
+          });
+
+          window.classFrequencyChart = new Chart(ctxClassFrequency, {
+              type: 'bar',
+              data: {
+                  labels: months,
+                  datasets: datasets
+              },
+              options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                      legend: {
+                          position: 'top',
+                          labels: { font: { size: 14 } }
+                      },
+                      title: {
+                          display: true,
+                          text: texts.classesTitle,
+                          font: { size: 18 }
+                      },
+                      tooltip: { mode: 'index', intersect: false }
+                  },
+                  scales: {
+                      x: {
+                          title: { display: true, text: texts.months_label }
+                      },
+                      y: {
+                          beginAtZero: true,
+                          min: 0,
+                          suggestedMax: 2,
+                          title: { display: true, text: texts.classesNumber },
+                          ticks: { stepSize: 1 }
+                      }
+                  }
+              },
+              plugins: [ChartDataLabels]
+          });
+
+          window.classFrequencyChart.update();
+      }
+
+      async function updateClassChart(data) {
+          const ctxClassData = document.getElementById("classChart").getContext("2d");
+          const texts = await fetch('/get_swal_texts').then(response => response.json());
+
+          // Extraer etiquetas y valores
+          const labels = data.chart_data.map(entry => entry.month);
+          const values = data.chart_data.map(entry => entry.value);
+
+          // Si el gráfico ya existe, lo destruye antes de crear uno nuevo
+          if (classChart) {
+              classChart.destroy();
+          }
+
+          classChart = new Chart(ctxClassData, {
+              type: "line",
+              data: {
+                  labels: labels, // Etiquetas corregidas
+                  datasets: [{
+                      label: texts.attendance_label,
+                      data: values, // Datos corregidos
+                      borderColor: "purple",
+                      backgroundColor: "rgba(0, 0, 255, 0.2)",
+                      borderWidth: 2,
+                      fill: true,
+                      pointStyle: 'circle', // Puedes usar el estilo de punto que desees (círculo, triángulo, etc.)
+                      pointRadius: 5, // Tamaño de los puntos
+                      pointHoverRadius: 7, // Tamaño en el hover
+                      borderWidth: 1
+                  }]
+              },
+              options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                      tooltip: {
+                          callbacks: {
+                              label: function (context) {
+                                  if (context.dataset.label === texts.attendance_label) {
+                                      return ` ${context.raw} ` + texts.members_label;
+                                  }
+                                  return ` ${context.dataset.label}: ${context.raw}`;
+                              }
+                          }
+                      },
+                      title: {
+                          display: true,
+                          text: texts.monthly_attendance,
+                          font: { size: 18 }
+                      },
+                  },
+                  scales: {
+                      x: {
+                          title: { display: true, text: texts.months_label }
+                      },
+                      y: {
+                          beginAtZero: true,
+                          min: 0,
+                          suggestedMax: 5,
+                          ticks: { stepSize: 1 },
+                          title: { display: true, text: texts.attendance_value_label }
+                      }
+                  }
+              },
+              plugins: [{
+                  afterDatasetsDraw: function (chart, args, options) {
+                      const ctx = chart.ctx;
+                      chart.data.datasets.forEach(function (dataset, i) {
+                          dataset.data.forEach(function (dataPoint, index) {
+                              const x = chart.scales.x.getPixelForValue(chart.data.labels[index]);
+                              const y = chart.scales.y.getPixelForValue(dataPoint);
+                              const value = dataset.data[index];  // Valor de la asistencia para este punto
+
+                              // Si el valor es 0, no dibujamos nada
+                              if (value === 0) {
+                                  return; // No dibujar el valor
+                              }
+
+                              // Dibuja el valor encima del punto
+                              ctx.font = 'bold 12px Arial';  // Establecer el estilo de la fuente
+                              ctx.fillStyle = 'black';  // Establecer el color del texto
+                              ctx.textAlign = 'center';  // Alineación del texto
+                              ctx.textBaseline = 'bottom';  // Alineación vertical (debajo del punto)
+                              ctx.fillText(value, x, y - 10);  // Ajusta el valor para que se dibuje encima del punto
+                          });
+                      });
+                  }
+              }]
+          });
+      }
+
+      async function fetchPercentageData() {
+          const classCode1 = document.getElementById("class-select1").value;
+          const classCode2 = document.getElementById("class-select-compare").value;
+          const year       = document.getElementById("year-select1").value;
+
+          // Construir la URL con los filtros
+          const url = `/classes_stats/percentage_data?class_code1=${classCode1}&class_code2=${classCode2}&year=${year}`;
+
+          try {
+              const response = await fetch(url);
+              const data = await response.json();
+              updatePercentageChart(data);
+          } catch (error) {
+              console.error("Error obteniendo datos de porcentaje:", error);
+          }
+      }
+
+      async function updatePercentageChart(data) {
+          const ctx = document.getElementById("percentageChart").getContext("2d");
+          // Etiquetas de meses (puedes obtener la traducción si lo necesitas)
+          const monthLabels = data.months ? data.months.map(item => item.label) : [];
+          const texts       = await fetch('/get_swal_texts').then(response => response.json());
+
+          // Generar un dataset por cada clase
+          const datasets = data.chart_data.map((clase, index) => {
+              const dataPoints = monthLabels.map((_, i) => {
+                  const monthData = clase.chart_data.find(m => m.month === i + 1);
+                  return monthData ? monthData.percentage : null;
+              });
+              // Definir colores distintos para cada línea
+              //const colors = ['red', 'blue', 'green', 'purple', 'orange', 'brown'];
+              return {
+                  label: clase.translated_name,
+                  data: dataPoints,
+                  backgroundColor: colors[index % colors.length],
+                  borderColor: borderColors[index % borderColors.length], //'rgba(0, 0, 0, 0)', // sin relleno
+                  borderWidth: 2,
+                  fill: false,
+                  tension: 0.1,
+                  pointRadius: 3,
+                  pointHoverRadius: 5,
+              };
+          });
+
+          // Destruir el gráfico anterior si existe
+          if (percentageChart) {
+              percentageChart.destroy();
+          }
+
+          percentageChart = new Chart(ctx, {
+              type: 'line',
+              data: {
+                  labels: monthLabels,
+                  datasets: datasets,
+              },
+              options: {
+                  layout: {
+                      padding: {
+                          top: 50  // Ajusta este valor (en píxeles) según lo necesites
+                      }
+                  },
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                      tooltip: {
+                          callbacks: {
+                              label: function (context) {
+                                  let label = context.dataset.label || '';
+                                  if (label) label += ': ';
+                                  if (context.raw !== null) {
+                                      label += context.raw + '%';
+                                  }
+                                  return label;
+                              }
+                          }
+                      },
+                      title: {
+                          display: true,
+                          text: texts.monthlyAttendancePerc,
+                          font: { size: 18 }
+                      },
+                  },
+                  scales: {
+                      x: {
+                          title: { display: true, text: texts.months_label }
+                      },
+                      y: {
+                          beginAtZero: true,
+                          max: 110,
+                          ticks: { stepSize: 10 },
+                          title: { display: true, text: texts.attendance_label + ' (%)' }
+                      }
+                  }
+              }
+          });
+      }
+
+      function checkSelectCompareStatus() {
+          if (classSelect1.value === "all") {
+              classSelectCompare.disabled = true;
+          } else {
+              classSelectCompare.disabled = false;
+          }
+      }
+     
+      function fetchJSON(url) {
+          return fetch(url)
+              .then(response => {
+                  if (!response.ok) {
+                      throw new Error(`HTTP error! status: ${response.status}`);
+                  }
+                  return response.json();
+              });
+      }
+
+      function updateCharts() {
+          const selectedClass = classSelect.value || "all";
+          const selectedYear = year_Select.value || new Date().getFullYear();
+          const url = `/stats2/?class_code=${selectedClass}&year=${selectedYear}`;
+
+          fetchJSON(url)
+              .then(data => {
+                  updateChartData(data.labels, data.datasets);
+              })
+              .catch(error => console.error("Error al actualizar las gráficas:", error));
+      }
+    
+      function updateChartData(labels, datasets) {
+
+          const lineDatasets = datasets.map((dataset, index) => ({
+              ...dataset,
+              backgroundColor: colors[index % colors.length],
+              borderColor: borderColors[index % borderColors.length],
+              borderWidth: 2,
+              pointBackgroundColor: borderColors[index % borderColors.length],
+              pointBorderColor: "#fff",
+              pointHoverBackgroundColor: "#fff",
+              pointHoverBorderColor: borderColors[index % borderColors.length],
+              fill: false,
+              tension: 0.2
+          }));
+          datasets.forEach((ds, i) => {
+              console.log(`Dataset ${i}:`, ds.data);
+          });
+          const barDatasets = datasets.map((dataset, index) => ({
+              ...dataset,
+              backgroundColor: colors[index % colors.length],
+              borderColor: borderColors[index % borderColors.length],
+              borderWidth: 2,
+              hoverBackgroundColor: borderColors[index % borderColors.length],
+              hoverBorderColor: "#000"
+          }));
+
+          const ctx1 = document.getElementById("lineChart").getContext("2d");
+          if (lineChart) {
+              lineChart.destroy();
+          }
+          lineChart = new Chart(ctx1, {
+              type: "line",
+              data: { labels: labels, datasets: lineDatasets },
+              options: {
+                  responsive: true,
+                  plugins: {
+                      legend: { position: "top" },
+                      title: {
+                          display: "true",
+                          text: "Attendance per Period",
+                          font: { size: 18 }
+                      },
+                  },
+                  elements: { line: { tension: 0.3 } }
+              }
+          });
+
+          const ctx2 = document.getElementById("barChart").getContext("2d");
+          if (barChart) {
+              barChart.destroy();
+          }
+          barChart = new Chart(ctx2, {
+              type: "bar",
+              data: { labels: labels, datasets: barDatasets },
+              options: {
+                  responsive: true,
+                  plugins: {
+                      legend: { position: "top" },
+                      title: {
+                          display: "true",
+                          text: "Attendance per Period",
+                          font: { size: 18 }
+                      },
+                  },
+                  scales: { y: { beginAtZero: true } }
+              }
+          });
+      }
+
+      function ordenarSelect(selectId) {
+          // Obtener el select y las opciones
+          const select = document.getElementById(selectId);
+          const options = Array.from(select.getElementsByTagName('option'));
+      
+          // Separar las opciones con valores "all" y "none" si existen
+          const firstOptions = options.filter(option => option.value === "all" || option.value === "none");
+          const sortableOptions = options.filter(option => option.value !== "all" && option.value !== "none");
+      
+          // Ordenar las opciones restantes alfabéticamente
+          sortableOptions.sort((a, b) => a.textContent.trim().localeCompare(b.textContent.trim()));
+      
+          // Limpiar el select
+          select.innerHTML = '';
+      
+          // Volver a agregar las opciones excluidas del ordenamiento
+          firstOptions.forEach(option => select.appendChild(option));
+      
+          // Agregar las opciones ordenadas
+          sortableOptions.forEach(option => select.appendChild(option));
+      }
+      
+      loadTranslationsAndCreateChart();
+      fetchPercentageData();
+      fetchClassData();
+      if (studentSelect.value) {
+          fetchAttendanceData();
+      }
+      checkSelectCompareStatus();
+      updateCharts();
+
+      // Escuchar cambios en los filtros
+      studentSelect.addEventListener('change', fetchAttendanceData);
+      yearSelect.addEventListener('change', fetchAttendanceData);
+
+      classSelect.addEventListener("change", () => { fetchClassData(); checkSelectCompareStatus(); updateCharts(); fetchPercentageData();});
+      year_Select.addEventListener("change", () => { fetchClassData(); checkSelectCompareStatus(); updateCharts(); fetchPercentageData();});
+
+      classSelect1.addEventListener('change', () => {fetchPercentageData(); checkSelectCompareStatus();});
+      classSelectCompare.addEventListener('change', fetchPercentageData);
+      yearCompare.addEventListener('change', fetchPercentageData);
+  });
+</script>

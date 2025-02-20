@@ -9,7 +9,6 @@ from sqlalchemy import func
 import unicodedata
 
 
-
 # ================================================================
 def role_required(*roles):
     """Decorador para restringir el acceso basado en roles."""
@@ -154,8 +153,6 @@ def get_meeting_center_id():
     return session.get('meeting_center_id')  # Para otros roles
 
 
-
-# GRFICOS
 # ================================================================
 def get_attendance_by_class_data():
     # Obtener los datos de asistencia agrupados por clase
@@ -164,8 +161,6 @@ def get_attendance_by_class_data():
         func.count(Attendance.student_name.distinct()).label('attendance_count')
     ).join(Classes).filter(Classes.class_type == 'Main').group_by(Attendance.class_id).all()
 
-    # Aquí puedes agregar la lógica para obtener el nombre de la clase a partir de class_id
-    # Por ejemplo, con una consulta adicional o utilizando la relación con la tabla Classes
     return attendance_by_class
 
 
@@ -196,4 +191,3 @@ def get_last_sunday():
     days_since_sunday = today.weekday()  # 0 = Monday, 6 = Sunday
     last_sunday       = today - timedelta(days=days_since_sunday + 1) if today.weekday() != 6 else today
     return last_sunday.strftime('%Y-%m-%d')
-

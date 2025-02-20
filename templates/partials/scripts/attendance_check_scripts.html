@@ -1,0 +1,110 @@
+<script>
+  // Esperamos a que el DOM se cargue completamente
+  document.addEventListener('DOMContentLoaded', async function () {
+    const classFilter        = document.getElementById('class_filter');
+    const rangeFilter        = document.getElementById('time_range');
+    const nonAttendanceTbody = document.querySelector('#non_attendance_table tbody');
+    const attendanceTbody    = document.querySelector('#with_attendance_table tbody');
+    const submitButton       = document.getElementById('submit_attendance');
+
+    // Obtener textos antes de cualquier acción
+    try {
+        texts = await fetch('/get_swal_texts').then(res => res.json());
+    } catch (error) {
+        console.error("Error fetching texts:", error);
+    }
+   
+    // Función para actualizar las tablas según la clase y meeting_center_id seleccionados
+    function updateTables() {
+      const selectedClass = classFilter.value;
+      const timeRange     = rangeFilter.value;
+
+      // Si no hay clase seleccionada, detenemos la actualización.
+      if (!selectedClass) return;
+
+      const meetingCenter = classFilter.options[classFilter.selectedIndex].dataset.meetingCenter;
+
+      const params = new URLSearchParams({
+        class_code       : selectedClass,
+        time_range       : timeRange,
+        meeting_center_id: meetingCenter
+      });
+
+      fetch("{{ url_for('routes.filter_attendance') }}?" + params.toString(), {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+        .then(response => response.json())
+        .then(data => {
+          // Se espera que el backend retorne:
+          nonAttendanceTbody.innerHTML = data.non_attendance_html;
+          attendanceTbody.innerHTML = data.attendance_html;
+        })
+        .catch(error => console.error("Error updating tables:", error));
+    }
+
+    // Actualización automática al cambiar el filtro de clase
+    classFilter.addEventListener('change', updateTables);
+    rangeFilter.addEventListener('change', updateTables);
+    
+    // Acción al presionar el botón "Register Attendance"
+    submitButton.addEventListener('click', function () {
+      Swal.fire({
+        title: texts.confirmRegisterTitle,
+        text: texts.confirmRegisterText,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: texts.confirmRegisterYes,
+        cancelButtonText: texts.confirmRegisterCancel
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // Recolectar los IDs de los estudiantes marcados
+          const checkboxes = document.querySelectorAll('input[name="attendance"]:checked');
+          const selectedNames = Array.from(checkboxes).map(checkbox => checkbox.value);
+
+          const selectedClass = classFilter.value;
+          const meetingCenter = classFilter.options[classFilter.selectedIndex].dataset.meetingCenter;
+
+          fetch("{{ url_for('routes.register_attendance') }}", {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              student_names    : selectedNames,
+              class_code       : selectedClass,
+              meeting_center_id: meetingCenter
+            })
+          })
+            .then(response => response.json())
+            .then(data => {
+              // Actualizamos las tablas con la respuesta del servidor
+              nonAttendanceTbody.innerHTML = data.non_attendance_html;
+              attendanceTbody.innerHTML = data.attendance_html;
+              Swal.fire(
+                texts.confirmRegSuccessTitle,
+                texts.confirmRegSuccessText,
+                'success'
+              );
+            })
+            .catch(error => {
+              console.error("Error registering attendance:", error);
+              Swal.fire(
+                texts.errorTitle,
+                texts.registrationError,
+                'error'
+              );
+            });
+        } else {
+          Swal.fire(
+            texts.cancelled,
+            texts.registrationCancel,
+            'info'
+          );
+        }
+      });
+    });
+  });
+</script>

@@ -1,3 +1,6 @@
+
+<input type="hidden" id="total-members-hidden" value="{{ total_miembros }}">
+
 <table class="table table-bordered table-striped table-sm table-hover">
     <thead class="table-dark sticky-top">
       <tr>
@@ -30,19 +33,4 @@
     </tbody>
   </table>
   
-  <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    document.querySelectorAll(".toggle-column").forEach(function (checkbox) {
-      checkbox.addEventListener("change", function () {
-        let columnIndex = this.dataset.column;
-        let isChecked = this.checked;
-        
-        // Oculta o muestra tanto los encabezados (<th>) como las celdas (<td>)
-        document.querySelectorAll(`[data-column='${columnIndex}']`).forEach(function (cell) {
-          cell.style.display = isChecked ? "" : "none";
-        });
-      });
-    });
-  });
-  </script>
-  
+

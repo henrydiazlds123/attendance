@@ -1,35 +1,8 @@
 {% extends "layout.html" %}
 {% block title %}{{ _('Attendance | Classes') }}{% endblock %}
 
-
 {% block head %}
-<script>
-  // Function to load the state from localStorage and set the dropdown value
-  function loadInactiveClassesPreference() {
-      const showInactive = localStorage.getItem('showInactiveClasses') || 'false';
-      document.getElementById('inactive_classes_toggle').value = showInactive;
-      filterClasses(showInactive);
-  }
-
-  // Function to toggle and save the preference for showing inactive classes
-  function toggleInactiveClasses() {
-      const showInactive = document.getElementById('inactive_classes_toggle').value;
-      localStorage.setItem('showInactiveClasses', showInactive);
-      filterClasses(showInactive);
-  }
-
-  // Function to filter classes based on preference
-  function filterClasses(showInactive) {
-      const rows = document.querySelectorAll('.class-row');  // Assuming each class is wrapped in an element with class 'class-row'
-      rows.forEach(row => {
-          const isActive = row.getAttribute('data-is-active') === 'true';
-          row.style.display = (showInactive === 'true' || isActive) ? '' : 'none';
-      });
-  }
-
-  // Load the state when the page is loaded
-  document.addEventListener('DOMContentLoaded', loadInactiveClassesPreference);
-</script>
+{% include 'partials/scripts/classes_scripts.html' %}
 {% endblock %}
 
 {% block pageTitle %}<i class="bi bi-mortarboard-fill"></i>  {{ _('Classes Management') }}{% endblock %}
