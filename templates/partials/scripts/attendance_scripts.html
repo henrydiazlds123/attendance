@@ -22,6 +22,16 @@
                 document.getElementById("classCode").value  = class_code;
                 document.getElementById("sundayCode").value = sunday_code;
                 document.getElementById("unitNumber").value = unit_number;
+
+                const listGroupItems = document.querySelectorAll('.list-group-item');
+                listGroupItems.forEach(item => {
+                    if (item.textContent.trim() === decodeURIComponent(class_name)) {
+                        item.classList.add('active');
+                    } else {
+                        item.classList.remove('active');
+                    }
+                });    
+
             } else {
                 classNameDisplay.textContent = texts.chooseClass;
                 document.getElementById("button-addon2").disabled = true;
@@ -98,7 +108,7 @@
       function autoSubmitIfNameExists() {
         const saveName = localStorage.getItem("studentName");
       
-        if (saveName) {            
+        if ((saveName) && (!document.body.classList.contains("logged-in"))) {            
             const formElement = document.getElementById("attendanceForm");
             const formData = new FormData(formElement);
       
@@ -108,11 +118,8 @@
       
             for (let pair of formData.entries()) {
                 console.log(pair[0] + ": " + pair[1]);
-            }
-      
-      
+            }           
             sendAttendanceForm(formData); // Enviar usando la función AJAX
-      
         }
       }
       

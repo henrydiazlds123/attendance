@@ -136,18 +136,20 @@ class AttendanceEditForm(FlaskForm):
     
 #==================================================================================================    
 class ClassForm(FlaskForm):
-    class_name  = StringField(_l('Class Name'), validators=[DataRequired(), Length(max=50)])
-    short_name  = StringField(_l('Short Name'), validators=[DataRequired(), Length(max=20)])
-    class_code  = StringField(_l('Class Code'), validators=[DataRequired(), Length(max=10)])
-    class_type  = SelectField(_l('Class Type'), choices=[('Main', _l('Main')), ('Extra', _l('Extra'))], default=_l('Extra'))
-    schedule    = StringField(_l('Schedule'), validators=[Length(max=10)])
-    is_active   = BooleanField(_l('Is Active?'), default=True)
-    class_color = StringField(
+    class_name      = StringField(_l('Class Name'), validators=[DataRequired(), Length(max=50)])
+    short_name      = StringField(_l('Short Name'), validators=[DataRequired(), Length(max=20)])
+    class_code      = StringField(_l('Class Code'), validators=[DataRequired(), Length(max=10)])
+    class_type      = SelectField(_l('Class Type'), choices=[('Main', _l('Main')), ('Extra', _l('Extra'))], default=_l('Extra'))
+    organization_id = SelectField(_l('Organization'), coerce=int, validators=[DataRequired()])
+    schedule        = StringField(_l('Schedule'), validators=[Length(max=10)])
+    is_active       = BooleanField(_l('Is Active?'), default=True)
+    class_color     = StringField(
         'Hex Color',
         validators=[Length(max=7), Regexp(r'^#(?:[0-9a-fA-F]{3}){1,2}$', message=_l('Invalid color format'))],
         render_kw={'class': 'form-control form-control-color', 'type': 'color', 'value': '#000000'}
     )
     meeting_center_id = SelectField(_l('Church Unit'), coerce=int, validators=[DataRequired()])
+    
     
 
     def __init__(self, *args, **kwargs):
@@ -172,6 +174,7 @@ class ClassForm(FlaskForm):
                 self.class_type.render_kw        = {'disabled': 'disabled'}
                 self.schedule.render_kw          = {'disabled': 'disabled'}
                 self.is_active.render_kw         = {'disabled': 'disabled'}
+                self.organization_id.render_kw   = {'disabled': 'disabled'}
                 
 
 #==================================================================================================

@@ -97,6 +97,7 @@ def index():
 def users():
     role = session.get('role')
     meeting_center_id = get_meeting_center_id()
+    organization_id = session.get('organization_id')  # Agregamos la organización del usuario actual
     admin_count = User.query.filter_by(role='Admin').count()
 
     query = db.session.query(
@@ -110,25 +111,41 @@ def users():
      .join(Organization, User.organization_id == Organization.id)
 
     if role == 'Owner':
-        if meeting_center_id != 'all':  # Filtra solo si hay un meeting_center_id seleccionado
+        # El Owner ve todos si el meeting_center_id es 'all'
+        if meeting_center_id != 'all':
             query = query.filter(User.meeting_center_id == meeting_center_id)
+        query = query.filter(
+            (User.role != 'Owner') | (User.username == session.get('username'))
+        )
 
-    else:  # Si el rol no es 'Owner'
-        query = query.filter(User.role != 'Owner')  # Asegurar que no vea Owners
+    elif role == 'Super':
+        # Super ve solo usuarios de su organización
+        query = query.filter(User.organization_id == organization_id) \
+                     .filter((User.role != 'Owner') | (User.username == session.get('username')))
 
-        if role == 'Admin':
-            # Admins pueden ver usuarios de su mismo meeting_center_id
-            query = query.filter(User.meeting_center_id == session.get('meeting_center_id'))
-        else:
-            # Usuarios regulares solo pueden ver su propia cuenta
-            query = User.query.filter_by(username=session.get('username'))
+    elif role == 'Admin':
+        # Admin ve solo usuarios de su propio Meeting Center, excluyendo Owners
+        query = query.filter(User.meeting_center_id == meeting_center_id) \
+                     .filter(User.role != 'Owner')
 
-    # Ejecutar la consulta
+    else:
+        # Usuario regular solo ve su propio usuario
+        query = db.session.query(
+            User.id,
+            User.username,
+            User.email,
+            User.role,
+            MeetingCenter.short_name.label('meeting_short_name'),
+            Organization.name.label('organization_name')
+        ).join(MeetingCenter, User.meeting_center_id == MeetingCenter.id) \
+         .join(Organization, User.organization_id == Organization.id) \
+         .filter(User.username == session.get('username'))
+
     users = query.all()
 
     return render_template('users.html', 
-                           users       = users,
-                           admin_count = admin_count)
+                           users=users,
+                           admin_count=admin_count)
 
 
 # =============================================================================================
@@ -477,10 +494,8 @@ def create_attendance():
                                    submit_button_text = _('Create'),
                                    clas               = 'warning')
 
-        # Calculate sunday_code based on the provided sunday date
-        # sunday_code = get_next_sunday_code(form.sunday_date.data)
-        sunday_code = '0000'
-        
+        sunday_code = '0000' # Indica que la clase fue entrada manualmente, no usando QR 
+
         # Obtener el class_code basado en el class_id seleccionado
         selected_class = Classes.query.filter_by(id=form.class_id.data).first()
         if not selected_class:
@@ -1210,6 +1225,7 @@ def generate_pdfs():
     flash(_('QR Codes generated successfully.'), 'success')
     return redirect(url_for('routes.list_pdfs'))
 
+
 # =============================================================================================
 @bp.route('/pdf/view/<path:filename>', methods=['GET'])
 @login_required
@@ -1327,19 +1343,19 @@ def set_meeting_center():
 @login_required
 def get_meeting_centers():
     meeting_centers = MeetingCenter.query.order_by(MeetingCenter.name).all()
-    return jsonify([
-        {"id": mc.id, "name": mc.name}
-        for mc in meeting_centers
-    ])
+    return jsonify([{"id": mc.id, "name": mc.name} for mc in meeting_centers])
+
 
 # =============================================================================================
 @bp.route('/classes', methods=['GET'])
 @role_required('Admin', 'Super', 'Owner')
 def classes():
-    # Get user role and meeting_center_id from session
+    # Obtener rol, organization_id y meeting_center_id de la sesión
     role = session.get('role')
+    organization_id = session['organization_id']
     meeting_center_id = get_meeting_center_id()
     
+    # Inicializar la consulta básica
     query = db.session.query(
         Classes.id,
         Classes.class_name,
@@ -1349,14 +1365,27 @@ def classes():
         Classes.schedule,
         Classes.is_active,
         Classes.class_color,
+        Classes.organization_id,
         MeetingCenter.short_name.label('meeting_short_name')
-        ).join(MeetingCenter, Classes.meeting_center_id == MeetingCenter.id)
+    ).join(MeetingCenter, Classes.meeting_center_id == MeetingCenter.id)
 
+    # Verificar si el rol es Admin
     if role == 'Admin':
+        # Si es Admin, filtrar por meeting_center_id
         query = query.filter(Classes.meeting_center_id == meeting_center_id)
-    elif role == 'Owner':
-        pass
     
+    # Verificar si el rol es Super
+    elif role == 'Super':
+        # Si es Super, filtrar por organization_id y meeting_center_id
+        query = query.filter(Classes.organization_id == organization_id)
+        query = query.filter(Classes.meeting_center_id == meeting_center_id)
+    
+    # Si no es Admin ni Super, aplicar la lógica existente para Owner
+    elif role == 'Owner':
+        if not (meeting_center_id == 'all'):
+            query = query.filter(Classes.meeting_center_id == meeting_center_id)
+    
+    # Ejecutar la consulta
     classes = query.all()
 
     return render_template('classes.html', classes=classes)
@@ -1367,7 +1396,10 @@ def classes():
 @role_required('Admin', 'Super', 'Owner')
 def create_class():
     form = ClassForm()
-    form.meeting_center_id.choices = [(mc.id, mc.name) for mc in MeetingCenter.query.all()]
+    meeting_center_id = get_meeting_center_id()
+    
+    form.meeting_center_id.choices = [(mc.id, mc.name) for mc in MeetingCenter.query.filter_by(id=meeting_center_id).all()]
+    form.organization_id.choices = [(og.id, og.name) for og in Organization.query.all()]
     
     if form.validate_on_submit():
         new_class = Classes(
@@ -1378,7 +1410,8 @@ def create_class():
             schedule            = form.schedule.data,
             is_active           = form.is_active.data,
             class_color         = form.class_color.data,
-            meeting_center_id   = form.meeting_center_id.data
+            meeting_center_id   = form.meeting_center_id.data,
+            organization_id     = form.organization_id.data
         )
         try:
             db.session.add(new_class)
@@ -1398,6 +1431,7 @@ def update_class(id):
     class_instance = Classes.query.get_or_404(id)
     form           = ClassForm(obj=class_instance)
     form.meeting_center_id.choices = [(mc.id, mc.name) for mc in MeetingCenter.query.all()]
+    form.organization_id.choices = [(og.id, og.name) for og in Organization.query.all()]
     
     if form.validate_on_submit():
         class_instance.class_name        = form.class_name.data
@@ -1408,6 +1442,7 @@ def update_class(id):
         class_instance.is_active         = form.is_active.data
         class_instance.class_color       = form.class_color.data
         class_instance.meeting_center_id = form.meeting_center_id.data
+        class_instance.organization_id   = form.organization_id.data
         try:
             db.session.commit()
             flash(_('Class updated successfully!'), 'success')
@@ -1417,6 +1452,19 @@ def update_class(id):
             flash(_('A class with this name, short name, or code already exists in the same church unit.'), 'danger')
     return render_template('form.html', form=form, title=_('Edit Class'), submit_button_text=_('Update'), clas='warning', backroute='classes')
 
+
+# =============================================================================================
+@bp.route('/classes/reset_color/<int:class_id>', methods=['POST'])
+@login_required
+def reset_class_color(class_id):
+    class_obj = Classes.query.get_or_404(class_id)
+    try:
+        class_obj.class_color = "#000000"
+        db.session.commit()
+        return jsonify({"message": "Color restablecido con éxito."}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Error al restablecer el color: {str(e)}"}), 500
 
 # =============================================================================================
 @bp.route('/classes/delete/<int:id>', methods=['POST'])
@@ -1506,40 +1554,43 @@ def get_swal_texts():
     return {    
         'actionCanceled'          : _("Action canceled"),
         'alreadyRegistered'       : _("You already have registered assistance on {sunday_date}."),
+        'atention'                : _("Attention"),
         'attendance_label'        : _("Attendance"),
         'attendance_unit'         : _("attendance(s)"),
-        'atention'                : _("Attention"),
         'attendance_value_label'  : _("Attendance"),
         'attendanceRecorded'      : _("¡{student_name}, your attendance was recorded!"),
         'cancel'                  : _("Cancel"),
         'cancelled'               : _("Cancelled"),
         'cancelledMessage'        : _("No correction has been made."),
         'chooseClass'             : _("Choose a Class"),
+        'classesLabel'            : _("Classes"),
+        'classesNumber'           : _("Number of Classes"),
+        'classesTitle'            : _("Frequency of Classes per Month"),
         'cleared'                 : _("Cleared!"),
+        'colorErrorText'          : _("There was a problem resetting the color."),
+        'colorResetText'          : _("This will reset the class color to black."),
+        'colorSuccessText'        : _("The color has been successfully restored."),
         'confirm'                 : _("Confirm"),
         'confirmDelete'           : _("You \'re sure?"),
-        'confirmRegisterTitle'    : _("Confirm Attendance Registration?"),
-        'confirmRegisterText'     : _("Do you want to register attendance for the selected students?"),
-        'confirmRegisterYes'      : _("Yes, register it!"),
         'confirmRegisterCancel'   : _("No, cancel!"),
-        'confirmRegSuccessTitle'  : _("Success"),
+        'confirmRegisterText'     : _("Do you want to register attendance for the selected students?"),
+        'confirmRegisterTitle'    : _("Confirm Attendance Registration?"),
+        'confirmRegisterYes'      : _("Yes, register it!"),
         'confirmRegSuccessText'   : _("Attendance has been registered successfully."),
-        'connectionError'         : _("There was a problem connecting to the server."),
+        'confirmRegSuccessTitle'  : _("Success"),
         'confirmSave'             : _("Confirm"),
-        'classesNumber'           : _("Number of Classes"),
-        'classesLabel'            : _("Classes"),
-        'classesTitle'            : _("Frequency of Classes per Month"),
+        'connectionError'         : _("There was a problem connecting to the server."),
         'deleteConfirmationText'  : _("This action will delete all records and cannot be undone."),
         'deleteOneRecordText   '  : _("This record will be deleted."),
-        'errorTitle'              : _("Error"),
         'errorMessage'            : _("There was a problem saving the correction"),
+        'errorTitle'              : _("Error"),
         'great'                   : _("Great!"),
         'incorrectPatternLabel'   : _("Incorrect format"),
         'incorrectPatternText'    : _("The name must be in the format 'Last Name, First Name', separated by a comma."),
-        'months_label'            : _("Months"),
         'members_label'           : _("members"),
         'monthly_attendance'      : _("Monthly Attendance"),
         'monthlyAttendancePerc'   : _("Monthly Attendance Percentage"),
+        'months_label'            : _("Months"),
         'mustSelectDate'          : _("You must select a date!"),
         'nameFormatText'          : _("Please enter your name in \'First Name Last Name\' format."),
         'nameNotRemoved'          : _("Your name was not removed."),
@@ -1550,27 +1601,28 @@ def get_swal_texts():
         'promotionConfirmation'   : _("Yes, Do it!"),
         'promotionText'           : _("Do you want to promote \'{user_name}\' as a Power User?"),
         'promotionTitle'          : _("You 're sure?"),
-        'resetStudentName'        : _("Reset Student Name"),
-        'revertTitle'             : _("Are you sure you want to revert this correction?"),
-        'revertConfirmButton'     : _("Revert"),
-        'registrationError'       : _("There was an error registering attendance."),
         'registrationCancel'      : _("Attendance registration cancelled."),
+        'registrationError'       : _("There was an error registering attendance."),
+        'resetStudentName'        : _("Reset Student Name"),
+        'revertConfirmButton'     : _("Revert"),
+        'revertTitle'             : _("Are you sure you want to revert this correction?"),
         'savedNameText'           : _("The saved name is: \'{name}\'. Do you want to clear it?"),
         'selectDateExtraClasses'  : _("Select a date for Extra classes"),
         'successMessage'          : _("The name has been corrected"),
-        'sundayClassRestriction'  : _("You cannot register a \'Sunday Class\' outside of Sunday."),
         'successTitle'            : _("¡Success"),
-        'yes'                     : _("Yes"),
-        'yesDeleteEverything'     : _("Yes, delete everything"),
-        'yesClearIt'              : _("Yes, clear it!"),
-        'yesDeleteIt'             : _("Yes, Delete it!"),
+        'sundayClassRestriction'  : _("You cannot register a \'Sunday Class\' outside of Sunday."),
         'validationError'         : _("Error, There was a problem validating the attendance."),
         'warningTitle'            : _("warning"),
-        'wrongNameTitle'          : _("Please enter the correct name"),
-        'wrongNameText'           : _("Please enter the correct name for "),
+        'weeks_label'             : _("Weeks with attendance"),       
         'wrongNameLabel'          : _("Correct Format: Last Name, First Name"),
         'wrongNamePlaceholder'    : _("Enter the new name"),
-        'weeks_label'             : _("Weeks with attendance"),       
+        'wrongNameText'           : _("Please enter the correct name for "),
+        'wrongNameTitle'          : _("Please enter the correct name"),
+        'yes'                     : _("Yes"),
+        'yesClearIt'              : _("Yes, clear it!"),
+        'yesDeleteEverything'     : _("Yes, delete everything"),
+        'yesDeleteIt'             : _("Yes, Delete it!"),
+        'yesResetIt'              : _("Yes, Reset it!"),
     }
     
     
@@ -1583,70 +1635,76 @@ def populate_classes(id):
     # Arreglo estático con las clases tipo Main
     main_classes_static = [
         {
-            'class_name': _('Elders Quorum'),
-            'short_name': _('Elders_Q'),
-            'class_code': _('EQ'),
-            'class_type': _('Main'),
-            'schedule'  : '2,4',
-            'is_active' : True,
-            'class_color': None  # Esto se puede ajustar en el futuro
+            'class_name'     : _('Elders Quorum'),
+            'short_name'     : _('Elders_Q'),
+            'class_code'     : _('EQ'),
+            'class_type'     : _('Main'),
+            'schedule'       : '2,4',
+            'is_active'      : True,
+            'class_color'    : None,
+            'organization_id': 2
         },
         {
-            'class_name': _('Aaronic Priesthood'),
-            'short_name': _('Aaronic_P'),
-            'class_code': _('AP'),
-            'class_type': _('Main'),
-            'schedule'  : '2,4',
-            'is_active' : True,
-            'class_color': None
+            'class_name'     : _('Aaronic Priesthood'),
+            'short_name'     : _('Aaronic_P'),
+            'class_code'     : _('AP'),
+            'class_type'     : _('Main'),
+            'schedule'       : '2,4',
+            'is_active'      : True,
+            'class_color'    : None,
+            'organization_id': 4
         },
         {
-            'class_name': _('Relief Society'),
-            'short_name': _('Relief_S'),
-            'class_code': _('RS'),
-            'class_type': _('Main'),
-            'schedule'  : '2,4',
-            'is_active' : True,
-            'class_color': '#ba8e23'
+            'class_name'     : _('Relief Society'),
+            'short_name'     : _('Relief_S'),
+            'class_code'     : _('RS'),
+            'class_type'     : _('Main'),
+            'schedule'       : '2,4',
+            'is_active'      : True,
+            'class_color'    : '#ba8e23',
+            'organization_id': 3
         },
         {
-            'class_name': _('Young Woman'),
-            'short_name': _('Young_W'),
-            'class_code': _('YW'),
-            'class_type': _('Main'),
-            'schedule'  : '2,4',
-            'is_active' : True,
-            'class_color': '#943f88'
+            'class_name'     : _('Young Woman'),
+            'short_name'     : _('Young_W'),
+            'class_code'     : _('YW'),
+            'class_type'     : _('Main'),
+            'schedule'       : '2,4',
+            'is_active'      : True,
+            'class_color'    : '#943f88',
+            'organization_id': 5
         },
         {
-            'class_name': _('Sunday School Adults'),
-            'short_name': _('S_S_Adults'),
-            'class_code': _('SSA'),
-            'class_type': _('Main'),
-            'schedule'  : '1,3',
-            'is_active' : True,
-            'class_color': None
+            'class_name'     : _('Sunday School Adults'),
+            'short_name'     : _('S_S_Adults'),
+            'class_code'     : _('SSA'),
+            'class_type'     : _('Main'),
+            'schedule'       : '1,3',
+            'is_active'      : True,
+            'class_color'    : None,
+            'organization_id': 6
         },
         {
-            'class_name': _('Sunday School Youth'),
-            'short_name': _('S_S_Youth'),
-            'class_code': _('SSY'),
-            'class_type': _('Main'),
-            'schedule'  : '1,3',
-            'is_active' : True,
-            'class_color': None
+            'class_name'     : _('Sunday School Youth'),
+            'short_name'     : _('S_S_Youth'),
+            'class_code'     : _('SSY'),
+            'class_type'     : _('Main'),
+            'schedule'       : '1,3',
+            'is_active'      : True,
+            'class_color'    : None,
+            'organization_id': 6
         },
         {
-            'class_name': _('Fifth Sunday'),
-            'short_name': _('F_Sunday'),
-            'class_code': _('FS'),
-            'class_type': _('Main'),
-            'schedule'  : '5',
-            'is_active' : True,
-            'class_color': None
+            'class_name'     : _('Fifth Sunday'),
+            'short_name'     : _('F_Sunday'),
+            'class_code'     : _('FS'),
+            'class_type'     : _('Main'),
+            'schedule'       : '5',
+            'is_active'      : True,
+            'class_color'    : None,
+            'organization_id': 1
         }
     ]
-
     try:
         # Validar si ya existen clases asociadas al nuevo Meeting Center
         existing_classes = Classes.query.filter_by(meeting_center_id=new_meeting_center_id).first()
@@ -1657,14 +1715,15 @@ def populate_classes(id):
         # Insertar las clases del arreglo estático
         for class_data in main_classes_static:
             new_class = Classes(
-                class_name        = class_data['class_name'],
-                short_name        = class_data['short_name'],
                 class_code        = class_data['class_code'],
-                class_type        = class_data['class_type'],
-                schedule          = class_data['schedule'],
-                is_active         = class_data['is_active'],
                 class_color       = class_data['class_color'],
-                meeting_center_id = new_meeting_center_id
+                class_name        = class_data['class_name'],
+                class_type        = class_data['class_type'],
+                is_active         = class_data['is_active'],
+                meeting_center_id = new_meeting_center_id,
+                organization_id   = class_data['organization_id'],
+                schedule          = class_data['schedule'],
+                short_name        = class_data['short_name'],
             )
             db.session.add(new_class)
 
@@ -2006,6 +2065,7 @@ def render_stats():
                            bottom_students   = bottom_students ,
                            current_year      = current_year)
 
+
 # =============================================================================================
 @bp.route("/classes_stats/data")
 @role_required('Owner', 'Admin')
@@ -2076,6 +2136,7 @@ def get_classes_stats():
         "chart_data": chart_data       
     })
 
+
 # =============================================================================================
 @bp.route("/attendance/check", methods=['POST', 'GET'])
 @login_required
@@ -2085,6 +2146,7 @@ def register_attendance():
     sunday_date       = datetime.strptime(sunday_date_str, "%Y-%m-%d").date()
     sunday_week       = (get_next_sunday().day - 1) // 7 + 1
     role              = session.get('role')
+    organization_id   = session.get('organization_id')
 
     time_range = request.args.get('time_range', 'last_two_weeks')
 
@@ -2103,17 +2165,22 @@ def register_attendance():
     if meeting_center_id is not None:
         class_query = class_query.filter(Classes.meeting_center_id == meeting_center_id)
    
-    if role == 'Owner' or role == 'Admin':
+    if role == 'Owner':
         available_classes = class_query.order_by(Classes.class_name).all()
+    elif role == 'Admin':
+         available_classes = list({
+            c for c in Classes.query.filter_by(is_active=True, meeting_center_id=meeting_center_id)
+                    if str(sunday_week) in c.schedule.split(',')
+        })
     else:
         available_classes = list({
-            c for c in Classes.query.filter_by(is_active=True, meeting_center_id=meeting_center_id)
+            c for c in Classes.query.filter_by(is_active=True, meeting_center_id=meeting_center_id, organization_id=organization_id)
                     if str(sunday_week) in c.schedule.split(',')
         })
 
     if request.method == 'POST':
         data = request.get_json()
-        print(f"Received data: {data}")
+        #print(f"Received data: {data}")
 
         student_names = data.get("student_names", [])
         class_code = data.get("class_code")
@@ -2410,7 +2477,6 @@ def stats():
             "borderWidth": 1,
             "spanGaps": True
         })
-
     
     formatted_labels = [
         format_date(datetime.strptime(label, "%Y-%m-%d"), format='MMM dd')
@@ -2421,4 +2487,3 @@ def stats():
         'labels': formatted_labels,
         'datasets': datasets
     })
-

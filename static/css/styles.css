@@ -155,13 +155,13 @@ div > label[for="csrf_token"] {
 td button[type="button"], 
 td a[type="button"] {
     padding: 4px;  /* Reduce el espacio interno del botón */
-    font-size: 0.65rem; /* Hace que el texto e íconos sean más pequeños */
+    font-size: 0.75rem; /* Hace que el texto e íconos sean más pequeños */
     line-height: 1;     /* Ajusta la altura del botón */
 }
 
 td button[type="button"] i, 
 td a[type="button"] i {
-    font-size: 0.65rem;  /* Reduce el tamaño del icono */
+    font-size: 0.75rem;  /* Reduce el tamaño del icono */
     padding: 0;          /* Elimina cualquier padding extra */
     /* margin: 0;           Asegura que no haya margen adicional */
     line-height: 1;      /* Ajusta la altura de línea para hacerlo más compacto */
@@ -208,7 +208,7 @@ table th {
   --bs-table-bg-state: #b5b5ac; /* Color personalizado */
 }
 
-input[type="checkbox"] {
+input[type="checkbox"].toggle-column {
   -webkit-appearance: none;  /* Elimina el estilo predeterminado en navegadores como Safari */
   -moz-appearance: none;     /* Elimina el estilo predeterminado en Firefox */
   appearance: none;          /* Elimina el estilo predeterminado en otros navegadores */
@@ -218,7 +218,7 @@ input[type="checkbox"] {
 }
 
 /* Estilo del icono del checkbox (como el 'checkmark') */
-input[type="checkbox"]:checked::before {
+input[type="checkbox"].toggle-column:checked::before {
   content: '\2713';           /* El símbolo del 'checkmark' */
 
   line-height: 20px;

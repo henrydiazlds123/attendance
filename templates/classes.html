@@ -54,20 +54,75 @@
         <td class="col-md-1">{{ class.schedule}}</td>
         <td style="color: {{ class.class_color }};" class="col-md-1 d-none d-lg-table-cell"><div class="class_color" style="background-color: {{ class.class_color }};"></div></td>
         <td class="col-md-2 d-none d-lg-table-cell dot-1">{{ class.meeting_short_name}}</td>
-        <td class="col-md-2">
-          <a type="button" class="btn btn-primary btn-sm" data-toggle="tooltip" title="Edit class" href="{{ url_for('routes.update_class', id=class.id) }}">
+        <td class="col-md-2">          
+          <a type="button" class="btn btn-primary btn-sm" data-toggle="tooltip" title="{{ _('Edit class') }}" href="{{ url_for('routes.update_class', id=class.id) }}">
             <i class="bi bi-pencil-square"></i>
-          </a>
-          {% if not (class.class_type == 'Main')  %}
+          </a>          
+          <!-- Botón para restablecer color -->
+          <button type="button" class="btn btn-secondary btn-sm" data-toggle="tooltip" title="{{ _('Reset class color') }}" onclick="resetColor({{ class.id }})">
+            <i class="bi bi-palette"></i>
+          </button>
+          {% if not (class.class_type == 'Main') %}
           <form id="deleteForm-class-{{ class.id }}" action="{{ url_for('routes.delete_class', id=class.id) }}" method="post" style="display:inline;">
-            <button type="button" class="btn btn-danger btn-sm" data-toggle="tooltip" title="Eliminar Clase"  onclick="confirmDelete('class', {{ class.id }})">
+            <button type="button" class="btn btn-danger btn-sm" data-toggle="tooltip" title="{{ _('Delete class') }}" onclick="confirmDelete('class', {{ class.id }})">
               <i class="bi bi-trash"></i>
             </button>
           </form>
           {% endif %}
+          
         </td>
+        
       </tr>
     {% endfor%}
   </tbody>
-</table>   
+</table> 
+<script>
+  async function resetColor(classId) {
+    texts = await fetch('/get_swal_texts').then(res => res.json());
+      Swal.fire({
+          title: texts.confirmDelete,
+          text: texts.colorResetText,
+          icon: 'warning',
+          showCancelButton: true,
+          cancelButtonText: texts.cancel,
+          confirmButtonText: texts.yesResetIt,
+          reverseButtons: true
+      }).then((result) => {
+          if (result.isConfirmed) {
+              fetch(`/classes/reset_color/${classId}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' }
+              })
+              .then(response => {
+                  if (response.ok) {
+                      Swal.fire({
+                          title: texts.successTitle,
+                          text: texts.colorSuccessText,
+                          icon: 'success',
+                          confirmButtonText: 'OK'
+                      }).then(() => location.reload()); // Recarga la página tras el cierre del modal
+                  } else {
+                      Swal.fire({
+                          title: texts.errorTitle,
+                          text: texts.colorErrorText,
+                          icon: 'error',
+                          confirmButtonText: 'OK'
+                      });
+                  }
+              })
+              .catch(error => {
+                  console.error("Error:", error);
+                  Swal.fire({
+                      title: texts.errorTitle,
+                      text: texts.connectionError,
+                      icon: 'error',
+                      confirmButtonText: 'OK'
+                  });
+              });
+          }
+      });
+  }
+</script>
+
+  
 {% endblock %}
