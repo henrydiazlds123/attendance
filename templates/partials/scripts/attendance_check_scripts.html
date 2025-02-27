@@ -8,12 +8,13 @@
     const submitButton       = document.getElementById('submit_attendance');
 
     // Obtener textos antes de cualquier acción
+    let texts = {};
     try {
         texts = await fetch('/get_swal_texts').then(res => res.json());
     } catch (error) {
         console.error("Error fetching texts:", error);
     }
-   
+
     // Función para actualizar las tablas según la clase y meeting_center_id seleccionados
     function updateTables() {
       const selectedClass = classFilter.value;
@@ -41,6 +42,9 @@
           // Se espera que el backend retorne:
           nonAttendanceTbody.innerHTML = data.non_attendance_html;
           attendanceTbody.innerHTML = data.attendance_html;
+
+          toggleSubmitButton(); // Verifica si debe deshabilitar el botón
+          addCheckboxListeners(); // Vuelve a agregar los event listeners a los nuevos checkboxes
         })
         .catch(error => console.error("Error updating tables:", error));
     }
@@ -48,7 +52,14 @@
     // Actualización automática al cambiar el filtro de clase
     classFilter.addEventListener('change', updateTables);
     rangeFilter.addEventListener('change', updateTables);
-    
+
+    // Si solo hay una clase, seleccionamos esa clase y hacemos la consulta automáticamente
+    if (classFilter.options.length === 2) { // Solo hay una opción además de "Select a class"
+      const singleClass = classFilter.options[1]; // La única clase disponible
+      classFilter.value = singleClass.value; // Establecemos el valor de la clase
+      updateTables(); // Hacemos la consulta automáticamente
+    }
+
     // Acción al presionar el botón "Register Attendance"
     submitButton.addEventListener('click', function () {
       Swal.fire({
@@ -83,6 +94,9 @@
               // Actualizamos las tablas con la respuesta del servidor
               nonAttendanceTbody.innerHTML = data.non_attendance_html;
               attendanceTbody.innerHTML = data.attendance_html;
+              toggleSubmitButton(); // Verifica si debe deshabilitar el botón
+              addCheckboxListeners(); // Vuelve a agregar los event listeners a los nuevos checkboxes
+              
               Swal.fire(
                 texts.confirmRegSuccessTitle,
                 texts.confirmRegSuccessText,
@@ -103,8 +117,33 @@
             texts.registrationCancel,
             'info'
           );
+          // Desmarcar todos los checkboxes
+          document.querySelectorAll('input[name="attendance"]').forEach(checkbox => {
+            checkbox.checked = false;
+          });
+          toggleSubmitButton();
         }
       });
     });
+
+    function toggleSubmitButton() {
+      const checkboxes = document.querySelectorAll('input[name="attendance"]');
+      const submitButton = document.getElementById('submit_attendance');
+
+      // Verifica si al menos un checkbox está marcado
+      const isAnyChecked = Array.from(checkboxes).some(checkbox => checkbox.checked);
+      submitButton.disabled = !isAnyChecked;
+    }
+
+    function addCheckboxListeners() {
+      const checkboxes = document.querySelectorAll('input[name="attendance"]');
+      checkboxes.forEach(checkbox => {
+        checkbox.addEventListener("change", toggleSubmitButton);
+      });
+    }
+
+    // Ejecutamos la función para asegurar que el botón comience deshabilitado si no hay selección
+    toggleSubmitButton();
+    addCheckboxListeners();
   });
 </script>

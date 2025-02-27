@@ -8,7 +8,7 @@ from sqlalchemy.orm          import joinedload
 from sqlalchemy.exc          import IntegrityError
 from config                  import Config
 from models                  import db, Classes, User, Attendance, MeetingCenter, Setup, Organization, NameCorrections
-from forms                   import AttendanceEditForm, AttendanceForm, MeetingCenterForm, UserForm, EditUserForm, ResetPasswordForm, ClassForm, OrganizationForm
+from forms                   import AttendanceEditForm, AttendanceForm, MeetingCenterForm, UserForm, EditUserForm, ResetPasswordForm, ClassForm, OrganizationForm, ProfileForm
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.utils     import ImageReader
 from reportlab.pdfgen        import canvas
@@ -17,54 +17,65 @@ from utils                   import *
 from datetime                import datetime, timedelta
 from collections             import defaultdict
 
-
-
-
 bp = Blueprint('routes', __name__)
-
 
 @bp.before_request
 def load_user():
-    # Verifica si hay un ID de usuario en la sesión y carga el usuario
+    # Verifica si el usuario está en sesión
     user_id = session.get('user_id')
+
+    # Si no hay sesión, revisa la cookie 'remember_me'
+    if not user_id:
+        user_id = request.cookies.get('remember_me')
+
     if user_id:
-        g.user = User.query.get(user_id)  # Asumiendo que tienes un modelo `User`
+        user = User.query.get(user_id)
+        if user:
+            g.user                       = user
+            session['user_id']           = user.id
+            session['user_name']         = user.name
+            session['role']              = user.role
+            session['meeting_center_id'] = user.meeting_center_id
+            session['organization_id']   = user.organization_id
+        else:
+            g.user = None
     else:
         g.user = None
+
 
 # =============================================================================================
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
-    next_url = request.args.get('next')  # Obtiene la URL a la que el usuario quería acceder
+
+    next_url = request.args.get('next')
 
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username    = request.form['username']
+        password    = request.form['password']
+        remember_me = request.form.get('remember_me') == 'on'
+
         user = User.query.filter_by(username=username).first()
 
-        if user and user.check_password(password):  # Verifica si el usuario y la contraseña son correctos
+        if user and user.check_password(password):
             meeting_center                   = MeetingCenter.query.get(user.meeting_center_id)
             session['user_id']               = user.id
             session['user_name']             = user.name
+            session['username']              = user.username
+            session['user_lastname']         = user.lastname
+            session['user_email']            = user.email
             session['role']                  = user.role  # Guarda el rol del usuario
             session['meeting_center_id']     = meeting_center.id
             session['meeting_center_name']   = meeting_center.name
             session['meeting_center_number'] = meeting_center.unit_number
             session['organization_id']       = user.organization_id
+            
+            # Si "Remember Me" está marcado, guarda la cookie
+            response = redirect(next_url or url_for('routes.attendance_report'))
+            if remember_me:
+                response.set_cookie('remember_me', str(user.id), max_age=2*24*60*60)  # 30 días
+            return response
 
-            print(user.organization_id)
-
-            # Redirigir según el rol del usuario, con prioridad a la URL almacenada en `next`
-            if session['role'] == 'Operator':
-                return redirect(next_url or url_for('routes.manual_attendance'))
-            if session['role'] == 'Owner':
-                return redirect(next_url or url_for('routes.admin'))
-
-            flash(_('Login successful!'), 'success')
-            return redirect(next_url or url_for('routes.attendance_report'))  # Redirigir a `next_url` si existe
-
-        else:
-            flash(_('Invalid credentials. Please check your username and password.'), 'danger')
+        flash(_('Invalid credentials. Please check your username and password.'), 'danger')
 
     return render_template('login.html')
 
@@ -73,8 +84,10 @@ def login():
 @bp.route('/logout')
 def logout():
     session.clear()
+    response = redirect(url_for('routes.login'))
+    response.delete_cookie('remember_me')  # Elimina la cookie al cerrar sesión
     flash(_('Logout successful!'), 'success')
-    return redirect(url_for('routes.login'))
+    return response
 
 
 # =============================================================================================
@@ -110,24 +123,14 @@ def users():
     ).join(MeetingCenter, User.meeting_center_id == MeetingCenter.id) \
      .join(Organization, User.organization_id == Organization.id)
 
-    if role == 'Owner':
-        # El Owner ve todos si el meeting_center_id es 'all'
-        if meeting_center_id != 'all':
+    if role == 'Owner': # El Owner ve todos si el meeting_center_id es 'all'       
+        if meeting_center_id != 'all': 
             query = query.filter(User.meeting_center_id == meeting_center_id)
-        query = query.filter(
-            (User.role != 'Owner') | (User.username == session.get('username'))
-        )
-
-    elif role == 'Super':
-        # Super ve solo usuarios de su organización
-        query = query.filter(User.organization_id == organization_id) \
-                     .filter((User.role != 'Owner') | (User.username == session.get('username')))
-
-    elif role == 'Admin':
-        # Admin ve solo usuarios de su propio Meeting Center, excluyendo Owners
-        query = query.filter(User.meeting_center_id == meeting_center_id) \
-                     .filter(User.role != 'Owner')
-
+        query = query.filter((User.role != 'Owner') | (User.username == session.get('username')))
+    elif role == 'Super': # Super ve solo usuarios de su organización        
+        query = query.filter(User.organization_id == organization_id).filter((User.role != 'Owner') | (User.username == session.get('username')))
+    elif role == 'Admin': # Admin ve solo usuarios de su propio Meeting Center, excluyendo Owners        
+        query = query.filter(User.meeting_center_id == meeting_center_id).filter(User.role != 'Owner')
     else:
         # Usuario regular solo ve su propio usuario
         query = db.session.query(
@@ -141,11 +144,9 @@ def users():
          .join(Organization, User.organization_id == Organization.id) \
          .filter(User.username == session.get('username'))
 
-    users = query.all()
+    users = query.order_by(asc(User.meeting_center_id), asc(User.organization_id), asc(User.role)).all()
 
-    return render_template('users.html', 
-                           users=users,
-                           admin_count=admin_count)
+    return render_template('users.html', users=users, admin_count=admin_count)
 
 
 # =============================================================================================
@@ -172,16 +173,12 @@ def create_user():
         db.session.add(user)
         db.session.commit()
         return redirect(url_for('routes.users'))
-    return render_template('form.html', 
-                           form               = form,
-                           title              = _('New User'),
-                           submit_button_text = _('Create'),
-                           clas               = 'warning')
+    return render_template('form.html', form=form, title=_('New User'), submit_button_text=_('Create'), clas='warning')
 
 
 # =============================================================================================
 @bp.route('/user/edit/<int:id>', methods=['GET', 'POST'])
-@role_required('Admin', 'Super', 'Owner')
+@login_required
 def update_user(id):
     user                           = User.query.get_or_404(id)
     form                           = EditUserForm(obj=user)
@@ -363,7 +360,7 @@ def attendances():
     student_name  = request.args.get('student_name')
     sunday_date   = request.args.get('sunday_date')
     page          = request.args.get('page', 1, type=int)
-    per_page      = request.args.get('per_page', 25, type=int)
+    per_page      = request.args.get('per_page', 150, type=int)
 
     query = db.session.query(
         Attendance.id,
@@ -480,13 +477,9 @@ def create_attendance():
     existing_students          = db.session.query(Attendance.student_name).filter(Attendance.meeting_center_id == session['meeting_center_id']).distinct().all()
     form.student_name.choices += [(name[0], name[0]) for name in existing_students]
     
-
-    if form.validate_on_submit():
-        # Determine whether to use an existing student name or a new one
+    if form.validate_on_submit(): # Determine whether to use an existing student name or a new one       
         student_name = form.new_student_name.data.strip() if form.new_student_name.data else form.student_name.data
-
-        # Check if no name was provided in either field
-        if not student_name:
+        if not student_name: # Check if no name was provided in either field
             flash(_('Please select an existing student or provide a new name.'), 'danger')
             return render_template('form.html', 
                                    form               = form,
@@ -530,10 +523,8 @@ def create_attendance():
 @bp.route('/attendance/edit/<int:id>', methods=['GET', 'POST'])
 @role_required('Admin', 'Super', 'Owner')
 def update_attendance(id):
-    attendance = Attendance.query.get_or_404(id)
-    form = AttendanceEditForm(obj=attendance)
-
-    # Obtener el meeting_center_id relacionado con la asistencia
+    attendance        = Attendance.query.get_or_404(id)
+    form              = AttendanceEditForm(obj=attendance)
     meeting_center_id = get_meeting_center_id()
 
     # Filtrar las clases por el meeting_center_id
@@ -610,8 +601,7 @@ def attendance_report():
 
     selected_year = request.args.get('year', type=int, default=current_year)
     
-    # Calcular el trimestre actual
-    current_quarter = f"Q{(current_month - 1) // 3 + 1}"
+    current_quarter = f"Q{(current_month - 1) // 3 + 1}" # Calcular el trimestre actual
 
     # Si no se selecciona un trimestre, por defecto usar el trimestre actual
     selected_month = request.args.get('month', default=current_quarter)
@@ -720,8 +710,7 @@ def attendance_report():
         quarters_with_data = quarters_with_data ,     # Pasar los trimestres con datos
         disable_month      = len(available_months)  == 1,
         disable_year       = len(available_years)   == 1,
-        available_classes  = available_classes  # Pasar clases disponibles a la plantilla
-    )
+        available_classes  = available_classes)  # Pasar clases disponibles a la plantilla
 
 
 # =============================================================================================
@@ -798,7 +787,7 @@ def get_monthly_attendance(student_name):
     if not student_name:
         return jsonify({"error": "student_name is required"}), 400  # Retorna un error 400 en lugar de 404
     
-    year = request.args.get('year', type=int, default=2025)
+    year              = request.args.get('year', type=int, default=2025)
     meeting_center_id = get_meeting_center_id()
 
     # Obtener la cantidad de asistencias por mes para el estudiante
@@ -825,21 +814,21 @@ def get_monthly_attendance(student_name):
     total_weeks_dict = {int(row.month): row.total_weeks for row in total_weeks_query}
 
     # Inicializar listas completas con 0s para los meses sin datos
-    attendance_counts = []
+    attendance_counts      = []
     attendance_percentages = []
-    total_weeks_list = []
-    month_names = []
+    total_weeks_list       = []
+    month_names            = []
 
     # Lista con todos los meses del año
-    all_months = list(range(1, 13))  # [1, 2, 3, ..., 12]
+    all_months        = list(range(1, 13))  # [1, 2, 3, ..., 12]
     months_translated = [_('Jan'), _('Feb'), _('Mar'), _('Apr'), _('May'), _('Jun'),
                     _('Jul'), _('Aug'), _('Sep'), _('Oct'), _('Nov'), _('Dec')]
 
     # Filtramos solo los meses con datos de asistencia o semanas reportadas
     for month in all_months:
-        total_weeks = total_weeks_dict.get(month, 0)
+        total_weeks      = total_weeks_dict.get(month, 0)
         attendance_count = attendance_dict.get(month, 0)
-        percentage = (attendance_count / total_weeks * 100) if total_weeks > 0 else 0
+        percentage       = (attendance_count / total_weeks * 100) if total_weeks > 0 else 0
 
         # Solo agregar meses con datos de asistencia o semanas reportadas
         if attendance_count > 0 or total_weeks > 0:
@@ -882,11 +871,11 @@ def registrar():
     # 🔍 Depurar: Ver qué datos llegan al servidor
     print("Datos recibidos en el servidor:", request.form.to_dict())
     try:
-        class_code     = request.form.get('classCode')
-        sunday_date    = get_next_sunday()
-        sunday_code    = request.form.get('sundayCode')
-        unit_number    = request.form.get('unitNumber')
-        student_name   = request.form.get('studentName') 
+        class_code   = request.form.get('classCode')
+        sunday_date  = get_next_sunday()
+        sunday_code  = request.form.get('sundayCode')
+        unit_number  = request.form.get('unitNumber')
+        student_name = request.form.get('studentName') 
                
         # Limpiar el nombre recibido
         student_name     = ' '.join(student_name.strip().split()) # Elimina espacios antes y después
@@ -1370,18 +1359,12 @@ def classes():
     ).join(MeetingCenter, Classes.meeting_center_id == MeetingCenter.id)
 
     # Verificar si el rol es Admin
-    if role == 'Admin':
-        # Si es Admin, filtrar por meeting_center_id
+    if role == 'Admin': # Si es Admin, filtrar por meeting_center_id        
         query = query.filter(Classes.meeting_center_id == meeting_center_id)
-    
-    # Verificar si el rol es Super
-    elif role == 'Super':
-        # Si es Super, filtrar por organization_id y meeting_center_id
+    elif role == 'Super':# Si es Super, filtrar por organization_id y meeting_center_id       
         query = query.filter(Classes.organization_id == organization_id)
-        query = query.filter(Classes.meeting_center_id == meeting_center_id)
-    
-    # Si no es Admin ni Super, aplicar la lógica existente para Owner
-    elif role == 'Owner':
+        query = query.filter(Classes.meeting_center_id == meeting_center_id)   
+    elif role == 'Owner': # Si no es Admin ni Super, aplicar la lógica existente para Owner
         if not (meeting_center_id == 'all'):
             query = query.filter(Classes.meeting_center_id == meeting_center_id)
     
@@ -1392,14 +1375,24 @@ def classes():
 
 
 # =============================================================================================
-@bp.route('/classes/new', methods=['GET', 'POST'])
+@bp.route('/class/new', methods=['GET', 'POST'])
 @role_required('Admin', 'Super', 'Owner')
 def create_class():
-    form = ClassForm()
+    # Obtener rol, organization_id y meeting_center_id de la sesión
     meeting_center_id = get_meeting_center_id()
-    
-    form.meeting_center_id.choices = [(mc.id, mc.name) for mc in MeetingCenter.query.filter_by(id=meeting_center_id).all()]
-    form.organization_id.choices = [(og.id, og.name) for og in Organization.query.all()]
+    organization_id   = session['organization_id']
+    role              = session.get('role')
+    form              = ClassForm()
+
+    if role == 'Owner':
+        form.meeting_center_id.choices = [(mc.id, mc.name) for mc in MeetingCenter.query.all()]
+    else:
+        form.meeting_center_id.choices = [(mc.id, mc.name) for mc in MeetingCenter.query.filter_by(id=meeting_center_id).all()]
+
+    if (role == 'Owner' or role == 'Admin'):
+        form.organization_id.choices = [(og.id, og.name) for og in Organization.query.all()]
+    else:
+        form.organization_id.choices = [(og.id, og.name) for og in Organization.query.filter_by(id=organization_id).all()]
     
     if form.validate_on_submit():
         new_class = Classes(
@@ -1421,11 +1414,11 @@ def create_class():
         except IntegrityError:
             db.session.rollback()
             flash(_('A class with this name, short name, or code already exists in the same church unit.'), 'danger')
-    return render_template('form.html', form=form, title=_('Create New Class'), submit_button_text=_('Create'), clas='warning')
+    return render_template('form.html', form=form, title=_('Create new Class'), submit_button_text=_('Create'), clas='warning')
 
 
 # =============================================================================================
-@bp.route('/classes/edit/<int:id>', methods=['GET', 'POST'])
+@bp.route('/class/edit/<int:id>', methods=['GET', 'POST'])
 @role_required('Admin', 'Super', 'Owner')
 def update_class(id):
     class_instance = Classes.query.get_or_404(id)
@@ -1454,7 +1447,7 @@ def update_class(id):
 
 
 # =============================================================================================
-@bp.route('/classes/reset_color/<int:class_id>', methods=['POST'])
+@bp.route('/class/reset_color/<int:class_id>', methods=['POST'])
 @login_required
 def reset_class_color(class_id):
     class_obj = Classes.query.get_or_404(class_id)
@@ -1467,7 +1460,7 @@ def reset_class_color(class_id):
         return jsonify({"error": f"Error al restablecer el color: {str(e)}"}), 500
 
 # =============================================================================================
-@bp.route('/classes/delete/<int:id>', methods=['POST'])
+@bp.route('/class/delete/<int:id>', methods=['POST'])
 @role_required('Admin', 'Owner')
 def delete_class(id):
     class_instance = Classes.query.get_or_404(id)
@@ -1574,7 +1567,7 @@ def get_swal_texts():
         'confirmDelete'           : _("You \'re sure?"),
         'confirmRegisterCancel'   : _("No, cancel!"),
         'confirmRegisterText'     : _("Do you want to register attendance for the selected students?"),
-        'confirmRegisterTitle'    : _("Confirm Attendance Registration?"),
+        'confirmRegisterTitle'    : _("Confirm Attendance Registration"),
         'confirmRegisterYes'      : _("Yes, register it!"),
         'confirmRegSuccessText'   : _("Attendance has been registered successfully."),
         'confirmRegSuccessTitle'  : _("Success"),
@@ -2148,6 +2141,8 @@ def register_attendance():
     role              = session.get('role')
     organization_id   = session.get('organization_id')
 
+    print(f"Organization id: {organization_id}")
+
     time_range = request.args.get('time_range', 'last_two_weeks')
 
     if time_range == 'last_two_weeks':
@@ -2165,7 +2160,7 @@ def register_attendance():
     if meeting_center_id is not None:
         class_query = class_query.filter(Classes.meeting_center_id == meeting_center_id)
    
-    if role == 'Owner':
+    if (role == 'Owner' or role == 'Operator' or organization_id == 1):
         available_classes = class_query.order_by(Classes.class_name).all()
     elif role == 'Admin':
          available_classes = list({
@@ -2487,3 +2482,45 @@ def stats():
         'labels': formatted_labels,
         'datasets': datasets
     })
+
+# =============================================================================================
+@bp.route('/user/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    form = ProfileForm()
+
+    user = User.query.get(session['user_id'])
+    if not user:
+        flash('User not found.', 'danger')
+        return redirect(url_for('login'))
+
+    if form.validate_on_submit():
+        # Verificar si el email ya existe y no pertenece al usuario actual
+        if User.query.filter(User.email == form.email.data, User.id != user.id).first():
+            flash('Email already in use by another account.', 'danger')
+            return redirect(url_for('profile'))
+
+        user.email = form.email.data
+        #user.name = form.name.data
+        #user.lastname = form.lastname.data
+
+        # Cambiar la contraseña si se ingresó una nueva
+        if form.password.data:
+            user.set_password(form.password.data)
+
+        db.session.commit()
+        flash('Profile updated successfully.', 'success')
+        return redirect(url_for('routes.profile'))
+
+    # Prellenar el formulario con los datos actuales del usuario
+    form.username.data = user.username
+    form.email.data    = user.email
+    form.name.data     = user.name
+    form.lastname.data = user.lastname
+
+    return render_template('form.html',
+                           form=form,
+                           title=_('Edit User Profile'),
+                           submit_button_text=_('Update Profile'),
+                           clas='warning'
+                           )

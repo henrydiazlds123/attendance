@@ -580,76 +580,92 @@
               })
               .catch(error => console.error("Error al actualizar las gráficas:", error));
       }
-    
+
       function updateChartData(labels, datasets) {
-
-          const lineDatasets = datasets.map((dataset, index) => ({
-              ...dataset,
-              backgroundColor: colors[index % colors.length],
-              borderColor: borderColors[index % borderColors.length],
-              borderWidth: 2,
-              pointBackgroundColor: borderColors[index % borderColors.length],
-              pointBorderColor: "#fff",
-              pointHoverBackgroundColor: "#fff",
-              pointHoverBorderColor: borderColors[index % borderColors.length],
-              fill: false,
-              tension: 0.2
-          }));
-          datasets.forEach((ds, i) => {
-              console.log(`Dataset ${i}:`, ds.data);
-          });
-          const barDatasets = datasets.map((dataset, index) => ({
-              ...dataset,
-              backgroundColor: colors[index % colors.length],
-              borderColor: borderColors[index % borderColors.length],
-              borderWidth: 2,
-              hoverBackgroundColor: borderColors[index % borderColors.length],
-              hoverBorderColor: "#000"
-          }));
-
-          const ctx1 = document.getElementById("lineChart").getContext("2d");
-          if (lineChart) {
-              lineChart.destroy();
-          }
-          lineChart = new Chart(ctx1, {
-              type: "line",
-              data: { labels: labels, datasets: lineDatasets },
-              options: {
-                  responsive: true,
-                  plugins: {
-                      legend: { position: "top" },
-                      title: {
-                          display: "true",
-                          text: "Attendance per Period",
-                          font: { size: 18 }
-                      },
-                  },
-                  elements: { line: { tension: 0.3 } }
-              }
-          });
-
-          const ctx2 = document.getElementById("barChart").getContext("2d");
-          if (barChart) {
-              barChart.destroy();
-          }
-          barChart = new Chart(ctx2, {
-              type: "bar",
-              data: { labels: labels, datasets: barDatasets },
-              options: {
-                  responsive: true,
-                  plugins: {
-                      legend: { position: "top" },
-                      title: {
-                          display: "true",
-                          text: "Attendance per Period",
-                          font: { size: 18 }
-                      },
-                  },
-                  scales: { y: { beginAtZero: true } }
-              }
-          });
-      }
-
+        const lineDatasets = datasets.map((dataset, index) => ({
+            ...dataset,
+            backgroundColor: colors[index % colors.length],
+            borderColor: borderColors[index % borderColors.length],
+            borderWidth: 2,
+            pointBackgroundColor: borderColors[index % borderColors.length],
+            pointBorderColor: "#fff",
+            pointHoverBackgroundColor: "#fff",
+            pointHoverBorderColor: borderColors[index % borderColors.length],
+            fill: false,
+            tension: 0.2
+        }));
+    
+        const barDatasets = datasets.map((dataset, index) => ({
+            ...dataset,
+            backgroundColor: colors[index % colors.length],
+            borderColor: borderColors[index % borderColors.length],
+            borderWidth: 2,
+            hoverBackgroundColor: borderColors[index % borderColors.length],
+            hoverBorderColor: "#000"
+        }));
+    
+        // Line Chart
+        const ctx1 = document.getElementById("lineChart").getContext("2d");
+        if (lineChart) {
+            lineChart.destroy();
+        }
+        lineChart = new Chart(ctx1, {
+            type: "line",
+            data: { labels: labels, datasets: lineDatasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: "top" },
+                    title: {
+                        display: true,
+                        text: "Attendance per Period",
+                        font: { size: 18 }
+                    },
+                },
+                elements: { line: { tension: 0.3 } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 10 // Incrementos de 10
+                        }
+                    }
+                }
+            }
+        });
+    
+        // Bar Chart
+        const ctx2 = document.getElementById("barChart").getContext("2d");
+        if (barChart) {
+            barChart.destroy();
+        }
+        barChart = new Chart(ctx2, {
+            type: "bar",
+            data: { labels: labels, datasets: barDatasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: "top" },
+                    title: {
+                        display: true,
+                        text: "Attendance per Period",
+                        font: { size: 18 }
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 10 // Incrementos de 10
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
       function ordenarSelect(selectId) {
           // Obtener el select y las opciones
           const select = document.getElementById(selectId);
@@ -672,6 +688,8 @@
           sortableOptions.forEach(option => select.appendChild(option));
       }
       
+      
+      
       loadTranslationsAndCreateChart();
       fetchPercentageData();
       fetchClassData();
@@ -691,5 +709,7 @@
       classSelect1.addEventListener('change', () => {fetchPercentageData(); checkSelectCompareStatus();});
       classSelectCompare.addEventListener('change', fetchPercentageData);
       yearCompare.addEventListener('change', fetchPercentageData);
+            
   });
+  
 </script>

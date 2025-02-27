@@ -2,7 +2,7 @@ from flask              import session
 from flask_wtf          import FlaskForm
 from flask_babel        import _
 from flask_babel        import lazy_gettext as _l
-from wtforms            import BooleanField, StringField, PasswordField, DateField, SelectField, TimeField, IntegerField
+from wtforms            import BooleanField, StringField, PasswordField, DateField, SelectField, TimeField, IntegerField, SubmitField
 from wtforms.validators import DataRequired, Email, Length, Optional, EqualTo, ValidationError
 from datetime           import datetime, timedelta
 from wtforms.validators import Regexp
@@ -39,6 +39,10 @@ class UserForm(FlaskForm):
             if session['role'] != 'Owner':
                 self.meeting_center_id.data = session.get('meeting_center_id')
                 self.meeting_center_id.render_kw = {'disabled': 'disabled'}
+
+            if (session['role'] != 'Owner' and session['role'] != 'Admin'):
+                self.organization_id.data = session.get('organization_id')
+                self.organization_id.render_kw = {'disabled': 'disabled'}
 
     def validate(self, extra_validators=None):
         # Verifica que el usuario no pueda cambiar el Meeting Center si no es Owner
@@ -139,7 +143,7 @@ class ClassForm(FlaskForm):
     class_name      = StringField(_l('Class Name'), validators=[DataRequired(), Length(max=50)])
     short_name      = StringField(_l('Short Name'), validators=[DataRequired(), Length(max=20)])
     class_code      = StringField(_l('Class Code'), validators=[DataRequired(), Length(max=10)])
-    class_type      = SelectField(_l('Class Type'), choices=[('Main', _l('Main')), ('Extra', _l('Extra'))], default=_l('Extra'))
+    class_type      = SelectField(_l('Class Type'), choices=[], default=_l('Extra'))
     organization_id = SelectField(_l('Organization'), coerce=int, validators=[DataRequired()])
     schedule        = StringField(_l('Schedule'), validators=[Length(max=10)])
     is_active       = BooleanField(_l('Is Active?'), default=True)
@@ -163,21 +167,49 @@ class ClassForm(FlaskForm):
         else:
             self.class_color.render_kw['value'] = '#000000'  # Valor por defecto
 
-        # Manejo del rol para meeting_center_id y class_type
+        # Manejo del rol para meeting_center_id y class_type               
         if 'role' in session:
-            if session['role'] != 'Owner' and self.class_type.data == 'Main':
-                self.meeting_center_id.data      = session.get('meeting_center_id')
-                self.meeting_center_id.render_kw = {'disabled': 'disabled'}
-                self.class_name.render_kw        = {'disabled': 'disabled'}
-                self.short_name.render_kw        = {'disabled': 'disabled'}
-                self.class_code.render_kw        = {'disabled': 'disabled'}
-                self.class_type.render_kw        = {'disabled': 'disabled'}
-                self.schedule.render_kw          = {'disabled': 'disabled'}
-                self.is_active.render_kw         = {'disabled': 'disabled'}
-                self.organization_id.render_kw   = {'disabled': 'disabled'}
-                
+            role = session['role']
+            is_owner = role == 'Owner'
+            is_admin = role == 'Admin'
+
+            # Deshabilitar campos si no es Owner y la clase es Main
+            if not is_owner and self.class_type.data == 'Main':
+                for field in [
+                    self.meeting_center_id,
+                    self.class_name,
+                    self.short_name,
+                    self.class_code,
+                    self.class_type,
+                    self.schedule,
+                    self.is_active,
+                    self.organization_id
+                ]:
+                    field.render_kw = {'disabled': 'disabled'}
+                self.meeting_center_id.data = session.get('meeting_center_id')
+
+            # Configurar opciones de class_type según el rol
+            self.class_type.choices = [('Main', _('Main')), ('Extra', _('Extra'))] if is_owner else [('Extra', _('Extra'))]
+
+            # Deshabilitar class_type y meeting_center_id si no es Owner
+            if not is_owner:
+                for field in [self.class_type, self.meeting_center_id]:
+                    field.render_kw = {'disabled': 'disabled'}
+
+            # Deshabilitar organization_id si no es Owner ni Admin
+            if not (is_owner or is_admin):
+                self.organization_id.render_kw = {'disabled': 'disabled'}
 
 #==================================================================================================
 class OrganizationForm(FlaskForm):
     name = StringField(_('Organization Name'), validators=[DataRequired(), Length(max=50)])
+
     
+#==================================================================================================
+class ProfileForm(FlaskForm):
+    username         = StringField('Username', render_kw={'readonly': True, 'disabled': 'disabled'})
+    name             = StringField('First Name', render_kw={'readonly': True, 'disabled': 'disabled'})
+    lastname         = StringField('Last Name', render_kw={'readonly': True, 'disabled': 'disabled'})
+    email            = StringField('Email', validators=[DataRequired(), Email()])
+    password         = PasswordField('New Password', validators=[Optional(), Length(min=6)], render_kw={'placeholder': 'Leave blank to keep current password'})
+    confirm_password = PasswordField('Confirm Password', validators=[EqualTo('password')])

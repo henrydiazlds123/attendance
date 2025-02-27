@@ -629,8 +629,8 @@ msgid "Do you want to register attendance for the selected students?"
 msgstr "Quer registrar presença dos alunos selecionados?"
 
 #: routes.py:1577
-msgid "Confirm Attendance Registration?"
-msgstr "Confirmar registro de presença?"
+msgid "Confirm Attendance Registration"
+msgstr "Confirmar registro de presença"
 
 #: routes.py:1578
 msgid "Yes, register it!"

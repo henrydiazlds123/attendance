@@ -635,8 +635,8 @@ msgid "Do you want to register attendance for the selected students?"
 msgstr "¿Quieres registrar la asistencia de los estudiantes seleccionados?"
 
 #: routes.py:1577
-msgid "Confirm Attendance Registration?"
-msgstr "¿Confirmar Registro de Asistencia?"
+msgid "Confirm Attendance Registration"
+msgstr "Confirmar Registro de Asistencia"
 
 #: routes.py:1578
 msgid "Yes, register it!"
@@ -1092,7 +1092,7 @@ msgstr "Mes Pasado"
 
 #: templates/attendance_check.html:38
 msgid "Year to Date"
-msgstr "Hasta hoy"
+msgstr "En todo el año"
 
 #: templates/attendance_check.html:47
 msgid "Members with Attendance"

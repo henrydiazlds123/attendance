@@ -194,7 +194,7 @@ table th {
   position: relative;
   width: 100%;
   max-width: 800px; /* Ajusta según necesidad */
-  min-height: 400px; /* Asegura una mejor visualización */
+  min-height: 350px; /* Asegura una mejor visualización */
   margin: auto; /* Centra el gráfico */
 }
 
