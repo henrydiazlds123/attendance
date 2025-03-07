@@ -38,7 +38,7 @@
       // Crear gráficos vacíos
       async function loadTranslationsAndCreateChart() {
           try {
-              const texts = await fetch('/get_swal_texts').then(response => response.json());
+              const texts = await fetch('/swal/get_swal_texts').then(response => response.json());
 
               // Ahora que las traducciones están disponibles, crea el gráfico
               window.attendanceChart = new Chart(ctxAttendance, {
@@ -178,7 +178,7 @@
           console.log('Fetching class data for:', { classCode, year });
 
           // Construir la URL con los filtros
-          const url = `/classes_stats/data?class_code=${classCode}&year=${year}`;
+          const url = `/stats/classes/data?class_code=${classCode}&year=${year}`;
 
           try {
               const response = await fetch(url);
@@ -221,7 +221,7 @@
               //console.log("No previous chart to destroy.");
           }
 
-          const texts = await fetch('/get_swal_texts').then(response => response.json());
+          const texts = await fetch('/swal/get_swal_texts').then(response => response.json());
 
           // Crear el nuevo gráfico
           window.attendanceChart = new Chart(ctxAttendance, {
@@ -304,7 +304,7 @@
               window.classFrequencyChart.destroy();
           }
 
-          const texts = await fetch('/get_swal_texts').then(response => response.json());
+          const texts = await fetch('/swal/get_swal_texts').then(response => response.json());
 
           const allClasses = new Set();
           Object.values(class_frequencies).forEach(monthData => {
@@ -366,7 +366,7 @@
 
       async function updateClassChart(data) {
           const ctxClassData = document.getElementById("classChart").getContext("2d");
-          const texts = await fetch('/get_swal_texts').then(response => response.json());
+          const texts = await fetch('/swal/get_swal_texts').then(response => response.json());
 
           // Extraer etiquetas y valores
           const labels = data.chart_data.map(entry => entry.month);
@@ -460,7 +460,7 @@
           const year       = document.getElementById("year-select1").value;
 
           // Construir la URL con los filtros
-          const url = `/classes_stats/percentage_data?class_code1=${classCode1}&class_code2=${classCode2}&year=${year}`;
+          const url = `/stats/classes/percentage_data?class_code1=${classCode1}&class_code2=${classCode2}&year=${year}`;
 
           try {
               const response = await fetch(url);
@@ -475,7 +475,7 @@
           const ctx = document.getElementById("percentageChart").getContext("2d");
           // Etiquetas de meses (puedes obtener la traducción si lo necesitas)
           const monthLabels = data.months ? data.months.map(item => item.label) : [];
-          const texts       = await fetch('/get_swal_texts').then(response => response.json());
+          const texts       = await fetch('/swal/get_swal_texts').then(response => response.json());
 
           // Generar un dataset por cada clase
           const datasets = data.chart_data.map((clase, index) => {
@@ -572,7 +572,7 @@
       function updateCharts() {
           const selectedClass = classSelect.value || "all";
           const selectedYear = year_Select.value || new Date().getFullYear();
-          const url = `/stats2/?class_code=${selectedClass}&year=${selectedYear}`;
+          const url = `/stats/stats2/?class_code=${selectedClass}&year=${selectedYear}`;
 
           fetchJSON(url)
               .then(data => {

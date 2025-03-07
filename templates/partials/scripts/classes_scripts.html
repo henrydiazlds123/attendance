@@ -22,7 +22,7 @@
       });
   }
   async function resetColor(classId) {
-    texts = await fetch('/get_swal_texts').then(res => res.json());
+    texts = await fetch('/swal/get_swal_texts').then(res => res.json());
       Swal.fire({
           title: texts.confirmDelete,
           text: texts.colorResetText,

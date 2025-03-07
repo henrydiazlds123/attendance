@@ -45,14 +45,14 @@
 
       <td>
         <a type="button" class="btn btn-primary btn-sm"
-          href="{{ url_for('routes.update_attendance', id=attendance.id, **request.args.to_dict()) }}"><i
+          href="{{ url_for('attendance.update_attendance', id=attendance.id, **request.args.to_dict()) }}"><i
             class="bi bi-pencil-square"></i></a>
 
         {% endif %}
         {% if session['role'] == 'Owner' %}
         {% if attendance.id %}
           <form id="deleteForm-attendance-{{ attendance.id }}"
-                       action="{{ url_for('routes.delete_attendance', id=attendance.id, **request.args.to_dict()) }}"
+                       action="{{ url_for('attendance.delete_attendance', id=attendance.id, **request.args.to_dict()) }}"
           method="post" style="display:inline;">
           <button type="button" class="btn btn-danger btn-sm" data-toggle="tooltip" title="{{ _('Delete attendance') }}"
             onclick="confirmDelete('attendance', {{ attendance.id }})">

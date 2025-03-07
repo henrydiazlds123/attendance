@@ -7,7 +7,7 @@
       generateButton.addEventListener('click', async (event) => {
           event.preventDefault(); // Evitar el envío automático del formulario
 
-          const texts = await fetch('/get_swal_texts').then(response => response.json());
+          const texts = await fetch('/swal/get_swal_texts').then(response => response.json());
 
           // Mostrar SweetAlert2 para seleccionar la fecha
           const { value: selectedDate } = await Swal.fire({

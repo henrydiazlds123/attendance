@@ -42,7 +42,7 @@ function initDeleteAllButton() {
   if (!deleteAllButton) return;
 
   deleteAllButton.addEventListener("click", async () => {
-    const texts = await fetch('/get_swal_texts').then(response => response.json());
+    const texts = await fetch('/swal/get_swal_texts').then(response => response.json());
 
     Swal.fire({
       title             : texts.confirmDelete,
@@ -106,7 +106,7 @@ async function confirmDelete(entityType, entityId) {
     return; 
   }
 
-  const texts = await fetch('/get_swal_texts').then(response => response.json());
+  const texts = await fetch('/swal/get_swal_texts').then(response => response.json());
   Swal.fire({
     title             : texts.confirmDelete,
     text              : texts.deleteOneRecordText,
@@ -164,7 +164,7 @@ async function correctName(checkbox) {
         }
 
           // Enviar la corrección al servidor usando fetch
-          fetch('/update_name_correction', {
+          fetch('/update', {
               method: 'POST',
               headers: {
                   'Content-Type': 'application/json'
@@ -194,7 +194,7 @@ async function correctName(checkbox) {
 //----------------------------------------------------------------------------------
 async function confirmRevert(id) {
   // Obtiene las traducciones de los textos desde el servidor
-  const texts = await fetch('/get_swal_texts').then(response => response.json());
+  const texts = await fetch('/swal/get_swal_texts').then(response => response.json());
 
   // Muestra el SweetAlert con los textos traducidos
   const result = await Swal.fire({
@@ -213,7 +213,7 @@ async function confirmRevert(id) {
 
 //----------------------------------------------------------------------------------
 async function confirmPromotion(userId, username) {
-  const texts = await fetch('/get_swal_texts').then(response => response.json());
+  const texts = await fetch('/swal/get_swal_texts').then(response => response.json());
   Swal.fire({
     title: texts.promotionTitle,
     text: texts.promotionText,

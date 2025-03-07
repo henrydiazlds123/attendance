@@ -10,7 +10,7 @@
     // Obtener textos antes de cualquier acción
     let texts = {};
     try {
-        texts = await fetch('/get_swal_texts').then(res => res.json());
+        texts = await fetch('/swal/get_swal_texts').then(res => res.json());
     } catch (error) {
         console.error("Error fetching texts:", error);
     }
@@ -31,7 +31,7 @@
         meeting_center_id: meetingCenter
       });
 
-      fetch("{{ url_for('routes.filter_attendance') }}?" + params.toString(), {
+      fetch("{{ url_for('attendance.filter_attendance') }}?" + params.toString(), {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
@@ -78,7 +78,7 @@
           const selectedClass = classFilter.value;
           const meetingCenter = classFilter.options[classFilter.selectedIndex].dataset.meetingCenter;
 
-          fetch("{{ url_for('routes.register_attendance') }}", {
+          fetch("{{ url_for('attendance.register_attendance') }}", {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'

@@ -1,22 +1,19 @@
-from flask import Flask, request, session
+from flask import Flask, request, session, g
 from flask_babel import Babel, format_datetime
 from flask_migrate import Migrate
 from config import Config
-from models import db
-from routes import bp as routes_blueprint
+from models import db, User
+from routes import register_blueprints
 
 def get_locale():
-    # Prioriza el parámetro 'lang' en la URL
     lang = request.args.get('lang')
     if lang and lang in Config.LANGUAGES:
-        session['lang'] = lang  # Guarda el idioma en la sesión
+        session['lang'] = lang
         return lang
     
-    # Si no hay parámetro 'lang', usa el idioma en la sesión
     if 'lang' in session and session['lang'] in Config.LANGUAGES:
         return session['lang']
     
-    # Como último recurso, usa el encabezado Accept-Language
     return request.accept_languages.best_match(Config.LANGUAGES)
 
 def create_app():
@@ -27,23 +24,48 @@ def create_app():
     db.init_app(app)
     Migrate(app, db)
 
-    # Inicialización de Babel con el locale_selector
+    # Inicialización de Babel
     babel = Babel(app, locale_selector=get_locale)
 
+    # **Mover load_user() aquí para manejar autenticación global**
+    @app.before_request
+    def load_user():
+        user_id = session.get('user_id')
+
+        if not user_id:
+            user_id = request.cookies.get('remember_me')
+
+        if user_id:
+            user = User.query.get(user_id)
+            if user:
+                g.user = user
+                session['user_id'] = user.id
+                session['user_name'] = user.name
+                session['role'] = user.role
+                session['organization_id'] = user.organization_id
+
+                # ✅ Solo establece 'meeting_center_id' si no existe en la sesión
+                if 'meeting_center_id' not in session:
+                    session['meeting_center_id'] = user.meeting_center_id  
+            else:
+                g.user = None
+        else:
+            g.user = None
+
     # Registro de Rutas
-    app.register_blueprint(routes_blueprint)
+    register_blueprints(app)
 
     # Registrar funciones adicionales en Jinja2
     @app.context_processor
     def inject_utilities():
         return {
             'get_locale': get_locale,
-            'format_datetime': format_datetime,  # Asegura que esté disponible en las plantillas
+            'format_datetime': format_datetime,
         }
+
     return app
 
 app = create_app()
 
 if __name__ == '__main__':
     app.run(debug=True)
-

@@ -4,8 +4,8 @@ from datetime     import datetime, timedelta
 from flask        import flash, redirect, session, url_for, request, g
 from flask_babel  import format_date, gettext as _
 from config       import Config
-from models import Attendance, Classes, db
-from sqlalchemy import func
+from models       import Attendance, Classes, db, Setup
+from sqlalchemy   import func
 import unicodedata
 
 
@@ -16,12 +16,12 @@ def role_required(*roles):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             if g.user is None:  # Si no está autenticado, lo redirigimos a login
-                return redirect(url_for('routes.login', next=request.url))
+                return redirect(url_for('auth.login', next=request.url))
             
             user_role = session.get('role')  # Suponiendo que el rol se almacena en la sesión
             if user_role not in roles:
                 flash(_('You do not have permission to perform this action.'), 'danger')
-                return redirect(url_for('routes.login'))  # O podrías redirigir a otra página
+                return redirect(url_for('auth.login'))  # O podrías redirigir a otra página
             
             return f(*args, **kwargs)
         return decorated_function
@@ -34,7 +34,7 @@ def login_required(f):
     def decorated_function(*args, **kwargs):
         if g.user is None:  # Si el usuario no está autenticado
             next_url = request.url  # Guardamos la URL a la que intentaba acceder
-            return redirect(url_for('routes.login', next=next_url))  # Pasamos 'next' como parámetro
+            return redirect(url_for('auth.login', next=next_url))  # Pasamos 'next' como parámetro
         return f(*args, **kwargs)
     return decorated_function
 
@@ -149,8 +149,12 @@ def get_months():
 def get_meeting_center_id():
     """Obtiene el meeting_center_id basado en el rol y la sesión."""
     if session.get('role') == 'Owner':
-        return session.get('meeting_center_id', 'all')  # 'all' si no está definido
-    return session.get('meeting_center_id')  # Para otros roles
+        # Buscar el valor de SelectedMeetingCenterId desde la tabla Setup
+        setup = Setup.query.filter_by(key='SelectedMeetingCenterId', meeting_center_id=1).first()
+        if setup:
+            return setup.value  # Retorna el valor del meeting_center_id almacenado en Setup
+        return 'all'  # Si no hay valor en Setup, por defecto retorna 'all'
+    return session.get('meeting_center_id')  # Para otros roles, usar el valor de la sesión
 
 
 # ================================================================

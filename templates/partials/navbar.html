@@ -9,17 +9,17 @@
             <ul class="navbar-nav">
                 {% if session['user_id'] %}
                     {% if session['role'] != 'Operator'%}
-                        <!-- <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'routes.index' else '' }}" href="{{ url_for('routes.index') }}"><i class="bi bi-house-fill"></i> {{_('Home') }}</a></li> -->
-                        <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'routes.attendance_report' else '' }}" href="{{ url_for('routes.attendance_report') }}"><i class="bi bi-file-earmark-spreadsheet"></i> {{ _('Report') }}</a></li>
-                        <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'routes.list_pdfs' else '' }}" href="{{ url_for('routes.list_pdfs') }}"><i class="bi bi-file-earmark-pdf"></i>  PDFs</a></li>
+                        <!-- <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'auth.index' else '' }}" href="{{ url_for('auth.index') }}"><i class="bi bi-house-fill"></i> {{_('Home') }}</a></li> -->
+                        <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'attendance.attendance_report' else '' }}" href="{{ url_for('attendance.attendance_report') }}"><i class="bi bi-file-earmark-spreadsheet"></i> {{ _('Report') }}</a></li>
+                        <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'pdf.list_pdfs' else '' }}" href="{{ url_for('pdf.list_pdfs') }}"><i class="bi bi-file-earmark-pdf"></i>  PDFs</a></li>
 
                         
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="bi bi-card-checklist"></i> {{ _('Attendance') }}</a>
                             <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.attendances' else '' }}" href="{{ url_for('routes.attendances') }}"><i class="bi bi-clipboard-data"></i>  {{ _('View Attendance') }}</a>
-                                <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.manual_attendance' else '' }}" href="{{ url_for('routes.manual_attendance') }}"><i class="bi bi-calendar2-plus"></i></i>  {{ _('Add Attendance') }}</a>
-                                <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.register_attendance' else '' }}" href="{{ url_for('routes.register_attendance') }}"><i class="bi bi-calendar2-check"></i>  {{ _('Check Attendance') }}</a>
+                                <a class="dropdown-item {{ 'active' if request.endpoint == 'attendance.attendances' else '' }}" href="{{ url_for('attendance.attendances') }}"><i class="bi bi-clipboard-data"></i>  {{ _('View Attendance') }}</a>
+                                <a class="dropdown-item {{ 'active' if request.endpoint == 'attendance.manual_attendance' else '' }}" href="{{ url_for('attendance.manual_attendance') }}"><i class="bi bi-calendar2-plus"></i></i>  {{ _('Add Attendance') }}</a>
+                                <a class="dropdown-item {{ 'active' if request.endpoint == 'attendance.register_attendance' else '' }}" href="{{ url_for('attendance.register_attendance') }}"><i class="bi bi-calendar2-check"></i>  {{ _('Check Attendance') }}</a>
                             </div>
                         </li>
                         
@@ -29,18 +29,18 @@
                                 <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="bi bi-gear"></i> {{ 'Admin' }}</a>
                                 <div class="dropdown-menu" aria-labelledby="navbarDropdown">
                                                                                 
-                                        <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.users' else '' }}" href="{{ url_for('routes.users') }}"><i class="bi bi-person-circle"></i>  {{ _('Users') }}</a>
-                                        <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.classes' else '' }}" href="{{ url_for('routes.classes') }}"><i class="bi bi-mortarboard-fill"></i>  {{ _('Classes') }}</a>
+                                        <a class="dropdown-item {{ 'active' if request.endpoint == 'user.users' else '' }}" href="{{ url_for('user.users') }}"><i class="bi bi-person-circle"></i>  {{ _('Users') }}</a>
+                                        <a class="dropdown-item {{ 'active' if request.endpoint == 'classes.classes' else '' }}" href="{{ url_for('classes.classes') }}"><i class="bi bi-mortarboard-fill"></i>  {{ _('Classes') }}</a>
                                         {% if session['role'] =='Owner' %}
-                                        <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.meeting_centers' else '' }}" href="{{ url_for('routes.meeting_centers') }}"><i class="bi bi-buildings"></i>   {{ _('Chuch Units') }}</a>
+                                        <a class="dropdown-item {{ 'active' if request.endpoint == 'meeting_centers.meeting_centers' else '' }}" href="{{ url_for('meeting_center.meeting_centers') }}"><i class="bi bi-buildings"></i>   {{ _('Chuch Units') }}</a>
                                         {% endif %}
                                         
                                         <div class="dropdown-divider"></div>
                                         {% if session['role'] in ['Owner', 'Admin'] %}
-                                        <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.render_stats' else '' }}" href="{{ url_for('routes.render_stats') }}"><i class="bi bi-bar-chart-line"></i>  {{ _('Attendance Stats') }}</a>
+                                        <a class="dropdown-item {{ 'active' if request.endpoint == 'stats.render_stats' else '' }}" href="{{ url_for('stats.render_stats') }}"><i class="bi bi-bar-chart-line"></i>  {{ _('Attendance Stats') }}</a>
                                         {% endif %}
                                         {% if session['role'] in ['Owner', 'Admin', 'Super'] %}
-                                        <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.admin' else '' }}" href="{{ url_for('routes.admin') }}"><i class="bi bi-gear"></i>  {{ _('Admin Panel') }}</a>
+                                        <a class="dropdown-item {{ 'active' if request.endpoint == 'admin.admin' else '' }}" href="{{ url_for('admin.admin') }}"><i class="bi bi-gear"></i>  {{ _('Admin Panel') }}</a>
                                         {% endif %}
                                     </div>
                                 </li>
@@ -50,19 +50,19 @@
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="bi bi-card-checklist"></i> {{ _('Attendance') }}</a>
                         <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                        <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.manual_attendance' else '' }}" href="{{ url_for('routes.manual_attendance') }}"><i class="bi bi-calendar2-plus"></i></i>  {{ _('Add Attendance') }}</a>
-                        <a class="dropdown-item {{ 'active' if request.endpoint == 'routes.register_attendance' else '' }}" href="{{ url_for('routes.register_attendance') }}"><i class="bi bi-calendar2-check"></i>  {{ _('Check Attendance') }}</a>
+                        <a class="dropdown-item {{ 'active' if request.endpoint == 'attendance.manual_attendance' else '' }}" href="{{ url_for('attendance.manual_attendance') }}"><i class="bi bi-calendar2-plus"></i></i>  {{ _('Add Attendance') }}</a>
+                        <a class="dropdown-item {{ 'active' if request.endpoint == 'register.register_attendance' else '' }}" href="{{ url_for('register.register_attendance') }}"><i class="bi bi-calendar2-check"></i>  {{ _('Check Attendance') }}</a>
                          </div>
                     </li>
                     {% endif %}
 
                     <div class="circle">
-                        <a class="nav-link" href="{{ url_for('routes.profile', id=session['user_id']) }}"><p style="color: black; font-size: 10px; display:block; padding-top: 15px;">{{ session['user_name'] }}</p></a> 
+                        <a class="nav-link" href="{{ url_for('user.profile', id=session['user_id']) }}"><p style="color: black; font-size: 10px; display:block; padding-top: 15px;">{{ session['user_name'] }}</p></a> 
                     </div>                        
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.logout') }}"></i>{{ _('Logout') }}  <i class="bi bi-box-arrow-right"></i></a></i></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}"></i>{{ _('Logout') }}  <i class="bi bi-box-arrow-right"></i></a></i></li>
                 {% else %}
-                    {% if request.endpoint != 'routes.login' %}
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.login') }}"><i class="bi bi-box-arrow-in-right"></i> {{ _('Login') }}</a></li>
+                    {% if request.endpoint != 'auth.login' %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}"><i class="bi bi-box-arrow-in-right"></i> {{ _('Login') }}</a></li>
                     {% endif %}
                 {% endif %}
 

@@ -5,7 +5,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const savedName = localStorage.getItem("studentName");
 
-    fetch('/get_swal_texts')
+    fetch('/swal/get_swal_texts')
         .then(response => response.json())
         .then(texts => {
             if (savedName) {

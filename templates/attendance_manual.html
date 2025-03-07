@@ -16,7 +16,7 @@
                 <a href="{{ class_data['url'] }}" class="list-group-item list-group-item-action">{{ _(class_data['name']) }}</a>
             {% endfor %}
         </div>
-        <form id="attendanceForm" method="POST" action="{{ url_for('routes.registrar') }}">
+        <form id="attendanceForm" method="POST" action="{{ url_for('register.registrar') }}">
             <div class="input-group mt-4">
                 <input type="text" class="form-control" id="studentName" name="studentName" aria-label="{{ _('Enter your Name and Last name') }}" aria-describedby="button-addon2"  placeholder="{{ _('Name & Lastname') }}">
                 <button class="btn btn-primary btn-lg" type="submit" id="button-addon2"><i class="fa fa-share-square-o" aria-hidden="true"></i> {{ _('Send') }}</button>               

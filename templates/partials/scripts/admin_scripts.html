@@ -1,0 +1,216 @@
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const meetingCenterSelector    = document.getElementById('meetingCenterSelector');
+        const nameCorrectionsContainer = document.getElementById('name-corrections-container');
+        const bypassRestriction        = document.getElementById('bypass_restriction');
+        const codeVerification         = document.getElementById('code_verification');
+
+        const savedMeetingCenterId = localStorage.getItem('selectedMeetingCenterId');
+        if (savedMeetingCenterId) {
+            meetingCenterSelector.value = savedMeetingCenterId;
+            toggleSelects();
+        }
+
+        // Escuchar cambios en el selector de meeting centers
+        meetingCenterSelector.addEventListener('change', toggleSelects);
+        meetingCenterSelector.addEventListener('change', function () {
+            const selectedMeetingCenterId = this.value;
+            localStorage.setItem('selectedMeetingCenterId', selectedMeetingCenterId);
+
+            // Actualizar la tabla de correcciones de nombres
+            updateNameCorrectionsTable(selectedMeetingCenterId);
+
+            // Actualizar los selects de code_verification y bypass_restriction
+            updateSettings(selectedMeetingCenterId);
+
+            // Actualizar el footer
+            updateFooter();
+
+            sendMeetingCenterToServer(selectedMeetingCenterId);
+
+        });
+
+        // ----------------------------------------------------------------
+        // Función para actualizar los selects de code_verification y bypass_restriction
+        function updateSettings(meetingCenterId) {
+            console.log("Ejecutando updateSettings para:", meetingCenterId);
+
+            if (meetingCenterId === "all") {
+                console.log("Se seleccionó 'all', limpiando valores...");
+                bypassRestriction.value = "";
+                codeVerification.value = "";
+                return;
+            }
+            fetch(`/admin/get_settings?meeting_center_id=${meetingCenterId}`, {
+                method: "GET",
+                headers: { "X-Requested-With": "XMLHttpRequest" }
+
+            })
+                .then(response => response.json())
+                .then(data => {
+                    //console.log("Datos recibidos de /admin/get_settings:", data);
+                    // Actualizar los selects solo si están habilitados
+                    if (!bypassRestriction.disabled) {
+                        bypassRestriction.value = data.bypass_restriction;
+                    }
+                    if (!codeVerification.disabled) {
+                        codeVerification.value = data.code_verification;
+                    }
+
+                    //console.log("Después de updateSettings - Bypass:", bypassRestriction.value, "Code Verification:", codeVerification.value);
+                })
+                .catch(error => console.error("Error al cargar los ajustes:", error));
+        }
+
+
+        // ----------------------------------------------------------------
+        // Función para actualizar la tabla de correcciones de nombres
+        function updateNameCorrectionsTable(meetingCenterId) {
+            //console.log("Actualizando tabla de correcciones para:", meetingCenterId);
+
+            fetch(`/name_correction/filter?meeting_center_id=${meetingCenterId}`, {
+                method: "GET",
+                headers: { "X-Requested-With": "XMLHttpRequest" }
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error("Error en la respuesta del servidor");
+                    return response.text();
+                })
+                .then(html => {
+                    nameCorrectionsContainer.innerHTML = html;
+                })
+                .catch(error => console.error("Error al cargar los datos:", error));
+        }
+
+        // ----------------------------------------------------------------
+        // Función para habilitar o deshabilitar los selects
+        function toggleSelects() {
+            //console.log("Ejecutando toggleSelects. Meeting Center actual:", meetingCenterSelector.value);
+
+            if (meetingCenterSelector.value === 'all') {
+                bypassRestriction.disabled = true;
+                codeVerification.disabled = true;
+
+                // Eliminar valores cuando está en "all"
+                bypassRestriction.value = "";
+                codeVerification.value = "";
+
+                //console.log("Meeting Center es 'all'. Deshabilitando selects.");
+            } else {
+                bypassRestriction.disabled = false;
+                codeVerification.disabled = false;
+                //console.log("Meeting Center seleccionado:", meetingCenterSelector.value, "- Habilitando selects.");
+            }
+
+            //console.log("Estado final de los selects - Bypass:", bypassRestriction.disabled, "Code Verification:", codeVerification.disabled);
+        }
+        // Ejecutar la función al cargar la página
+        toggleSelects();
+
+        // ----------------------------------------------------------------
+        // Función para enviar el meeting center seleccionado al servidor
+        function sendMeetingCenterToServer(meetingCenterId) {
+            console.log("Enviando Meeting Center al servidor:", meetingCenterId);
+        
+            fetch("/meeting_center/set", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ meeting_center_id: meetingCenterId })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Respuesta del servidor:", data);
+            })
+            .catch(error => console.error("Error al enviar Meeting Center:", error));
+        }
+
+        // ----------------------------------------------------------------   
+        // Función para actualizar el footer
+        function updateFooter() {
+            const meetingCenterId = localStorage.getItem('selectedMeetingCenterId') || 'all';
+            //console.log("Actualizando footer para Meeting Center:", meetingCenterId);
+
+            const year  = new Date().getFullYear();
+            const month = new Date().getMonth() + 1;
+
+            //fetch(`/admin/api/data?meeting_center_id=${meetingCenterId}&year=${year}&month=${month}`, {
+            fetch(`/admin/api/data?meeting_center_id=${meetingCenterId}`, {
+                headers: { "X-Requested-With": "XMLHttpRequest" }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    const footerContainer = document.getElementById('meetingCenterInfo');
+                    if (footerContainer) {
+                        footerContainer.innerHTML = data.name ? `${data.name} (${data.unit_number})` : "Please select a valid meeting center.";
+                    }
+                })
+                .catch(error => console.error("Error al cargar el footer:", error));
+        }
+
+        // Llamada a la API para obtener todos los meeting centers
+        fetch("/meeting_center/api")
+            .then(response => response.json())
+            .then(data => {
+                //console.log("Meeting Centers recibidos:", data);
+
+                meetingCenterSelector.innerHTML = '<option value="all">{{ _("All Meeting Centers") }}</option>';
+
+                data.forEach(meetingCenter => {
+                    const option             = document.createElement('option');
+                          option.value       = meetingCenter.id;
+                          option.textContent = meetingCenter.name;
+                    meetingCenterSelector.appendChild(option);
+                });
+
+                // Establecer el meeting center seleccionado desde localStorage
+                const selectedMeetingCenterId = localStorage.getItem('selectedMeetingCenterId') || 'all';
+                meetingCenterSelector.value = selectedMeetingCenterId;
+
+                // Actualizar la tabla y el footer al cargar la página
+                updateNameCorrectionsTable(selectedMeetingCenterId);
+                updateFooter();
+            })
+            .catch(error => console.error('Error fetching meeting centers:', error));
+    });
+
+    function submitVerificationForm() {
+        const form = document.getElementById('verificationForm');
+        const formData = new FormData(form);
+        
+        fetch(form.action, {
+            method: "POST",
+            body: formData,
+            headers: { "X-Requested-With": "XMLHttpRequest" }
+        })
+        .then(response => {
+            if (response.ok) {
+                //console.log("Formulario enviado correctamente (Verification)");
+            }
+        })
+        .catch(error => console.error("Error al enviar el formulario:", error));
+    }
+    
+    function submitBypassForm() {
+        const form = document.getElementById('bypassForm');
+        const formData = new FormData(form);
+        
+        fetch(form.action, {
+            method: "POST",
+            body: formData,
+            headers: { "X-Requested-With": "XMLHttpRequest" }
+        })
+        .then(response => {
+            if (response.ok) {
+                //console.log("Formulario enviado correctamente (Bypass)");
+            }
+        })
+        .catch(error => console.error("Error al enviar el formulario:", error));
+    }
+    
+
+</script>

@@ -18,13 +18,13 @@
 
 <div class="container">
     <div class="row">
-        <form id="attendanceForm" method="POST" action="{{ url_for('routes.registrar') }}">
+        <form id="attendanceForm" method="POST" action="{{ url_for('register.registrar') }}">
             <div class="input-group">
                 <input type="text" class="form-control" id="studentName" name="studentName"
                     placeholder="{{ _('Name & Lastname') }}" aria-label="{{ _('Enter your Name and Last name') }}">
                 
                 {% if session['user_id'] %}
-                <a class="btn btn-info" id="button-back" href="{{ url_for('routes.manual_attendance') }}">
+                <a class="btn btn-info" id="button-back" href="{{ url_for('attendance.manual_attendance') }}">
                     <i class="bi bi-arrow-left-circle-fill"></i> {{ _('Back') }}
                 </a>
                 {% endif %}

@@ -7,7 +7,7 @@
     document.getElementById('filterForm').submit();
   }
   function clearFilters() {
-    window.location.href = "{{ url_for('routes.attendances') }}";
+    window.location.href = "{{ url_for('attendance.attendances') }}";
   }
 
 </script>
@@ -30,7 +30,7 @@
   {% if session['role'] == 'Admin' or session['role'] == 'Owner' %}
 
   <div class="col-auto mb-2">
-    <a class="btn btn-primary col-auto" href="{{ url_for('routes.create_attendance') }}"><i
+    <a class="btn btn-primary col-auto" href="{{ url_for('attendance.create_attendance') }}"><i
         class="bi bi-plus-circle-fill"></i> {{ _('New Attendance') }}</a>
   </div>
 
@@ -131,13 +131,13 @@
           <ul class="pagination">
             {% if pagination.has_prev %}
             <li class="page-item"><a class="page-link"
-                href="{{ url_for('routes.attendances', page=pagination.prev_num, per_page=pagination.per_page, class_name=request.args.get('class_name'), student_name=request.args.get('student_name'), sunday_date=request.args.get('sunday_date')) }}">{{_('Previous')}}</a>
+                href="{{ url_for('attendance.attendances', page=pagination.prev_num, per_page=pagination.per_page, class_name=request.args.get('class_name'), student_name=request.args.get('student_name'), sunday_date=request.args.get('sunday_date')) }}">{{_('Previous')}}</a>
             </li>
             {% endif %}
             {% for page_num in pagination.iter_pages() %}
             {% if page_num %}
             <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
-              <a class="page-link" href="{{ url_for('routes.attendances', page=page_num, per_page=request.args.get('per_page', 10), class_name=request.args.get('class_name'), student_name=request.args.get('student_name'), sunday_date=request.args.get('sunday_date'), year=request.args.get('year'), month=request.args.get('month')) }}">
+              <a class="page-link" href="{{ url_for('attendance.attendances', page=page_num, per_page=request.args.get('per_page', 10), class_name=request.args.get('class_name'), student_name=request.args.get('student_name'), sunday_date=request.args.get('sunday_date'), year=request.args.get('year'), month=request.args.get('month')) }}">
                 {{ page_num }}
               </a>
             </li>
@@ -148,7 +148,7 @@
 
             {% if pagination.has_next %}
             <li class="page-item"><a class="page-link"
-                href="{{ url_for('routes.attendances', page=pagination.next_num, per_page=pagination.per_page, class_name=request.args.get('class_name'), student_name=request.args.get('student_name'), sunday_date=request.args.get('sunday_date')) }}">{{_('Next')}}</a>
+                href="{{ url_for('attendance.attendances', page=pagination.next_num, per_page=pagination.per_page, class_name=request.args.get('class_name'), student_name=request.args.get('student_name'), sunday_date=request.args.get('sunday_date')) }}">{{_('Next')}}</a>
             </li>
             {% endif %}
           </ul>
@@ -177,14 +177,14 @@
         <ul class="pagination">
           {% if pagination.has_prev %}
           <li class="page-item"><a class="page-link"
-              href="{{ url_for('routes.attendances', page=pagination.prev_num, per_page=pagination.per_page, class_name=request.args.get('class_name'), student_name=request.args.get('student_name'), sunday_date=request.args.get('sunday_date')) }}">{{_('Previous')}}</a>
+              href="{{ url_for('attendance.attendances', page=pagination.prev_num, per_page=pagination.per_page, class_name=request.args.get('class_name'), student_name=request.args.get('student_name'), sunday_date=request.args.get('sunday_date')) }}">{{_('Previous')}}</a>
           </li>
           {% endif %}
           {% for page_num in pagination.iter_pages() %}
           {% if page_num %}
           <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
             <a class="page-link" data-page="{{ page_num }}"
-              href="{{ url_for('routes.attendances', page=page_num, per_page=pagination.per_page, class_name=request.args.get('class_name'), student_name=request.args.get('student_name'), sunday_date=request.args.get('sunday_date')) }}">{{
+              href="{{ url_for('attendance.attendances', page=page_num, per_page=pagination.per_page, class_name=request.args.get('class_name'), student_name=request.args.get('student_name'), sunday_date=request.args.get('sunday_date')) }}">{{
               page_num }}</a>
           </li>
           {% else %}
@@ -193,7 +193,7 @@
           {% endfor %}
           {% if pagination.has_next %}
           <li class="page-item"><a class="page-link"
-              href="{{ url_for('routes.attendances', page=pagination.next_num, per_page=pagination.per_page, class_name=request.args.get('class_name'), student_name=request.args.get('student_name'), sunday_date=request.args.get('sunday_date')) }}">{{_('Next')}}</a>
+              href="{{ url_for('attendance.attendances', page=pagination.next_num, per_page=pagination.per_page, class_name=request.args.get('class_name'), student_name=request.args.get('student_name'), sunday_date=request.args.get('sunday_date')) }}">{{_('Next')}}</a>
           </li>
           {% endif %}
         </ul>

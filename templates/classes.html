@@ -16,7 +16,7 @@
 
 <div class="row d-flex justify-content-between">
   <div class="col-auto">
-    <a class="btn btn-primary" href="{{ url_for('routes.create_class') }}"><i class="bi bi-plus-circle-fill"></i>  {{ _('Create New Class') }}</a>
+    <a class="btn btn-primary" href="{{ url_for('classes.create_class') }}"><i class="bi bi-plus-circle-fill"></i>  {{ _('Create New Class') }}</a>
   </div>
   <form class="col-auto" id="toggleInactiveClasses" method="POST" action="/attendances">
     <div class="form-inline mb-3">
@@ -55,7 +55,7 @@
         <td style="color: {{ class.class_color }};" class="col-md-1 d-none d-lg-table-cell"><div class="class_color" style="background-color: {{ class.class_color }};"></div></td>
         <td class="col-md-2 d-none d-lg-table-cell dot-1">{{ class.meeting_short_name}}</td>
         <td class="col-md-2">          
-          <a type="button" class="btn btn-primary btn-sm" data-toggle="tooltip" title="{{ _('Edit class') }}" href="{{ url_for('routes.update_class', id=class.id) }}">
+          <a type="button" class="btn btn-primary btn-sm" data-toggle="tooltip" title="{{ _('Edit class') }}" href="{{ url_for('classes.update_class', id=class.id) }}">
             <i class="bi bi-pencil-square"></i>
           </a>          
           <!-- Botón para restablecer color -->
@@ -63,7 +63,7 @@
             <i class="bi bi-palette"></i>
           </button>
           {% if not (class.class_type == 'Main') %}
-          <form id="deleteForm-class-{{ class.id }}" action="{{ url_for('routes.delete_class', id=class.id) }}" method="post" style="display:inline;">
+          <form id="deleteForm-class-{{ class.id }}" action="{{ url_for('classes.delete_class', id=class.id) }}" method="post" style="display:inline;">
             <button type="button" class="btn btn-danger btn-sm" data-toggle="tooltip" title="{{ _('Delete class') }}" onclick="confirmDelete('class', {{ class.id }})">
               <i class="bi bi-trash"></i>
             </button>

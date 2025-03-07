@@ -18,7 +18,7 @@
     <div class="d-flex justify-content-between">
         {% if session['role'] == 'Admin' or session['role'] == 'Owner' %}       
         <div class="col-md-3 col-lg-3 mb-2">
-            <a class="btn btn-primary col-auto" href="{{ url_for('routes.create_attendance') }}"><i class="bi bi-plus-circle-fill"></i> {{ _('New Attendance') }}</a>
+            <a class="btn btn-primary col-auto" href="{{ url_for('attendance.create_attendance') }}"><i class="bi bi-plus-circle-fill"></i> {{ _('New Attendance') }}</a>
         </div>
         {% endif %}
         <div class="col-md-3 col-lg-3"><p>{{ _('Total Members') }}: <b id="total-members">{{ total_miembros }}</b> </p></div>

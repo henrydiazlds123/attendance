@@ -13,11 +13,11 @@
       </p>
     </div>
     <div>
-      <a class="btn btn-primary mb-3" href="{{ url_for('routes.create_organization') }}"><i class="fa fa-plus" aria-hidden="true"></i>  {{ _('Add New Organization') }}</a> 
+      <a class="btn btn-primary mb-3" href="{{ url_for('organization.create_organization') }}"><i class="fa fa-plus" aria-hidden="true"></i>  {{ _('Add New Organization') }}</a> 
     </div> 
     <div class="list-group list-group-numbered">
       {% for org in organizations %}
-        <a class="list-group-item list-group-item-action" data-toggle="tooltip" title="{{ _('Edit Organization') }}" href="{{ url_for('routes.edit_organization', id=org.id) }}">
+        <a class="list-group-item list-group-item-action" data-toggle="tooltip" title="{{ _('Edit Organization') }}" href="{{ url_for('organization.edit_organization', id=org.id) }}">
           
           {{ _(org.name) }}
         </a>

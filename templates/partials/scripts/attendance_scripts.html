@@ -13,7 +13,7 @@
         const unit_number = urlParams.get("unitNumber");
         
         try {
-            const texts = await fetch('/get_swal_texts').then(res => res.json());
+            const texts = await fetch('/swal/get_swal_texts').then(res => res.json());
             const classNameDisplay = document.getElementById("classNameDisplay");
             
             if (class_name) {
@@ -59,7 +59,7 @@
             const regex = /^[^\s]+(?:\s+[^\s]+)\s*$/;
             
             if (!regex.test(studentName)) {
-                const texts = await fetch('/get_swal_texts').then(res => res.json());
+                const texts = await fetch('/swal/get_swal_texts').then(res => res.json());
                 Swal.fire(texts.warningTitle, texts.nameFormatText, "warning");
                 return;
             }
@@ -79,8 +79,8 @@
         }
       
         try {
-            const response = await fetch("/registrar", { method: "POST", body: formData });
-            const texts = await fetch('/get_swal_texts').then(res => res.json());
+            const response = await fetch("/register", { method: "POST", body: formData });
+            const texts = await fetch('/swal/get_swal_texts').then(res => res.json());
       
             let data;
             try {
