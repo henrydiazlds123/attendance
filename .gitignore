@@ -1,9 +1,13 @@
+# .gitignore
 
-.DS_Store
-__pycache__/utils.cpython-313.pyc
-__pycache__/routes.cpython-313.pyc
-__pycache__/models.cpython-313.pyc
-__pycache__/forms.cpython-313.pyc
-__pycache__/config.cpython-313.pyc
-__pycache__/app.cpython-313.pyc
-Backup
+.env
+__pycache__
+*.pyc
+README.md
+migrations
+note.txt
+qr_codes/*
+!qr_codes/.gitkeep
+favicon/*
+!favicon/.gitkeep
+imports/*

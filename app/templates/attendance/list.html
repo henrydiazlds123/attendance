@@ -1,0 +1,204 @@
+{% extends "layout.html" %}
+{% block title %}{{ _('Attendance | List') }}{% endblock %}
+
+{% block head %}
+<script>
+  function submitForm() {
+    document.getElementById('filterForm').submit();
+  }
+  function clearFilters() {
+    window.location.href = "{{ url_for('attendance.attendances') }}";
+  }
+
+</script>
+<style>
+  div.input-group {
+    margin-bottom: .2rem !important;
+  }
+</style>
+
+{% endblock %}
+
+{% block pageTitle %}<i class="bi bi-clipboard-data"></i> {{ _('Attendance Records Management') }}{% endblock %}
+{% block content %}
+
+<div class="blog-post">
+  <div class="col-xl-8">
+    <p class="mb-3"></p>
+  </div>
+
+  {% if session['role'] == 'Admin' or session['role'] == 'Owner' %}
+
+  <div class="col-auto mb-2">
+    <a class="btn btn-primary col-auto" href="{{ url_for('attendance.create_attendance') }}"><i
+        class="bi bi-plus-circle-fill"></i> {{ _('New Attendance') }}</a>
+  </div>
+
+  {% endif %}
+  <div class="mb-5">
+    <form id="filterForm" method="GET" action="/attendance/list" class="card mb-3 p-3">
+      <input type="hidden" name="per_page" id="hidden_per_page" value="{{ request.args.get('per_page', 10) }}">
+      <p>{{ _('Total Attendance Records') }}: <b id="total-records">{{ total_registros }}</b></p>
+      <div class="row mb-2">
+        <div class="input-group col-md">
+          <span class="input-group-text"><i class="bi bi-person-check-fill"></i></span>
+          <select name="student_name" id="student_name" onchange="submitForm()" class="form-select">
+            <option value="" disabled {% if not request.args.get('student_name') %}selected{% endif %}>{{ _('Member') }}
+            </option>
+            {% for student in students %}
+            <option value="{{ student[0] }}" {% if student[0]==request.args.get('student_name') %}selected{% endif %}>
+              {{ student[0] }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="input-group col-md">
+          <span class="input-group-text"><i class="bi bi-mortarboard-fill"></i></span>
+          <select name="class_name" id="class_name" onchange="submitForm()" class="form-select">
+            <option value="" disabled {% if not request.args.get('class_code') %}selected{% endif %}>{{ _('Class') }}
+            </option>
+            {% for class in classes %}
+            <option value="{{ class[1] }}" data-class-name="{{ _(class[1]) }}" {% if
+              class[1]==request.args.get('class_name') %}selected{% endif %}>
+              {{ _(class[1]) }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="input-group col-md">
+          <span class="input-group-text"><i class="bi bi-calendar2-date"></i></span>
+          <select name="sunday_date" id="sunday_date" onchange="submitForm()" class="form-select">
+            <option value="" disabled {% if not request.args.get('sunday_date') %}selected{% endif %}>{{ _('Date') }}
+            </option>
+            {% for sunday in sundays %}
+            <option value="{{ sunday['date'].strftime('%Y-%m-%d') }}" {% if
+              sunday['date']|string==request.args.get('sunday_date') %}selected{% endif %}>
+              {{ sunday['formatted'] }} <!-- Usar la fecha formateada -->
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        {% if years|length > 1 %}
+        <div class="input-group col-md">
+          <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+          <select name="year" id="year" onchange="submitForm()" class="form-select">
+            <option value="" disabled {% if not request.args.get('year') %}selected{% endif %}>{{ _('Year') }}</option>
+            {% for year in years %}
+            <option value="{{ year[0] }}" {% if year[0]|string==request.args.get('year') %}selected{% endif %}>
+              {{ year[0] }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+        {% if months|length > 1 %}
+        <div class="input-group col-md">
+          <span class="input-group-text"><i class="bi bi-calendar-month"></i></span>
+          <select name="month" id="month" onchange="submitForm()" class="form-select">
+            <option value="" disabled {% if not request.args.get('month') %}selected{% endif %}> {{ _('Month') }}
+            </option>
+            {% for month, name in months_abr %}
+            <option value="{{ month }}" {% if month==request.args.get('month') %}selected{% endif %}>
+              {{ name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+        <div class="input-group col-md">
+          <button id="filter-clear2" type="button" class="btn btn-warning form-control" onclick="clearFilters()">
+            {{ _('Remove filters') }} <i class="bi bi-funnel"></i>
+          </button>
+        </div>
+      </div>
+    </form>
+    <!-- Actions Form -->
+    <form id="perpageSelect" method="POST" action="/attendance/list" class="pb-2">
+      <!-- Agregar un menú desplegable para seleccionar el número de elementos por página -->
+      <div class="d-flex justify-content-between">
+        <div class="d-flex align-items-center mb-3">
+          <label for="per_page_select" class="me-2">{{ _('Records per page') }}:</label>
+          <select id="per_page_select" name="per_page" class="form-select" style="width: auto;">
+            <option value="10" {% if request.args.get('per_page', '10' )|int==10 %}selected{% endif %}>10</option>
+            <option value="25" {% if request.args.get('per_page', '25' )|int==25 %}selected{% endif %}>25</option>
+            <option value="50" {% if request.args.get('per_page', '50' )|int==50 %}selected{% endif %}>50</option>
+            <option value="100" {% if request.args.get('per_page', '100' )|int==100 %}selected{% endif %}>100</option>
+            <option value="150" {% if request.args.get('per_page', '150' )|int==150 %}selected{% endif %}>150</option>
+          </select>
+        </div>
+        <nav aria-label="Page navigation">
+          <ul class="pagination">
+            {% if pagination.has_prev %}
+            <li class="page-item"><a class="page-link"
+                href="{{ url_for('attendance.attendances', page=pagination.prev_num, per_page=pagination.per_page, class_name=request.args.get('class_name'), student_name=request.args.get('student_name'), sunday_date=request.args.get('sunday_date')) }}">{{_('Previous')}}</a>
+            </li>
+            {% endif %}
+            {% for page_num in pagination.iter_pages() %}
+            {% if page_num %}
+            <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+              <a class="page-link" href="{{ url_for('attendance.attendances', page=page_num, per_page=request.args.get('per_page', 10), class_name=request.args.get('class_name'), student_name=request.args.get('student_name'), sunday_date=request.args.get('sunday_date'), year=request.args.get('year'), month=request.args.get('month')) }}">
+                {{ page_num }}
+              </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+            {% endfor %}
+
+            {% if pagination.has_next %}
+            <li class="page-item"><a class="page-link"
+                href="{{ url_for('attendance.attendances', page=pagination.next_num, per_page=pagination.per_page, class_name=request.args.get('class_name'), student_name=request.args.get('student_name'), sunday_date=request.args.get('sunday_date')) }}">{{_('Next')}}</a>
+            </li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+    </form>
+    <div class="attendanceContainer">
+      {% include 'attendance/list_table.html' %}
+    </div>
+    <div class="d-flex justify-content-between flex-row-reverse">
+      {% if session['role'] == 'Owner' %}
+      <form id="deleteAllForm" method="POST" action="/attendances" class="mb-5">
+        <input type="hidden" name="delete_all" value="true">
+        <button id="delete_all" class="btn btn-danger mb-5" type="button" data-toggle="tooltip"
+          title="{{ _('Delete all attendance records in the database') }}" {% if not has_records %}disabled{% endif %}>
+          {% if not has_records %}
+          {{ _('No Attendances to show') }}
+          {% else %}
+          <i class="bi bi-eraser-fill"></i> {{ _('Delete all records') }}
+          {% endif %}
+        </button>
+      </form>
+      {% endif %}
+      <!-- Agregar la paginación -->
+      <nav aria-label="Page navigation">
+        <ul class="pagination">
+          {% if pagination.has_prev %}
+          <li class="page-item"><a class="page-link"
+              href="{{ url_for('attendance.attendances', page=pagination.prev_num, per_page=pagination.per_page, class_name=request.args.get('class_name'), student_name=request.args.get('student_name'), sunday_date=request.args.get('sunday_date')) }}">{{_('Previous')}}</a>
+          </li>
+          {% endif %}
+          {% for page_num in pagination.iter_pages() %}
+          {% if page_num %}
+          <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+            <a class="page-link" data-page="{{ page_num }}"
+              href="{{ url_for('attendance.attendances', page=page_num, per_page=pagination.per_page, class_name=request.args.get('class_name'), student_name=request.args.get('student_name'), sunday_date=request.args.get('sunday_date')) }}">{{
+              page_num }}</a>
+          </li>
+          {% else %}
+          <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% endif %}
+          {% endfor %}
+          {% if pagination.has_next %}
+          <li class="page-item"><a class="page-link"
+              href="{{ url_for('attendance.attendances', page=pagination.next_num, per_page=pagination.per_page, class_name=request.args.get('class_name'), student_name=request.args.get('student_name'), sunday_date=request.args.get('sunday_date')) }}">{{_('Next')}}</a>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+    {% include 'attendance/list_script.html' %}
+
+    {% endblock %}

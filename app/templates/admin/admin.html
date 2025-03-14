@@ -1,0 +1,59 @@
+{% extends "layout.html" %}
+{% block head%} {% endblock %}
+{% block title %}Attendance | Admin {% endblock %}
+
+{% block pageTitle %}{{ _('Welcome to the Attendance Management System') }}{% endblock %}
+{% block content %}
+
+{% if session['role'] == 'Owner' %}
+<div class="form-group col-auto">
+    <label class="my-2 mr-2 col-auto" for="meetingCenterSelector">{{ _('Choose a Meeting Center') }}:</label>
+    <select class="form-select" id="meetingCenterSelector">
+        <option value="all">{{ _('All Meeting Centers') }}</option>
+        <!-- Otras opciones de meeting centers -->
+    </select>
+</div>
+
+<form class="col-auto" id="bypassForm" method="POST" action="/admin/bypass">
+    <input type="hidden" name="meeting_center_id" value="{{ meeting_center_id }}">
+    <div class="form-inline mb-3">
+        <label class="my-2 mr-2 col-auto" for="bypass_restriction">{{ _('Allow attendance any day?') }} </label>
+        <select class="form-select" name="bypass_restriction" id="bypass_restriction" data-toggle="tooltip"
+            title="Activar esto permitirá registrar asistencia cualquier día de la semana en la unidad de prueba (ID = 2)."
+            onchange="submitBypassForm()">
+            <option value="true" {% if bypass_enabled=='true' %}selected{% endif %}>{{ _('Yes') }}</option>
+            <option value="false" {% if bypass_enabled=='false' %}selected{% endif %}>No</option>
+        </select>
+    </div>
+</form>
+{% endif %}
+<form class="col-auto" id="verificationForm" method="POST" action="/admin">
+    <input type="hidden" name="meeting_center_id" value="{{ meeting_center_id }}">
+    <div class="form-inline mb-3">
+        <label class="my-2 mr-2 col-auto" for="code_verification">{{ _('Lock QR code?') }} </label>
+        <select class="form-select" name="code_verification" id="code_verification" data-toggle="tooltip"
+            title="Al activar la Verificación de Domingo, solo se podrá usar la imagen de QR Code impresa para esa semana."
+            onchange="submitVerificationForm()">
+            <option value="true" {% if verification_enabled=='true' %}selected{% endif %}>{{ _('Yes') }}</option>
+            <option value="false" {% if verification_enabled=='false' %}selected{% endif %}>No</option>
+        </select>
+    </div>
+</form>
+    {% if session['role'] == 'Owner' %}
+    <div class="form-group col-auto">
+        <div class="form-inline mb-3">
+        <button type="button" class="btn btn-primary"
+                href="{{ url_for('attendance.export_attendance', **request.args.to_dict()) }}"><i class="bi bi-filetype-csv"></i></button>
+    </div>
+    {% endif %}
+</div>
+    <div class="container my-4">
+        <h3>Name Corrections</h3>
+        <div id="name-corrections-container">
+            {% include 'admin/name_correction.html' %}
+        </div>
+    </div>
+
+    {% include 'admin/admin_script.html' %}
+
+{% endblock %}

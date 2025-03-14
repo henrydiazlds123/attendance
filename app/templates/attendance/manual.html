@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+{% block title %}{{ _('Attendance | Manual') }} {% endblock %}
+{% block pageTitle %}<i class="bi bi-file-earmark-plus"></i>  {{ _('Attendance Registration') }} {% endblock %}
+{% block content %}
+    <div class="col-md">
+        <div class="col-xl-8">
+            <p class="mt-1">{{ _('Use this page to add the attendance to the classes listed below. You will be able to record attendance for those people who do not have the means to do so themselves.') }}</p>
+            <p>{{ _('To be able register your attendance, first you will need to choose a class.') }}</p>
+        </div>
+        
+        <h4 id="classNameDisplay" class="mb-3 text-center"></h4>
+
+        <div class="list-group my-3">
+            {% for class_data in class_links.values() %}
+            <li style="list-style-type: none;">
+                <a href="{{ class_data['url'] }}" class="list-group-item list-group-item-action">{{ _(class_data['name']) }}</a>
+            {% endfor %}
+        </div>
+        <form id="attendanceForm" method="POST" action="{{ url_for('register.registrar') }}">
+            <div class="input-group mt-4">
+                <input type="text" class="form-control" id="studentName" name="studentName" aria-label="{{ _('Enter your Name and Last name') }}" aria-describedby="button-addon2"  placeholder="{{ _('Name & Lastname') }}">
+                <button class="btn btn-primary btn-lg" type="submit" id="button-addon2"><i class="fa fa-share-square-o" aria-hidden="true"></i> {{ _('Send') }}</button>               
+            </div>
+            <input type="hidden" id="className"  name="className">
+            <input type="hidden" id="date"       name="date">
+            <input type="hidden" id="classCode"  name="classCode">
+            <input type="hidden" id="sundayCode" name="sundayCode">
+            <input type="hidden" id="unitNumber" name="unitNumber">
+        </form>
+        {% include 'attendance/manual_script.html' %}
+    </div>
+{% endblock %}

@@ -1,1 +1,0 @@
-Se creo un archivo translations.py que extrae todos los valores del archivo po y los convierte en una cadena de texto para subirlo a google sheet y traducirlo

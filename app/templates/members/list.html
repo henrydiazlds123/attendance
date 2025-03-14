@@ -1,0 +1,124 @@
+<!-- app/templates/members/list.html -->
+{% extends 'layout.html' %}
+{% block title %}{{ _('Attendance | Members') }}{% endblock %}
+
+{% block head %}
+{% endblock %}
+
+{% block pageTitle %}<i class="bi bi-people-fill"></i> {{ _('Members Management') }}{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3">{{ _('Members List') }}</h2>
+    <div class="row mb-3 g-2">
+        <div class="col-md">
+            <div class="input-group">
+                <input type="text" id="filterName" class="form-control" placeholder="{{ _('Name') }}">
+            </div>
+        </div>
+    
+        <div class="col-md">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-person-arms-up"></i></span>
+                <select id="filterFamily" class="form-select">
+                    <option value="">{{ _('Head of Family') }}</option>
+                    {% for family in family_head %}
+                    <option value="{{ family.family_head }}">{{ family.family_head }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    
+        <div class="col-md">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-gender-ambiguous"></i></span>
+                <select id="filterGender" class="form-select">
+                    <option value="">{{ _('Gender') }}</option>
+                    <option value="M">{{ _('Male') }}</option>
+                    <option value="F">{{ _('Female') }}</option>
+                </select>
+            </div>
+        </div>
+    
+        <div class="col-md">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-person-check-fill"></i></span>
+                <select id="filterCategory" class="form-select">
+                    <option value="">{{ _('Category') }}</option>
+                    <option value="Children">{{ _('Children') }}</option>
+                    <option value="Youth">{{ _('Youth') }}</option>
+                    <option value="Adult">{{ _('Adult') }}</option>
+                </select>
+            </div>
+        </div>
+    
+        <div class="col-md">
+            <div class="input-group">
+                <input type="text" id="filterSector" class="form-control" placeholder="{{ _('Sector') }}">
+            </div>
+        </div>
+    
+        <div class="col-md">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-tools"></i></span>
+                <select id="filterHasCalling" class="form-select">
+                    <option value="">{{ _('Callings') }}</option>
+                    <option value="yes">{{ _('Had Calling') }}</option>
+                    <option value="no">{{ _('No Calling') }}</option>
+                </select>
+            </div>
+        </div>
+    
+        <div class="col-md">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-person-raised-hand"></i></span>
+                <select id="filterCondition" class="form-select">
+                    <option value="">{{ _('Condition') }}</option>
+                    <option value="yes">{{ _('Active') }}</option>
+                    <option value="no">{{ _('Less active') }}</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <div class="d-flex justify-content-between">
+        <p><strong>{{ _('Total Members') }}: <span id="memberCount">0</span></strong></p>    
+        <div id="members_list_container" class="d-flex align-items-center mb-2">            
+            <label for="perPageSelect">{{ _('Records per page') }}: </label>
+            <select id="perPageSelect" class="form-select" style="width: auto;" onchange="fetchMembers()">
+                {% set per_page_values = [10, 25, 50, 100, 150] %}
+                {% set default_per_page = per_page if per_page is defined else 50 %}
+                {% for option in per_page_values %}
+                <option value="{{ option }}" {% if option==default_per_page %}selected{% endif %}>{{ option }}
+                </option>
+                {% endfor %}
+            </select>
+        </div> 
+    </div>
+
+    <table class="table table-striped table-sm" id="membersTable">
+        <thead class="table-dark">
+            <tr>
+                <th>#</th>
+                <th>{{ _('Active') }}</th>
+                <th>{{ _('Name') }}</th>
+                <th>{{ _('Age') }}</th>
+                <th>{{ _('Gender') }}</th>
+                <th>{{ _('Priesthood') }}</th>
+                <th>{{ _('Priesthood Office') }}</th>
+                <th>{{ _('Sector') }}</th>
+                <th>{{ _('Calling') }}</th>
+                <th>{{ _('Time in Ward') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+
+        </tbody>
+    </table>
+    {% set page = page if page is defined else 1 %}
+    {% set total_pages = total_pages if total_pages is defined else 1 %}
+    {% set per_page = per_page if per_page is defined else 25 %}
+
+    <div id="paginationContainer"></div>
+</div>
+{% include 'members/list_script.html' %}
+{% endblock %}

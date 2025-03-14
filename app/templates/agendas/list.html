@@ -1,0 +1,13 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+    <h2>Agendas</h2>
+    <ul>
+        {% for agenda in agendas %}
+            <li>
+                <a href="{{ url_for('announcements.announcements', id=meeting.id) }}">{{ meeting.sunday_date }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+    <a href="{{ url_for('announcements.add_announcement') }}">Agregar Anuncios</a>
+{% endblock %}

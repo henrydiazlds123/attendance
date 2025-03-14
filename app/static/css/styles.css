@@ -1,0 +1,227 @@
+body {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+
+}
+
+main {
+  flex: 1;
+}
+
+.page_4xx {
+  padding: 40px 0;
+  background: #d2d2d2;
+  font-family: 'Arvo', serif;
+}
+
+.page_4xx img {
+  width: 100%;
+}
+
+.four_zero_four_bg {
+
+  background-image: url(https://cdn.dribbble.com/users/285475/screenshots/2083086/dribbble_1.gif);
+  height: 400px;
+  background-position: center;
+}
+
+
+.four_zero_four_bg h1 {
+  font-size: 80px;
+}
+
+.four_zero_four_bg h3 {
+  font-size: 80px;
+}
+
+.link_4xx {
+  color: #d2d2d2 !important;
+  padding: 10px 20px;
+  background: #39ac31;
+  margin: 20px 0;
+  display: inline-block;
+}
+
+.contant_box_4xx {
+  margin-top: -50px;
+}
+
+.navbar-collapse {
+  -ms-flex-positive: 0;
+  flex-grow: 0;
+}
+
+.circle {
+  border-radius: 50%;
+  width: 40px;
+  height: 30px;
+  background-color: #d2d2d2;
+  color: black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 5px;
+
+}
+
+div > label[for="csrf_token"] {
+  display: none;
+}
+
+.theme-toggle {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    cursor: pointer;
+}
+
+/* Personalización de etiquetas */
+.custom-label {
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+/* Personalización de campos */
+.custom-input {
+  border-radius: 0.5rem;
+  box-shadow: none;
+  border: 1px solid #dee2e6;
+}
+
+.custom-input:focus {
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+ 
+.is-valid {
+  border-color: #198754;
+}
+.is-invalid {
+  border-color: #dc3545;
+}
+
+.theme-switcher {
+  cursor: pointer;
+}
+
+.dot-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.large-checkbox {
+  transform: scale(2);
+}
+
+.class_color {
+  display: inline-block;
+  /* margin: auto; */
+  width: 25px; 
+  height: 25px;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+.flag-icon {
+  width: 14px;
+  height: auto;
+  margin-right: 8px;
+  border-radius: 2px; /* Para redondear las esquinas de las banderas */
+}
+
+
+
+  /* Personalización del tema claro */
+  [data-bs-theme="light"] {
+    --bs-body-bg: #f8f9fa; /* Fondo claro más cálido */
+    --bs-body-color: #212529; /* Color del texto */
+    --bs-link-color: #0d6efd; /* Color de los enlaces */
+    --bs-border-color: #dee2e6; /* Color de bordes */
+    --bs-btn-bg: #e9ecef; /* Fondo de botones */
+    --bs-btn-hover-bg: #d6d8db; /* Fondo de botones al pasar el mouse */
+  }
+
+
+  [data-bs-theme="dark"] {
+    --bs-body-bg: #121212; /* Fondo oscuro más suave */
+    --bs-body-color: #e9ecef; /* Color del texto */
+    --bs-link-color: #66b2ff; /* Color de los enlaces */
+    --bs-border-color: #444; /* Color de bordes */
+  }
+  
+td button[type="button"], 
+td a[type="button"] {
+    padding: 4px;  /* Reduce el espacio interno del botón */
+    font-size: 0.75rem; /* Hace que el texto e íconos sean más pequeños */
+    line-height: 1;     /* Ajusta la altura del botón */
+}
+
+td button[type="button"] i, 
+td a[type="button"] i {
+    font-size: 0.75rem;  /* Reduce el tamaño del icono */
+    padding: 0;          /* Elimina cualquier padding extra */
+    /* margin: 0;           Asegura que no haya margen adicional */
+    line-height: 1;      /* Ajusta la altura de línea para hacerlo más compacto */
+    vertical-align: middle; /* Asegura una alineación correcta dentro del botón */
+}
+
+table {
+  font-size: 0.85rem;  /* Reduce el tamaño de la fuente de toda la tabla */
+}
+
+table th, 
+table td {
+  padding: 4px 8px; /* Reduce el espacio interno en celdas */
+  line-height: 1.2; /* Reduce la altura de línea para hacerlas más compactas */
+  vertical-align: middle; /* Asegura que el contenido esté alineado */
+}
+
+table th {
+  font-weight: 600; /* Mantiene los encabezados resaltados */
+}
+
+
+.table-hover tbody tr:hover td, .table-hover tbody tr:hover th {
+  background-color: #b5b5ac;
+  
+}
+
+/* Establecer un tamaño máximo y centrado para los gráficos */
+.chart-container {
+  position: relative;
+  width: 100%;
+  max-width: 800px; /* Ajusta según necesidad */
+  min-height: 350px; /* Asegura una mejor visualización */
+  margin: auto; /* Centra el gráfico */
+}
+
+.langSelector {
+  color: #b5b5ac;
+}
+
+/* Aumenta la especificidad usando tu propia clase */
+.table-active.custom-active {
+  --bs-table-color-state: var(--bs-table-active-color);
+  --bs-table-bg-state: #b5b5ac; /* Color personalizado */
+}
+
+input[type="checkbox"].toggle-column {
+  -webkit-appearance: none;  /* Elimina el estilo predeterminado en navegadores como Safari */
+  -moz-appearance: none;     /* Elimina el estilo predeterminado en Firefox */
+  appearance: none;          /* Elimina el estilo predeterminado en otros navegadores */
+    /* Borde del checkbox */
+  border-radius: 4px;        /* Bordes redondeados */
+  cursor: pointer;          /* Cambia el cursor al pasar sobre el checkbox */
+}
+
+/* Estilo del icono del checkbox (como el 'checkmark') */
+input[type="checkbox"].toggle-column:checked::before {
+  content: '\2713';           /* El símbolo del 'checkmark' */
+
+  line-height: 20px;
+  color: white;               /* Color blanco para el 'checkmark' */
+
+}

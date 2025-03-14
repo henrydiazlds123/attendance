@@ -1,0 +1,14 @@
+<!-- sacrament_meetings.html -->
+{% extends 'layout.html' %}
+
+{% block content %}
+    <h2>Agregar Himno</h2>
+    <ul>
+        {% for agenda in agendas %}
+            <li>
+                <a href="{{ url_for('announcements.announcements', id=meeting.id) }}">{{ meeting.sunday_date }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+
+{% endblock %}

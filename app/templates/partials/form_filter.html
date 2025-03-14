@@ -1,0 +1,75 @@
+{% block head %}
+    <style>
+        div.input-group {
+            margin-bottom: .2rem !important;
+        }
+    </style>
+{% endblock %}
+
+<p>{{ _('Total Attendance Records') }}: <b>{{ total_registros }} </b></p>
+<div class="row mb-2">
+    <div class="input-group col-md">
+        <span class="input-group-text"><i class="bi bi-person-check-fill"></i></span>
+        <select name="student_name" id="student_name" onchange="submitForm()" class="form-select">
+            <option value="" disabled {% if not request.args.get('student_name') %}selected{% endif %}>{{ _('Member') }}</option>
+            {% for student in students %}
+            <option value="{{ student[0] }}" {% if student[0]==request.args.get('student_name') %}selected{% endif %}>
+                {{ student[0] }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>    
+    <div class="input-group col-md">
+        <span class="input-group-text"><i class="bi bi-mortarboard-fill"></i></span>
+        <select name="class_name" id="class_name" onchange="submitForm()" class="form-select">
+            <option value="" disabled {% if not request.args.get('class_code') %}selected{% endif %}>{{ _('Class') }}</option>
+            {% for class in classes %}
+            <option value="{{ class[1] }}" {% if class[1]==request.args.get('class_name') %}selected{% endif %}>
+                {{ _(class[1]) }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="input-group col-md">
+        <span class="input-group-text"><i class="bi bi-calendar2-date"></i></span>
+        <select name="sunday_date" id="sunday_date" onchange="submitForm()" class="form-select">
+            <option value="" disabled {% if not request.args.get('sunday_date') %}selected{% endif %}>{{ _('Date') }}</option>
+            {% for sunday in sundays %}
+            <option value="{{ sunday['date'].strftime('%Y-%m-%d') }}" {% if sunday['date']|string==request.args.get('sunday_date') %}selected{% endif %}>
+                {{ sunday['formatted'] }}  <!-- Usar la fecha formateada -->
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    {% if years|length > 1 %}
+    <div class="input-group col-md">
+        <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+        <select name="year" id="year" onchange="submitForm()" class="form-select">
+            <option value="" disabled {% if not request.args.get('year') %}selected{% endif %}>{{ _('Year') }}</option>
+            {% for year in years %}
+            <option value="{{ year[0] }}" {% if year[0]|string==request.args.get('year') %}selected{% endif %}>
+                {{ year[0] }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    {% endif %}
+    {% if months|length > 1 %}
+    <div class="input-group col-md">
+        <span class="input-group-text"><i class="bi bi-calendar-month"></i></span>
+        <select name="month" id="month" onchange="submitForm()" class="form-select">
+            <option value="" disabled {% if not request.args.get('month') %}selected{% endif %}> {{ _('Month') }}</option>
+            {% for month, name in months_abr %}
+            <option value="{{ month }}" {% if month==request.args.get('month') %}selected{% endif %}>
+                {{ name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    {% endif %}
+    <div class="input-group col-md">
+        <button id="filter-clear2" type="button" class="btn btn-warning form-control" onclick="clearFilters()">
+            {{ _('Remove filters') }} <i class="bi bi-funnel"></i>
+        </button>
+    </div>
+</div>

@@ -1,5 +1,5 @@
 para correr la aplicacion principal
-py app.py
+py run.py
 
 
 Para crear una carpeta de migraciones
@@ -28,25 +28,25 @@ flask db downgrade
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 Despues de marcar todo el texto  traducir, correr este comando para crear .po
-pybabel extract -F babel.cfg -k _l -o messages.pot .
+pybabel extract -F app/babel.cfg -k _l -o app/messages.pot .
 
 Despues crear catalago para idioma especifico. Este es para espanol:
-pybabel init -i messages.pot -d translations -l es
+pybabel init -i app/messages.pot -d app/translations -l es
 
 Despues crear catalago para idioma especifico. Este es para portugues:
-pybabel init -i messages.pot -d translations -l pt
+pybabel init -i app/messages.pot -d app/translations -l pt
 
 Compilar un avez se haya traducido todo
-pybabel compile -d translations
+pybabel compile -d app/translations
 
 
 
 Para actualizar los archivos de traduccion:
 Identificar las cadenas nuevas y luego correr
-pybabel extract -F babel.cfg -k _l -o messages.pot .
+pybabel extract -F app/babel.cfg -k _l -o app/messages.pot .
 
 actualizar los archivos .po existentes sin borrar lo anterior
-pybabel update -i messages.pot -d translations
+pybabel update -i app/messages.pot -d app/translations
 
 Traducir las nuevas cadenas de texto y correr
-pybabel compile -d translations
+pybabel compile -d app/translations

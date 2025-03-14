@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+{% import "/form/macros.html" as macros %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container" style="overflow-y: auto; max-height: calc(100vh - 200px);">
+    <h2 class="mb-4 text-center">{{ title }}</h2>
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <form method="post" novalidate>
+                {{ form.hidden_tag() }}
+                {% for field in form %}
+                    {{ macros.render_field(field) }}
+                {% endfor %}
+                <div class="row mb-3">
+                    <div class="col-md-9 offset-md-3 d-flex justify-content-end gap-3">
+                        <button type="submit" class="btn btn-{{ clas }} w-50">{{ submit_button_text }}</button>
+                        <button type="button" class="btn btn-secondary w-50" onclick="window.location.href='{{ request.referrer or url_for(auth.index) }}'">
+                            {{ _('Cancel') }}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

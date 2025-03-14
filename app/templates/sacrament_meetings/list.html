@@ -1,0 +1,29 @@
+
+<!-- templates/sacrament_meetings/list.html -->
+{% extends 'layout.html' %}
+
+{% block content %}
+    <h2>Lista de Reuniones Sacramentales</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Director</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for meeting in meetings %}
+                <tr>
+                    <td>{{ meeting.sunday_date }}</td>
+                    <td>{{ meeting.director.name }}</td>
+                    <td>
+                        <a href="{{ url_for('sacramental.edit_sacrament_meeting', id=meeting.id) }}">Editar</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="{{ url_for('sacramental.add_sacrament_meeting') }}">Agregar Nueva Reunión</a>
+{% endblock %}
+

@@ -1,0 +1,142 @@
+<!-- templates/partials/scripts/members_list.html  -->
+<script>
+    const translations = {
+        previous: "{{ _('Previous') }}",
+        next: "{{ _('Next') }}"
+    };
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        let perPageSelect = document.getElementById('perPageSelect');
+        let currentPerPage = parseInt(perPageSelect.value) || 25;
+        let currentPage = 1;
+        let membersContainer = document.getElementById('members_list_container');
+
+        async function fetchMembers() {
+            let params = {
+                family     : document.getElementById('filterFamily').value,
+                name       : document.getElementById('filterName').value,
+                gender     : document.getElementById('filterGender').value,
+                category   : document.getElementById('filterCategory').value,
+                sector     : document.getElementById('filterSector').value,
+                has_calling: document.getElementById('filterHasCalling').value,
+                condition  : document.getElementById('filterCondition').value,
+                per_page   : currentPerPage,
+                page       : currentPage
+            };
+            try {
+                const respond = await fetch(`api/members?` + new URLSearchParams(params));
+                console.log("Parámetros enviados:", params);
+                const data = await respond.json();
+
+                // Actualizar el número total de miembros
+                document.getElementById("memberCount").textContent = data.members_count;
+
+                // Actualizar la tabla con los miembros
+                const tbody = document.querySelector("#membersTable tbody");
+                tbody.innerHTML = "";
+
+                data.members.forEach((member, index) => {
+                    const row = document.createElement("tr");
+                    
+                    // Calcula el índice considerando la paginación
+                    const indexWithPagination = index + 1 + ((currentPage - 1) * currentPerPage);
+                    
+                    row.innerHTML = `
+                        <td>${indexWithPagination}</td>  <!-- Índice con paginación -->
+                        <td><input type="checkbox" ${member.active ? 'checked' : ''} onchange="toggleActive(${member.id}, this.checked)"></td>
+                        <td>${member.short_name}</td>
+                        <td>${member.age}</td>
+                        <td>${member.gender}</td>
+                        <td>${member.priesthood || '-'}</td>
+                        <td>${member.priesthood_office || '-'}</td>
+                        <td>${member.sector || '-'}</td>
+                        <td>${member.calling || '-'}</td>
+                        <td>${member.time_in_ward}</td>                       
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                renderPagination(data.page, data.total_pages);
+
+            } catch (error) {
+                console.error("Error al obtener los miembros:", error);
+            }
+        }
+
+        function renderPagination(currentPage, totalPages) {
+            const paginationContainer = document.getElementById("paginationContainer");
+            paginationContainer.innerHTML = "";
+        
+            if (totalPages > 1) {
+                let paginationHTML = '<nav><ul class="pagination">';
+        
+                // Botón "Anterior"
+                if (currentPage > 1) {
+                    paginationHTML += `<li class="page-item">
+                        <a class="page-link" href="#" onclick="changePage(${currentPage - 1})">« ${translations.previous}</a>
+                    </li>`;
+                }
+        
+                // Números de página (máximo 5 visibles)
+                let maxVisiblePages = 10;
+                let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+                let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+        
+                if (endPage - startPage < maxVisiblePages - 1) {
+                    startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                }
+        
+                for (let p = startPage; p <= endPage; p++) {
+                    paginationHTML += `<li class="page-item ${p === currentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="changePage(${p})">${p}</a>
+                    </li>`;
+                }
+        
+                // Botón "Siguiente"
+                if (currentPage < totalPages) {
+                    paginationHTML += `<li class="page-item">
+                        <a class="page-link" href="#" onclick="changePage(${currentPage + 1})">${translations.next} »</a>
+                    </li>`;
+                }
+        
+                paginationHTML += '</ul></nav>';
+                paginationContainer.innerHTML = paginationHTML;
+            }
+        }
+        
+
+        window.changePage = function (page) {  
+            currentPage = page;
+            fetchMembers();
+        };
+
+        window.toggleActive = function (memberId, isActive) {  
+            fetch(`api/members/${memberId}/active`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ active: isActive })
+            }).then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        alert('Error updating status');
+                    }
+                });
+        };
+
+        document.querySelectorAll('input, select').forEach(element => {
+            element.addEventListener('input', fetchMembers);
+        });
+
+        perPageSelect.addEventListener('change', function () {
+            console.log("Nuevo valor de perPageSelect:", this.value);
+            currentPerPage = parseInt(this.value);
+            currentPage = 1;
+            fetchMembers();
+        });
+
+        fetchMembers().then(() => {
+            perPageSelect.value = currentPerPage;
+        });
+    });
+</script>

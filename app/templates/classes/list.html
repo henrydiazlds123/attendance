@@ -1,0 +1,80 @@
+{% extends "layout.html" %}
+{% block title %}{{ _('Attendance | Classes') }}{% endblock %}
+
+{% block head %}
+{% include 'classes/list_script.html' %}
+{% endblock %}
+
+{% block pageTitle %}<i class="bi bi-mortarboard-fill"></i>  {{ _('Classes Management') }}{% endblock %}
+{% block content %}
+<p class="mb-3">{{ meeting_center_name }}</p>
+<div class="col-xl-8">
+  <p class="mb-3">
+    {{ _("Something") }}
+  </p>
+</div>
+
+<div class="row d-flex justify-content-between">
+  <div class="col-auto">
+    <a class="btn btn-primary" href="{{ url_for('classes.create_class') }}"><i class="bi bi-plus-circle-fill"></i>  {{ _('Create New Class') }}</a>
+  </div>
+  <form class="col-auto" id="toggleInactiveClasses" method="POST" action="/attendances">
+    <div class="form-inline mb-3">
+      <label class="my-2 mr-2 col-auto" for="inactive_classes_toggle">{{ _('Show Inactive Classes:') }}</label>
+      <select class="custom-select my-1 mr-sm-2" id="inactive_classes_toggle" onchange="toggleInactiveClasses()">
+          <option value="false">{{ _('No') }}</option>
+          <option value="true">{{ _('Yes') }}</option>
+      </select>
+    </div>
+  </form>
+</div>
+<table class="table table-bordered table-striped table-sm pb-5">
+  <thead class="table-dark">
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">{{ _('Class Name') }}</th>
+      <th scope="col" class="d-none d-md-table-cell">{{ _('Short Name') }}</th>
+      <th scope="col" class="d-none d-md-table-cell">{{ _('Code') }}</th>
+      <th scope="col">{{ _('Class Type') }}</th>
+      <th scope="col">{{ _('Schedule') }}</th>
+      <th scope="col" class="d-none d-lg-table-cell">{{ _('Color') }}</th>
+      <th scope="col" class="d-none d-lg-table-cell">{{ _('Unit') }}</th>
+      <th scope="col">{{ _('Actions') }}</th>
+    </tr>
+  </thead>
+  
+  <tbody>
+    {% for class in classes %}
+      <tr class="class-row" data-is-active="{{ 'true' if class.is_active else 'false' }}">
+        <td scope="row">{{ loop.index }}</td>
+        <td class="col-md-2">{{ _(class.class_name) }}</td>
+        <td class="col-md-2 d-none d-md-table-cell">{{ _(class.short_name) }}</td>
+        <td class="col-md-1 d-none d-md-table-cell">{{ _(class.class_code)}}</td>
+        <td class="col-md-2">{{ _(class.class_type)}}</td>
+        <td class="col-md-1">{{ class.schedule}}</td>
+        <td style="color: {{ class.class_color }};" class="col-md-1 d-none d-lg-table-cell"><div class="class_color" style="background-color: {{ class.class_color }};"></div></td>
+        <td class="col-md-2 d-none d-lg-table-cell dot-1">{{ class.meeting_short_name}}</td>
+        <td class="col-md-2">          
+          <a type="button" class="btn btn-primary btn-sm" data-toggle="tooltip" title="{{ _('Edit class') }}" href="{{ url_for('classes.update_class', id=class.id) }}">
+            <i class="bi bi-pencil-square"></i>
+          </a>          
+          <!-- Botón para restablecer color -->
+          <button type="button" class="btn btn-secondary btn-sm" data-toggle="tooltip" title="{{ _('Reset class color') }}" onclick="resetColor({{ class.id }})">
+            <i class="bi bi-palette"></i>
+          </button>
+          {% if not (class.class_type == 'Main') %}
+          <form id="deleteForm-class-{{ class.id }}" action="{{ url_for('classes.delete_class', id=class.id) }}" method="post" style="display:inline;">
+            <button type="button" class="btn btn-danger btn-sm" data-toggle="tooltip" title="{{ _('Delete class') }}" onclick="confirmDelete('class', {{ class.id }})">
+              <i class="bi bi-trash"></i>
+            </button>
+          </form>
+          {% endif %}
+          
+        </td>
+        
+      </tr>
+    {% endfor%}
+  </tbody>
+</table> 
+
+{% endblock %}

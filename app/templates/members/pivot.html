@@ -1,0 +1,73 @@
+
+<!-- app/templates/members/pivot.html -->
+{% extends 'base.html' %}
+{% block title %}{{ _('Members | Pivot Table') }}{% endblock %}
+
+{% block head %}
+<title>Pivot Table Example</title>
+    <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+
+    <!-- Otras dependencias -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/4.1.2/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.11/c3.min.js"></script>
+
+    <!-- PivotTable.js desde CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pivottable@2.23.0/dist/pivot.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/pivottable@2.23.0/dist/pivot.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pivottable@2.23.0/dist/c3_renderers.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pivottable@2.23.0/dist/export_renderers.min.js"></script>
+
+    
+
+
+    <style>
+        body {
+            font-family: Verdana;
+        }
+        table th, table td {
+            vertical-align: top; /* Asegura que el contenido esté alineado */
+        }
+        div.pvtFilterBox {
+            top: 65px !important;
+        }
+
+    </style>
+{% endblock %}
+
+{% block pageTitle %}<i class="bi bi-bar-chart-steps"></i> {{ _('Pivot Table') }}{% endblock %}
+{% block content %}
+<div class="container">
+    <div id="pivot-table"></div>
+
+    <script>
+        $(document).ready(function () {
+            var tpl        = $.pivotUtilities.aggregatorTemplates;
+            var derivers   = $.pivotUtilities.derivers;
+            var dateFormat = $.pivotUtilities.derivers.dateFormat;
+            var renderers  = $.extend(
+                $.pivotUtilities.renderers,
+                $.pivotUtilities.c3_renderers,
+                $.pivotUtilities.d3_renderers,
+                $.pivotUtilities.export_renderers
+            );
+            $.ajax({
+                url: '/members/api',
+                dataType: 'json',
+                success: function (data) {
+                    $('#pivot-table').pivotUI(data, {
+
+                        // PivotTable.js options
+                        renderers: renderers,
+                        unusedAttrsVertical: false,
+                        rows: {{ rows_translated | tojson }},
+                        cols: {{ cols_translated | tojson }},
+                    });
+                }
+            });
+        });
+    </script>
+</div>
+
+{% endblock %}

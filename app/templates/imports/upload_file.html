@@ -1,0 +1,65 @@
+<!-- app/templates/imports/upload_file.html -->
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Subir Archivo para Importación</h2>
+
+    <form method="POST" action="{{ url_for('admin.upload_file') }}" enctype="multipart/form-data" class="mt-3">
+        <div class="my-4">
+            <h4>Drag and Drop</h4>
+            <div id="drop-area" class="border p-5 text-center bg-light">
+                Drag your file here or click to select one.
+            </div>
+        </div>
+        <div class="mb-3">
+            <label for="file" class="form-label">Select a file to import</label>
+            <input type="file" class="form-control" id="file" name="file" accept=".csv,.xls,.xlsx,.txt" required>
+        </div>
+        <div class="mb-3">
+            <label for="meeting_center_id" class="form-label">Select Meeting Center</label>
+            <select class="form-control" id="meeting_center_id" name="meeting_center_id" required>
+                <option value="">Select</option>
+                {% for center in meeting_centers %}
+                    <option value="{{ center.id }}">{{ center.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Map fields</button>
+        <a href="{{ url_for('admin.download_template') }}" class="btn btn-info">Download Template</a>
+    </form>
+    
+</div>
+{% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        let dropArea = document.getElementById("drop-area");
+        
+        dropArea.addEventListener("dragover", function(e) {
+            e.preventDefault();
+            dropArea.classList.add("border-primary");
+        });
+        
+        dropArea.addEventListener("dragleave", function() {
+            dropArea.classList.remove("border-primary");
+        });
+        
+        dropArea.addEventListener("drop", function(e) {
+            e.preventDefault();
+            dropArea.classList.remove("border-primary");
+            
+            let fileInput = document.getElementById("file");
+            fileInput.files = e.dataTransfer.files;
+            
+            console.log(fileInput.files);  // Verifica en consola si el archivo se asigna correctamente
+        });
+    });
+</script>
+{% endblock %}

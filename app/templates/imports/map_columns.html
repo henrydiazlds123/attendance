@@ -1,0 +1,90 @@
+<!-- app/templates/imports/map_columns.html -->
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Match Columns</h2>
+    <p>Please map the columns from your file to the correct fields in the system.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Columna del Archivo</th>
+                    <th>Campo en la Base de Datos</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for column in column_names %}
+                <tr>
+                    <td>{{ column }}</td>
+                    <td>
+                        <select name="{{ column }}" class="form-control"
+                            {% if column in required_fields %} required {% endif %}>                            
+                            <option value="">-- Ignore --</option>                            
+
+                            {% for required_column in required_fields %}
+                                <option value="{{ required_column }}">
+                                    {{ required_column.replace('_', ' ').capitalize() }} (Required)
+                                </option>
+                            {% endfor %}
+
+                            {% for optional_field in optional_fields %}
+                                <option value="{{ optional_field }}">
+                                    {{ optional_field.replace('_', ' ').capitalize() }} (Optional)
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <button type="submit" class="btn btn-primary mt-3">Confirm Mapping</button>
+    </form>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const savedMapping = JSON.parse(localStorage.getItem("columnMapping")) || {};
+
+        document.querySelectorAll("select").forEach(select => {
+            const columnName = select.name;
+            
+            // Primero, llenar desde la sesión de Flask si existe
+            const columnMapping = {{ column_mapping | tojson | safe }};
+            
+            if (columnMapping[columnName]) {
+                select.value = columnMapping[columnName];
+            }
+
+            // Luego, llenar desde localStorage si no hay datos en la sesión
+            if (!select.value && savedMapping[columnName]) {
+                select.value = savedMapping[columnName];
+            }
+
+            // Guardar cambios en localStorage al cambiar selección
+            select.addEventListener("change", () => {
+                savedMapping[columnName] = select.value;
+                localStorage.setItem("columnMapping", JSON.stringify(savedMapping));
+            });
+        });
+
+        // Guardar en localStorage al enviar el formulario
+        document.querySelector("form").addEventListener("submit", () => {
+            localStorage.setItem("columnMapping", JSON.stringify(savedMapping));
+        });
+    });
+</script>
+
+{% endblock %}
