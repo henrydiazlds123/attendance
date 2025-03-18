@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Member | Profile') }}{% endblock %}
+{% block head %}
+<style>
+    /* HTML marker styles */
+.id-tag {
+    background-color: #4285F4;
+    border-radius: 8px;
+    color: #FFFFFF;
+    font-size: 14px;
+    padding: 10px 15px;
+    position: relative;
+  }
+  
+  .id-tag::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    transform: translate(-50%, 0);
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid #4285F4;
+  }
+</style>
+{% endblock %}
+{% block pageTitle %}<i class="bi bi-clipboard-data"></i> {{ member.full_name }}{% endblock %}
+{% block content %}
+<div class="mt-4">    
+    <div class="card col-md-6">
+        <div class="card-body">
+            <h5 class="card-title">{{_('Personnal Information')}}</h5>
+            <p><strong>{{_('Preferred Nombre')}}:</strong> {{ member.preferred_name }}({{age}})</p>
+            <p><strong>{{_('Head of Family')}}:</strong> {{ member.family_head }}</p>
+            <p><strong>{{ _('Date of Birth') }}:</strong> {{ format_datetime(member.birth_date, format='d MMM yyyy') }}</p>
+
+            <p><strong>{{_('Gender')}}:</strong> {% if member.gender  == 'F' %} Female {% else %} Male {% endif %}</p>
+            <p><strong>{{_('Address')}}:</strong> {{ member.fixed_address }}</p>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <h4>{{ _('Location') }}</h4>
+        <div id="map" style="height: 400px; width: 100%;" class="mb-5"></div>
+    </div>
+</div>
+
+<script>
+    
+    async function initMap() {
+        // Request needed libraries.
+        const { Map } = await google.maps.importLibrary("maps");
+        const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+
+        const memberLocation = { lat: {{ member.lat }}, lng: {{ member.lon }} };
+
+        const map = new Map(document.getElementById("map"), {
+          center: memberLocation,
+          zoom: 14,
+          mapId: "4504f8b37365c3d0",
+        });
+        const idTag = document.createElement("div");
+      
+        idTag.className = "id-tag";
+        idTag.textContent = "{{member.preferred_name}}";
+      
+        const marker = new AdvancedMarkerElement({
+          map,
+          position: memberLocation,
+          content: idTag,
+        });
+      }
+      
+      initMap();
+</script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initMap&loading=async"></script>
+{% endblock %}
+
+

@@ -1,15 +1,17 @@
 import csv
 import io
-from flask                   import Blueprint, Response, jsonify, render_template, redirect, request, session, url_for, flash
-from flask_babel             import gettext as _
-from sqlalchemy              import func, extract, desc, asc
-from sqlalchemy.orm          import joinedload
-from app.config                  import Config
-from app.models                  import db, Classes, Attendance, MeetingCenter, Setup, NameCorrections
-from app.forms                   import AttendanceEditForm, AttendanceForm
-from urllib.parse            import unquote
-from app.utils                   import *
-from datetime                import datetime, timedelta
+from flask          import Blueprint, Response, jsonify, render_template, redirect, request, send_file, session, url_for, flash, make_response
+from flask_babel    import gettext as _
+from sqlalchemy     import func, extract, desc, asc
+from sqlalchemy.orm import joinedload
+from app.config     import Config
+from app.models     import db, Classes, Attendance, MeetingCenter, Setup, NameCorrections
+from app.forms      import AttendanceEditForm, AttendanceForm
+from urllib.parse   import unquote
+from app.utils      import *
+from datetime       import datetime, timedelta
+from weasyprint     import HTML
+from xhtml2pdf      import pisa
 
 bp_attendance = Blueprint('attendance', __name__)
 
@@ -237,7 +239,7 @@ def create_attendance():
         db.session.add(attendance)
         db.session.commit()
         flash(_('Attendance registered successfully!'))
-        return redirect(url_for('attendanced.attendances'))
+        return redirect(url_for('attendance.attendances'))
 
     return render_template('form/form.html', 
                            form               = form,
@@ -269,7 +271,7 @@ def update_attendance(id):
 
         db.session.commit()
         flash(_('Attendance record updated successfully.'), 'success')
-        return redirect(url_for('attendanced.attendances', **request.args.to_dict()))
+        return redirect(url_for('attendance.attendances', **request.args.to_dict()))
 
     return render_template('form/form.html', form=form, title=_('Edit Attendance'), submit_button_text=_('Update'), clas='warning')
 
@@ -283,7 +285,7 @@ def delete_attendance(id):
     db.session.delete(attendance)
     db.session.commit()
     flash(_('Attendance record deleted successfully.'), 'success')
-    return redirect(url_for('attendanced.attendances', **request.args.to_dict()))
+    return redirect(url_for('attendance.attendances', **request.args.to_dict()))
 
 
 # =============================================================================================
@@ -438,6 +440,139 @@ def attendance_report():
         disable_month      = len(available_months)  == 1,
         disable_year       = len(available_years)   == 1,
         available_classes  = available_classes)  # Pasar clases disponibles a la plantilla
+
+
+# =============================================================================================
+@bp_attendance.route('/report/pdf')
+@login_required
+def attendance_report_pdf():
+    meeting_center_id = get_meeting_center_id()
+    if meeting_center_id == 'all':
+        meeting_center_id = None  # No aplicar filtro
+
+    current_year = datetime.now().year
+    current_month = datetime.now().month
+
+    selected_class = request.args.get('class', default='all')
+
+    # Obtener clases disponibles
+    class_query = db.session.query(Classes).filter(Classes.is_active == True)
+    if meeting_center_id is not None:
+        class_query = class_query.filter(Classes.meeting_center_id == meeting_center_id)
+
+    available_classes = class_query.order_by(Classes.class_name).filter(Classes.meeting_center_id == meeting_center_id).all()
+
+    selected_year = request.args.get('year', type=int, default=current_year)
+    
+    current_quarter = f"Q{(current_month - 1) // 3 + 1}" # Calcular el trimestre actual
+
+    # Si no se selecciona un trimestre, por defecto usar el trimestre actual
+    selected_month = request.args.get('month', default=current_quarter)
+
+    # Determinar el filtro de mes o trimestre
+    month_filter = []
+    if selected_month == "all":
+        month_filter = list(range(1, 13))  # Todos los meses
+    elif selected_month.startswith("Q"):
+        quarter_map = {"Q1": [1, 2, 3], "Q2": [4, 5, 6], "Q3": [7, 8, 9], "Q4": [10, 11, 12]}
+        month_filter = quarter_map.get(selected_month, [])
+    else:
+        month_filter = [int(selected_month)]  # Mes específico
+
+    # Obtener años y meses disponibles
+    year_query  = db.session.query(func.extract('year', Attendance.sunday_date)).distinct().order_by(func.extract('year', Attendance.sunday_date))
+    month_query = db.session.query(func.extract('month', Attendance.sunday_date)).distinct().order_by(func.extract('month', Attendance.sunday_date))
+
+    if meeting_center_id is not None:
+        year_query  = year_query.filter(Attendance.meeting_center_id == meeting_center_id)
+        month_query = month_query.filter(Attendance.meeting_center_id == meeting_center_id)
+
+    available_years  = [y[0] for y in year_query.all() if y[0] is not None]
+    available_months = [m[0] for m in month_query.all() if m[0] is not None]
+    month_names      = [{"num": m, "name": _(datetime(2000, m, 1).strftime('%b'))} for m in available_months]
+
+    # Obtener fechas de domingos filtradas
+    query = db.session.query(Attendance.sunday_date).distinct().order_by(Attendance.sunday_date)
+    if meeting_center_id is not None:
+        query = query.filter(Attendance.meeting_center_id == meeting_center_id)
+
+    query        = query.filter(extract('year', Attendance.sunday_date) == selected_year)
+    query        = query.filter(extract('month', Attendance.sunday_date).in_(month_filter))
+    sundays      = query.all()
+    sunday_dates = [s[0] for s in sundays][-14:]  # Limitar a los últimos 14 domingo en un trimestre
+
+    # Formatear fechas
+    sunday_dates_formatted = [
+        {"date": date, "formatted": format_date(date, format='MMM dd')}
+        for date in sunday_dates
+    ]
+
+    # Obtener registros de asistencia filtrados
+    attendance_query = db.session.query(Attendance).order_by(Attendance.student_name, Attendance.sunday_date)
+    if meeting_center_id is not None:
+        attendance_query = attendance_query.filter(Attendance.meeting_center_id == meeting_center_id)
+    attendance_query = attendance_query.filter(extract('year', Attendance.sunday_date) == selected_year)
+    attendance_query = attendance_query.filter(extract('month', Attendance.sunday_date).in_(month_filter))
+
+    if selected_class != 'all':
+        # Obtener los nombres de los estudiantes que asistieron a la clase seleccionada
+        student_names = (db.session.query(Attendance.student_name).filter(Attendance.class_code == selected_class, Attendance.meeting_center_id == meeting_center_id)).distinct().all()
+
+        # Extraer los nombres en una lista
+        student_names = [name[0] for name in student_names]
+
+        # Filtrar attendance_query para incluir todas las asistencias de esos estudiantes
+        if student_names:
+            attendance_query = attendance_query.filter(Attendance.student_name.in_(student_names))
+
+    attendance_records = attendance_query.all()
+
+    # Procesar asistencia
+    students = {}
+    for record in attendance_records:
+        if record.student_name not in students:
+            students[record.student_name] = {date['date']: False for date in sunday_dates_formatted}
+        students[record.student_name][record.sunday_date] = True
+
+    total_miembros = len(students)
+
+    # Si el usuario no ha seleccionado nada, debe coincidir con el mes actual
+    if selected_month == "all" or selected_month not in ["Q1", "Q2", "Q3", "Q4"] + [str(m["num"]) for m in month_names]:
+        selected_month = current_quarter  # Asegurar que el select refleje el trimestre actual
+
+    # Obtener registros de asistencia por trimestre
+    quarters_with_data = {
+        "Q1": db.session.query(Attendance).filter(extract('month', Attendance.sunday_date).in_([1, 2, 3]),
+            Attendance.meeting_center_id == meeting_center_id).count() > 0,
+        "Q2": db.session.query(Attendance).filter(extract('month', Attendance.sunday_date).in_([4, 5, 6]),
+            Attendance.meeting_center_id == meeting_center_id).count() > 0,
+        "Q3": db.session.query(Attendance).filter(extract('month', Attendance.sunday_date).in_([7, 8, 9]),
+            Attendance.meeting_center_id == meeting_center_id).count() > 0,
+        "Q4": db.session.query(Attendance).filter(extract('month', Attendance.sunday_date).in_([10, 11, 12]),
+            Attendance.meeting_center_id == meeting_center_id).count() > 0
+    }
+
+    # Generar PDF
+    rendered_html = render_template(
+        'attendance/report_table.html',
+        students           = students ,
+        dates              = sunday_dates_formatted ,
+        available_years    = available_years ,
+        available_months   = month_names ,
+        selected_year      = selected_year ,
+        selected_month     = selected_month ,
+        total_miembros     = total_miembros ,
+        quarters_with_data = quarters_with_data ,     # Pasar los trimestres con datos
+        disable_month      = len(available_months)  == 1,
+        disable_year       = len(available_years)   == 1,
+        available_classes  = available_classes)  # Pasar clases disponibles a la plantilla
+    
+
+    pdf = io.BytesIO()
+    pisa.CreatePDF(io.BytesIO(rendered_html.encode("UTF-8")), pdf)
+    pdf.seek(0)
+
+    return send_file(pdf, mimetype='application/pdf', as_attachment=False, download_name="attendance_report.pdf")
 
 
 # =============================================================================================

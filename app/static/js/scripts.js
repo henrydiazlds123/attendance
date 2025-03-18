@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
   handleFlashMessages();
   initDeleteAllButton();
   initColorPickers();
+  adjustTableClass();
 
 });
 
@@ -69,6 +70,18 @@ function initColorPickers() {
     const label = document.getElementById(`${picker.id}_label`);
     if (label) label.textContent = picker.value;
   });
+}
+
+// ----------- Remover sm de las tablas en moviles -----------
+function adjustTableClass() {
+  let table = document.querySelector(".table");
+  if (!table) return;
+
+  if (window.matchMedia("(max-width: 767px)").matches) {
+      table.classList.remove("table-sm");
+  } else {
+      table.classList.add("table-sm");
+  }
 }
 
 
@@ -138,7 +151,7 @@ async function correctName(checkbox) {
   // Obtener el nombre incorrecto y el ID del centro de reunión + textos para sweetalert
   const wrongName       = checkbox.getAttribute('data-wrong-name');
   const meetingCenterId = checkbox.getAttribute('data-meeting-center-id');
-  const texts           = await fetch('/get_swal_texts').then(response => response.json());
+  const texts           = await fetch('/swal/get_swal_texts').then(response => response.json());
 
   Swal.fire({
       title            : texts.wrongNameTitle,
@@ -164,7 +177,7 @@ async function correctName(checkbox) {
         }
 
           // Enviar la corrección al servidor usando fetch
-          fetch('/update', {
+          fetch('/name_correction/update', {
               method: 'POST',
               headers: {
                   'Content-Type': 'application/json'
@@ -209,6 +222,9 @@ async function confirmRevert(id) {
   if (result.isConfirmed) {
       document.getElementById('revert-form-' + id).submit();
   }
+
+  // Escuchar cambios en el tamaño de la ventana
+window.addEventListener("resize", adjustTableClass);
 }
 
 //----------------------------------------------------------------------------------

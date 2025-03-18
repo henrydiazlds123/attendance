@@ -8,7 +8,10 @@
 {% block pageTitle %}<i class="bi bi-people-fill"></i> {{ _('Members Management') }}{% endblock %}
 {% block content %}
 <div class="container mt-4">
-    <h2 class="mb-3">{{ _('Members List') }}</h2>
+    <h3 class="mb-3">{{ _('Members List') }}</h3>
+    <div class="col-auto mb-3">
+        <a class="btn btn-primary" href="{{ url_for('members.add_member') }}"><i class="bi bi-plus-circle-fill"></i>  {{ _('Add New Member') }}</a>
+      </div>
     <div class="row mb-3 g-2">
         <div class="col-md">
             <div class="input-group">
@@ -85,7 +88,7 @@
         <div id="members_list_container" class="d-flex align-items-center mb-2">            
             <label for="perPageSelect">{{ _('Records per page') }}: </label>
             <select id="perPageSelect" class="form-select" style="width: auto;" onchange="fetchMembers()">
-                {% set per_page_values = [10, 25, 50, 100, 150] %}
+                {% set per_page_values = [10, 25, 50, 100, 150, 'All'] %}
                 {% set default_per_page = per_page if per_page is defined else 50 %}
                 {% for option in per_page_values %}
                 <option value="{{ option }}" {% if option==default_per_page %}selected{% endif %}>{{ option }}
@@ -98,16 +101,15 @@
     <table class="table table-striped table-sm" id="membersTable">
         <thead class="table-dark">
             <tr>
-                <th>#</th>
+                <th class="d-none d-md-table-cell">#</th>
                 <th>{{ _('Active') }}</th>
-                <th>{{ _('Name') }}</th>
-                <th>{{ _('Age') }}</th>
-                <th>{{ _('Gender') }}</th>
-                <th>{{ _('Priesthood') }}</th>
-                <th>{{ _('Priesthood Office') }}</th>
-                <th>{{ _('Sector') }}</th>
-                <th>{{ _('Calling') }}</th>
-                <th>{{ _('Time in Ward') }}</th>
+                <th>{{ _('Name') }} <i class="bi bi-sort-up"></i></th>
+                <th class="d-none d-md-table-cell">{{ _('Priesthood') }} <i class="bi bi-sort-up"></i></th>
+                <th>{{ _('Priesthood Office') }} <i class="bi bi-sort-up"></i></th>
+                <th>{{ _('Sector') }} <i class="bi bi-sort-up"></i></th>
+                <th class="d-none d-md-table-cell">{{ _('Calling') }} <i class="bi bi-sort-up"></i></th>
+                <th>{{ _('Time in Ward') }} <i class="bi bi-sort-up"></i></th>
+                <th scope="col">{{ _('Actions') }}</th>
             </tr>
         </thead>
         <tbody>

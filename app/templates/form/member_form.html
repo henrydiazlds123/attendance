@@ -1,0 +1,121 @@
+<!-- app/templates/form/member.html -->
+{% extends "layout.html" %}
+{% import "/form/macros.html" as macros %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container" style="overflow-y: auto; max-height: calc(100vh - 200px);">
+    <h2 class="mb-4 text-center">{{ title }}</h2>
+    <!-- Agrega un lugar en el formulario para mostrar el mensaje de error -->
+<div id="full_name_error" style="color: red; display: none;"></div>
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <form method="post" novalidate>
+                {{ form.hidden_tag() }}
+                {% for field in form %}
+                    {{ macros.render_field(field) }}
+                {% endfor %}
+                <div class="row mb-3">
+                    <div class="col-md-9 offset-md-3 d-flex justify-content-end gap-3">
+                        <button type="submit" class="btn btn-{{ clas }} w-50">{{ submit_button_text }}</button>
+                        <button type="button" class="btn btn-secondary w-50" onclick="window.location.href='{{ request.referrer }}'">
+                            {{ _('Cancel') }}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        const genderSelect           = document.getElementById('gender');
+        const priesthoodSelect       = document.getElementById('priesthood');
+        const priesthoodOfficeSelect = document.getElementById('priesthood_office');
+        const fullNameField          = document.getElementById('full_name');
+        const preferredNameField     = document.getElementById('preferred_name');
+        const shortNameField         = document.getElementById('short_name');
+    
+        const fieldsToDisable = [
+            'preferred_name', 'short_name', 'birth_date', 'gender', 'address',
+            'city', 'state', 'zip_code', 'sector', 'family_head', 'priesthood', 'priesthood_office',
+            'arrival_date', 'calling', 'lat', 'lon', 'fixed_address', 'active'
+        ].map(id => document.getElementById(id));
+    
+        function toggleFields(disable) {
+            fieldsToDisable.forEach(field => field.disabled = disable);
+        }
+    
+        function updateFieldsBasedOnGender() {
+            if (genderSelect.value === "F") {
+                priesthoodSelect.disabled = true;
+                priesthoodOfficeSelect.disabled = true;
+                priesthoodSelect.value = "";
+                priesthoodOfficeSelect.innerHTML = '';
+            } else {
+                priesthoodSelect.disabled = false;
+                priesthoodOfficeSelect.disabled = false;
+                updatePriesthoodOffice();
+            }
+        }
+    
+        function updatePriesthoodOffice() {
+            const options = {
+                "Aaronic": [
+                    { value: "Deacon", label: "Deacon" },
+                    { value: "Teacher", label: "Teacher" },
+                    { value: "Priest", label: "Priest" }
+                ],
+                "Melchizedek": [
+                    { value: "Elder", label: "Elder" },
+                    { value: "High Priest", label: "High Priest" },
+                    { value: "Seventy", label: "Seventy" }
+                ]
+            }[priesthoodSelect.value] || [];
+    
+            priesthoodOfficeSelect.innerHTML = options.map(
+                opt => `<option value="${opt.value}">${opt.label}</option>`
+            ).join('');
+        }
+    
+        function validateFullName() {
+            const regex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+,\s[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/;
+            const isValid = regex.test(fullNameField.value.trim());
+            toggleFields(!isValid);
+            return isValid;
+        }
+    
+        function processFullName() {
+            if (!validateFullName()) return;
+    
+            const [lastName, firstName] = fullNameField.value.trim().split(',').map(s => s.trim().split(' ')[0]);
+            preferredNameField.value = `${firstName} ${lastName}`;
+            shortNameField.value = `${lastName}, ${firstName}`;
+
+            // Asegurar que el cursor sigue el flujo correcto
+            setTimeout(() => {
+                preferredNameField.focus();
+            }, 0);
+        }
+    
+        function validateShortName() {
+            const regex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+,\s[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/;
+            return regex.test(shortNameField.value.trim());
+        }
+    
+        fullNameField.addEventListener('blur', processFullName);
+        shortNameField.addEventListener('blur', validateShortName);
+        genderSelect.addEventListener('change', updateFieldsBasedOnGender);
+        priesthoodSelect.addEventListener('change', updatePriesthoodOffice);
+    
+        updateFieldsBasedOnGender();
+        updatePriesthoodOffice();
+        validateFullName();
+    });
+    
+</script>
+
+
+{% endblock %}

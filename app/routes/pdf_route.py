@@ -246,5 +246,3 @@ def view_pdf(filename):
         print(f"Error: {e}")  # Log the actual error for debugging
         abort(500, description=str(e))
         
-        
-

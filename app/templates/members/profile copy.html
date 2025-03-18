@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Perfil de {{ member.full_name }}</h2>
+    
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Información Personal</h5>
+            <p><strong>Nombre:</strong> {{ member.full_name }}</p>
+            <p><strong>Email:</strong> {{ member.email }}</p>
+            <p><strong>Teléfono:</strong> {{ member.phone }}</p>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <h4>Ubicación</h4>
+        <div id="map" style="height: 400px; width: 100%;"></div>
+    </div>
+</div>
+
+<script>
+    function initMap() {
+        const memberLocation = { lat: {{ member.lat }}, lng: {{ member.lon }} };
+        const map = new google.maps.Map(document.getElementById('map'), {
+            zoom: 15,
+            center: memberLocation,
+            mapId: "DEMO_MAP_ID", // Map ID is required for advanced markers.
+        });
+        const marker = new google.maps.marker.AdvancedMarkerElement({
+            map,
+            position: position,
+            title: '{{ member.preferred_name}}',
+        });
+    }
+</script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAZ9VicEvSmn24pGPdmSd9QQC9P1ER4TlA&callback=initMap&loading=async"></script>
+{% endblock %}
+
+

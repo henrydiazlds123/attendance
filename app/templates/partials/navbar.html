@@ -41,7 +41,12 @@
                                         {% endif %}
                                         {% if session['role'] in ['Owner', 'Admin'] %}
                                         <a class="dropdown-item {{ 'active' if request.endpoint == 'stats.render_stats' else '' }}" href="{{ url_for('stats.render_stats') }}"><i class="bi bi-bar-chart-line"></i>  {{ _('Attendance Stats') }}</a>
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item {{ 'active' if request.endpoint == 'members.list_members' else '' }}" href="{{ url_for('members.list_members') }}"><i class="bi bi-database-fill-up"></i>  {{ _('Members') }}</a>
+                                        <a class="dropdown-item {{ 'active' if request.endpoint == 'members.pivot_table' else '' }}" href="{{ url_for('members.pivot_table') }}"><i class="bi bi-bar-chart-steps"></i>  {{ _('Pivot Table') }}</a>
+                                        <a class="dropdown-item {{ 'active' if request.endpoint == 'import.import_members' else '' }}" href="{{ url_for('import.import_members') }}"><i class="bi bi-database-fill-up"></i>  {{ _('Import Members') }}</a>
                                         {% endif %}
+                                        <div class="dropdown-divider"></div>
                                         {% if session['role'] in ['Owner', 'Admin', 'Super'] %}
                                         <a class="dropdown-item {{ 'active' if request.endpoint == 'admin.admin' else '' }}" href="{{ url_for('admin.admin') }}"><i class="bi bi-gear"></i>  {{ _('Admin Panel') }}</a>
                                         {% endif %}

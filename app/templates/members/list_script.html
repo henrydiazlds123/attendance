@@ -1,60 +1,101 @@
-<!-- templates/partials/scripts/members_list.html  -->
-<script>
-    const translations = {
-        previous: "{{ _('Previous') }}",
-        next: "{{ _('Next') }}"
-    };
-</script>
+<!-- templates/partials/scripts/members_list.html -->
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        let perPageSelect = document.getElementById('perPageSelect');
-        let currentPerPage = parseInt(perPageSelect.value) || 25;
-        let currentPage = 1;
+
         let membersContainer = document.getElementById('members_list_container');
 
-        async function fetchMembers() {
+        const table = document.getElementById("membersTable");
+        const headers = table.querySelectorAll("thead th");
+        const tbody = table.querySelector("tbody");
+        let currentPage = 1;
+        let currentPerPage = 10;
+
+        headers.forEach((header, index) => {
+            if (index === headers.length - 1) return; // Evitar ordenar la columna de "Acciones"
+            
+            header.style.cursor = "pointer";
+            header.addEventListener("click", function () {
+                const isAscending = header.dataset.order === "asc";
+                const newOrder = isAscending ? "desc" : "asc";
+                header.dataset.order = newOrder;
+    
+                sortTableByColumn(tbody, index, newOrder);
+            });
+        });
+    
+        function sortTableByColumn(tbody, columnIndex, order) {
+            const rows = Array.from(tbody.querySelectorAll("tr"));
+    
+            rows.sort((rowA, rowB) => {
+                const cellA = rowA.cells[columnIndex].textContent.trim().toLowerCase();
+                const cellB = rowB.cells[columnIndex].textContent.trim().toLowerCase();
+    
+                const isNumeric = !isNaN(cellA) && !isNaN(cellB);
+                if (isNumeric) {
+                    return order === "asc" ? cellA - cellB : cellB - cellA;
+                } else {
+                    return order === "asc" ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
+                }
+            });
+    
+            tbody.innerHTML = ""; // Limpiar tbody y agregar filas ordenadas
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        window.fetchMembers = async function () {
+            let perPageSelect = document.getElementById('perPageSelect');
+            currentPerPage = perPageSelect.value === "All" ? 99999 : parseInt(perPageSelect.value);
+            
             let params = {
-                family     : document.getElementById('filterFamily').value,
-                name       : document.getElementById('filterName').value,
-                gender     : document.getElementById('filterGender').value,
-                category   : document.getElementById('filterCategory').value,
-                sector     : document.getElementById('filterSector').value,
+                family: document.getElementById('filterFamily').value,
+                name: document.getElementById('filterName').value,
+                gender: document.getElementById('filterGender').value,
+                category: document.getElementById('filterCategory').value,
+                sector: document.getElementById('filterSector').value,
                 has_calling: document.getElementById('filterHasCalling').value,
-                condition  : document.getElementById('filterCondition').value,
-                per_page   : currentPerPage,
-                page       : currentPage
+                condition: document.getElementById('filterCondition').value,
+                per_page: currentPerPage,
+                page: currentPage
             };
+
             try {
+                // Mostrar spinner de carga
+                const tbody = document.querySelector("#membersTable tbody");
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center"><div class="spinner-border" role="status"></div></td></tr>`;
+
+                const texts = await fetch('/swal/get_swal_texts').then(response => response.json());
                 const respond = await fetch(`api/members?` + new URLSearchParams(params));
-                console.log("Parámetros enviados:", params);
                 const data = await respond.json();
 
                 // Actualizar el número total de miembros
                 document.getElementById("memberCount").textContent = data.members_count;
 
-                // Actualizar la tabla con los miembros
-                const tbody = document.querySelector("#membersTable tbody");
+                // Limpiar y actualizar la tabla con los miembros
                 tbody.innerHTML = "";
-
                 data.members.forEach((member, index) => {
                     const row = document.createElement("tr");
-                    
+
                     // Calcula el índice considerando la paginación
                     const indexWithPagination = index + 1 + ((currentPage - 1) * currentPerPage);
-                    
+
                     row.innerHTML = `
-                        <td>${indexWithPagination}</td>  <!-- Índice con paginación -->
+                        <td class="d-none d-md-table-cell">${indexWithPagination}</td>  <!-- Índice con paginación -->
                         <td><input type="checkbox" ${member.active ? 'checked' : ''} onchange="toggleActive(${member.id}, this.checked)"></td>
-                        <td>${member.short_name}</td>
-                        <td>${member.age}</td>
-                        <td>${member.gender}</td>
+                        <td>${member.short_name} (${member.age})</td>
                         <td>${member.priesthood || '-'}</td>
-                        <td>${member.priesthood_office || '-'}</td>
+                        <td class="d-none d-md-table-cell">${member.priesthood_office || '-'}</td>
                         <td>${member.sector || '-'}</td>
-                        <td>${member.calling || '-'}</td>
-                        <td>${member.time_in_ward}</td>                       
+                        <td class="d-none d-md-table-cell">${member.calling || '-'}</td>
+                        <td>${member.time_in_ward}</td>
+                        <td> 
+                            <a type="button" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" title="${texts.editMemberTooltip}: ${member.preferred_name}" href="/members/edit/${member.id}"> <i class="bi bi-pencil-square"></i></a>
+                            <a type="button" class="btn btn-secondary btn-sm" data-bs-toggle="tooltip" title="${texts.profileMemberTooltip} ${member.preferred_name}" href="/members/profile/${member.id}"> <i class="bi bi-search"></i></a>
+                        </td>                        
                     `;
                     tbody.appendChild(row);
+                    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+                        new bootstrap.Tooltip(el);
+                    });
                 });
 
                 renderPagination(data.page, data.total_pages);
@@ -64,54 +105,53 @@
             }
         }
 
-        function renderPagination(currentPage, totalPages) {
+        async function renderPagination(currentPage, totalPages) {
             const paginationContainer = document.getElementById("paginationContainer");
             paginationContainer.innerHTML = "";
-        
+            const texts = await fetch('/swal/get_swal_texts').then(response => response.json());
+
             if (totalPages > 1) {
                 let paginationHTML = '<nav><ul class="pagination">';
-        
+
                 // Botón "Anterior"
                 if (currentPage > 1) {
                     paginationHTML += `<li class="page-item">
-                        <a class="page-link" href="#" onclick="changePage(${currentPage - 1})">« ${translations.previous}</a>
+                        <a class="page-link" href="#" onclick="changePage(${currentPage - 1})">« ${texts.paginationPrevious}</a>
                     </li>`;
                 }
-        
                 // Números de página (máximo 5 visibles)
                 let maxVisiblePages = 10;
                 let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
                 let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-        
+
                 if (endPage - startPage < maxVisiblePages - 1) {
                     startPage = Math.max(1, endPage - maxVisiblePages + 1);
                 }
-        
+
                 for (let p = startPage; p <= endPage; p++) {
                     paginationHTML += `<li class="page-item ${p === currentPage ? 'active' : ''}">
                         <a class="page-link" href="#" onclick="changePage(${p})">${p}</a>
                     </li>`;
                 }
-        
+
                 // Botón "Siguiente"
                 if (currentPage < totalPages) {
                     paginationHTML += `<li class="page-item">
-                        <a class="page-link" href="#" onclick="changePage(${currentPage + 1})">${translations.next} »</a>
+                        <a class="page-link" href="#" onclick="changePage(${currentPage + 1})">${texts.paginationNext} »</a>
                     </li>`;
                 }
-        
+
                 paginationHTML += '</ul></nav>';
                 paginationContainer.innerHTML = paginationHTML;
             }
         }
-        
 
-        window.changePage = function (page) {  
+        window.changePage = function (page) {
             currentPage = page;
             fetchMembers();
         };
 
-        window.toggleActive = function (memberId, isActive) {  
+        window.toggleActive = function (memberId, isActive) {
             fetch(`api/members/${memberId}/active`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
@@ -130,9 +170,12 @@
 
         perPageSelect.addEventListener('change', function () {
             console.log("Nuevo valor de perPageSelect:", this.value);
-            currentPerPage = parseInt(this.value);
+            currentPerPage = this.value === "All" ? 99999 : parseInt(this.value);
             currentPage = 1;
-            fetchMembers();
+
+            requestAnimationFrame(() => {
+                fetchMembers();
+            });
         });
 
         fetchMembers().then(() => {

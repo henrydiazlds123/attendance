@@ -2,70 +2,78 @@
 
 {% block title %}{{ _('Attendance | Users') }}{% endblock %}
 
-{% block pageTitle %}<i class="bi bi-person-circle"></i>  {{ _('Users Management') }}{% endblock %}
+{% block pageTitle %}<i class="bi bi-person-circle"></i> {{ _('Users Management') }}{% endblock %}
 {% block content %}
 <div class="col-xl-8">
   <p class="mb-3">
     {{ _("Something") }}
   </p>
 </div>
-    
-    <div><a class="btn btn-primary mb-2" href="{{ url_for('user.create_user') }}"><i class="fa fa-plus" aria-hidden="true"></i>  {{ _('Create New User') }}</a></div>
-        
-    <table class="table table-bordered table-striped table-sm mb-5 pb-5">
-      <thead class="table-dark">
-        <tr>
-          <th scope="col">#</th>
-          <th scope="col">{{ _('Username') }}</th>
-          <th scope="col" class="d-none d-lg-table-cell">{{ _('Email') }}</th>
-          <th scope="col">{{ _('Organization') }}</th>
-          {% if session['role'] == 'Owner' %}
-          <th scope="col" class="d-none d-md-table-cell">{{ _('Unit') }}</th>
-          {% endif %}
-          <th scope="col" class="d-none d-md-table-cell">{{ _('Role') }}</th>
-          <th scope="col">{{ _('Actions') }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for user in users %}
-          <tr>
-            <td scope="row">{{ loop.index }}</td>
-            <td>{{ _(user.username) }}</td>
-            <td class="d-none d-lg-table-cell dot-1">{{ user.email }}</td>
-            <td class="">{{ _(user.organization_name) }}</td>
-            {% if session['role'] == 'Owner' %}
-            <td class="d-none d-md-table-cell">{{ user.meeting_short_name }}</td>
-            {% endif %}
-            <td class="d-none d-md-table-cell">{{ _(user.role) }}</td>
-            <td>
-              {% if not user['role'] == 'Owner' %}
-                <a type="button" href="{{ url_for('user.reset_password', id=user.id) }}" class="btn btn-warning btn-sm" data-toggle="tooltip" title="{{ _('Reset Password') }}">
-                  <i class="bi bi-key"></i>
-                </a>
-                <a type="button" class="btn btn-primary btn-sm" data-toggle="tooltip" title="{{ _('Edit user') }}" href="{{ url_for('user.update_user', id=user.id) }}">
-                  <i class="bi bi-pencil-square"></i>
-                </a>
-                {% if session['role'] == 'Owner' or (session['role'] == 'Admin' and (user.role == 'User' or user.role == 'Super' or user.role == 'Operator')) or user.id == session['user_id'] %}
 
-                  {% if not (user.role == 'Admin' and admin_count <= 1) %}
-                    <form id="deleteForm-user-{{ user.id }}" action="{{ url_for('user.delete_user', id=user.id) }}" method="post" style="display:inline;">
-                      <button type="button" class="btn btn-danger btn-sm" data-toggle="tooltip" title="{{ _('Delete User') }}"  onclick="confirmDelete('user', {{ user.id }})">
-                        <i class="bi bi-trash"></i>
-                      </button>
-                    </form>
-                  {% endif %}
-                {% endif %}
-                {% if user.role == 'User' %}
-                  <form id="promoteForm-{{ user.id }}" action="{{ url_for('user.promote_to_super', id=user.id) }}" method="POST" style="display:inline;">
-                    <button type="button" class="btn btn-success btn-sm" data-toggle="tooltip" title="{{ _('Change to Super User') }}" onclick="confirmPromotion({{ user.id }}, '{{ user.username }}')">
-                      <i class="bi bi-person-lock"></i>
-                    </button>
-                  </form>
-                {% endif %}
-              {% endif %}
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>  
+<div><a class="btn btn-primary mb-2" href="{{ url_for('user.create_user') }}"><i class="fa fa-plus"
+      aria-hidden="true"></i> {{ _('Create New User') }}</a></div>
+
+<table class="table table-bordered table-striped table-sm mb-5 pb-5" id="userTable">
+  <thead class="table-dark">
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">{{ _('Username') }} <i class="bi bi-sort-up"></i></th>
+      <th scope="col" class="d-none d-lg-table-cell">{{ _('Email') }} <i class="bi bi-sort-up"></i></th>
+      <th scope="col">{{ _('Organization') }} <i class="bi bi-sort-up"></i></th>
+      {% if session['role'] == 'Owner' %}
+      <th scope="col" class="d-none d-md-table-cell">{{ _('Unit') }} <i class="bi bi-sort-up"></i></th>
+      {% endif %}
+      <th scope="col" class="d-none d-md-table-cell">{{ _('Role') }} <i class="bi bi-sort-up"></i></th>
+      <th scope="col">{{ _('Actions') }}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for user in users %}
+    <tr>
+      <td scope="row">{{ loop.index }}</td>
+      <td>{{ _(user.username) }}</td>
+      <td class="d-none d-lg-table-cell dot-1">{{ user.email }}</td>
+      <td class="">{{ _(user.organization_name) }}</td>
+      {% if session['role'] == 'Owner' %}
+      <td class="d-none d-md-table-cell">{{ user.meeting_short_name }}</td>
+      {% endif %}
+      <td class="d-none d-md-table-cell">{{ _(user.role) }}</td>
+      <td>
+        {% if not user['role'] == 'Owner' %}
+        <a type="button" href="{{ url_for('user.reset_password', id=user.id) }}" class="btn btn-warning btn-sm"
+          data-toggle="tooltip" title="{{ _('Reset Password') }}">
+          <i class="bi bi-key"></i>
+        </a>
+        <a type="button" class="btn btn-primary btn-sm" data-toggle="tooltip" title="{{ _('Edit user') }}"
+          href="{{ url_for('user.update_user', id=user.id) }}">
+          <i class="bi bi-pencil-square"></i>
+        </a>
+        {% if session['role'] == 'Owner' or (session['role'] == 'Admin' and (user.role == 'User' or user.role == 'Super'
+        or user.role == 'Operator')) or user.id == session['user_id'] %}
+
+        {% if not (user.role == 'Admin' and admin_count <= 1) %} <form id="deleteForm-user-{{ user.id }}"
+          action="{{ url_for('user.delete_user', id=user.id) }}" method="post" style="display:inline;">
+          <button type="button" class="btn btn-danger btn-sm" data-toggle="tooltip" title="{{ _('Delete User') }}"
+            onclick="confirmDelete('user', {{ user.id }})">
+            <i class="bi bi-trash"></i>
+          </button>
+          </form>
+          {% endif %}
+          {% endif %}
+          {% if user.role == 'User' %}
+          <form id="promoteForm-{{ user.id }}" action="{{ url_for('user.promote_to_super', id=user.id) }}" method="POST"
+            style="display:inline;">
+            <button type="button" class="btn btn-success btn-sm" data-toggle="tooltip"
+              title="{{ _('Change to Super User') }}" onclick="confirmPromotion({{ user.id }}, '{{ user.username }}')">
+              <i class="bi bi-person-lock"></i>
+            </button>
+          </form>
+          {% endif %}
+          {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% include 'users/list_script.html' %}
 {% endblock %}

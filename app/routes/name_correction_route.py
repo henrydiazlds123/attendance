@@ -98,6 +98,4 @@ def update_name_correction():
     except Exception as e:
         db.session.rollback()
         # print(f"Error al guardar en la base de datos: {e}")
-        return jsonify({'error': 'Error al guardar la corrección'}), 500
-
-
+        return jsonify({'error': _('Error al guardar la corrección')}), 500

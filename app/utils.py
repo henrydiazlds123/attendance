@@ -12,7 +12,7 @@ from   functools    import wraps
 from   flask_babel  import format_date, gettext as _
 from   datetime     import date, datetime, timedelta
 from   app.models   import Attendance, Classes, db, Setup, Member
-from   flask        import current_app, flash, logging, redirect, session, url_for, request, g
+from   flask        import flash, logging, redirect, session, url_for, request, g
 
 
 # ================================================================
@@ -187,6 +187,71 @@ def translations():
         {'id': 8, 'name': _('Other')}
     ]
 
+    callings = [
+        { _('Assistant Ward Mission Leader')},
+        { _('Bishop')},
+        { _('Bishopric First Counselor')},
+        { _('Bishopric Second Counselor')},
+        { _('Communication Specialist')},
+        { _('Deacons Quorum Adviser')},
+        { _('Deacons Quorum President')},
+        { _('Elders Quorum First Counselor')},
+        { _('Elders Quorum President')},
+        { _('Elders Quorum Second Counselor')},
+        { _('Elders Quorum Secretary')},
+        { _('Elders Quorum Teacher')},
+        { _('Nursery Leader')},
+        { _('Priests Quorum Adviser')},
+        { _('Priests Quorum First Assistant')},
+        { _('Priests Quorum Second Assistant')},
+        { _('Priests Quorum Secretary')},
+        { _('Primary Activities Leader')},
+        { _('Primary First Counselor')},
+        { _('Primary Music Leader')},
+        { _('Primary President')},
+        { _('Primary Second Counselor')},
+        { _('Primary Secretary')},
+        { _('Primary Teacher')},
+        { _('Relief Society Activity Coordinator')},
+        { _('Relief Society First Counselor')},
+        { _('Relief Society Ministering Secretary')},
+        { _('Relief Society President')},
+        { _('Relief Society Second Counselor')},
+        { _('Relief Society Service Coordinator')},
+        { _('Relief Society Teacher')},
+        { _('Scheduler--Building 1')},
+        { _('Stake Assistant Clerk--Membership')},
+        { _('Stake Young Women Second Counselor')},
+        { _('Sunday School First Counselor')},
+        { _('Sunday School President')},
+        { _('Sunday School Second Counselor')},
+        { _('Sunday School Secretary')},
+        { _('Sunday School Teacher')},
+        { _('Teachers Quorum Adviser')},
+        { _('Teachers Quorum First Counselor')},
+        { _('Teachers Quorum President')},
+        { _('Teachers Quorum Second Counselor')},
+        { _('Ward Assistant Clerk--Finance')},
+        { _('Ward Assistant Clerk--Membership')},
+        { _('Ward Assistant Executive Secretary')},
+        { _('Ward Clerk')},
+        { _('Ward Executive Secretary')},
+        { _('Ward Mission Leader')},
+        { _('Ward Missionary')},
+        { _('Ward Temple and Family History Consultant')},
+        { _('Ward Temple and Family History Leader')},
+        { _('Ward/Branch Interpreter')},
+        { _('Welfare and Self-Reliance Specialist')},
+        { _('Young Women Class Adviser')},
+        { _('Young Women Class First Counselor')},
+        { _('Young Women Class President')},
+        { _('Young Women Class Second Counselor')},
+        { _('Young Women First Counselor')},
+        { _('Young Women President')},
+        { _('Young Women Second Counselor')},
+        { _('Young Women Specialist - Sports')}
+    ]
+
     
 # ================================================================
 def remove_accents(input_str):
@@ -276,36 +341,55 @@ def validate_import_data(df):
 # =================================================================
 def convertir_texto_a_fecha(txt_fecha):
     get_months = {
-        "Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6,
-        "Jul": 7, "Ago": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dic": 12,
-        "January": 1, "February": 2, "March": 3, "April": 4, "May": 5, "June": 6,
-        "July": 7, "August": 8, "September": 9, "October": 10, "November": 11, "December": 12
+        "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
+        "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12
     }
-
-    if not txt_fecha or not isinstance(txt_fecha, str):
+    
+    #print(f"Fecha recibida: {txt_fecha}")
+    if not txt_fecha:
         return None
+    
+    # Si ya es un objeto date, devolverlo directamente
+    if isinstance(txt_fecha, date):
+        return txt_fecha
 
+    # Caso 1: Manejar formato MM/DD/YYYY
+    if "/" in txt_fecha:
+        try:
+            fecha_convertida = datetime.strptime(txt_fecha, "%m/%d/%Y").date()
+            #print(f"Fecha convertida (MM/DD/YYYY): {fecha_convertida}")
+            return fecha_convertida
+        except ValueError:
+            #print("Error: Formato inválido para MM/DD/YYYY")
+            return None
+
+    # Caso 2: Manejar formato DD MMM YYYY
     part = txt_fecha.replace("-", " ").split()
-
-    if len(part) not in [3, 4]:
-        return None  # Formato inválido
+    if len(part) not in [3, 4]:  
+        #print(f"Error: Formato inválido con {len(part)} partes")
+        return None  
 
     try:
         day = int(part[0])
         month = part[1].lower()
         year = int(part[-1])
 
-        if len(str(year)) == 2:  # Manejo de años cortos
+        if len(str(year)) == 2:  
             year += 2000
 
         if month in get_months:
             month = get_months[month]
         else:
-            return None  # Mes inválido
+            #print(f"Error: Mes inválido '{month}'")
+            return None  
 
-        return datetime(year, month, day).date()
-    except (ValueError, KeyError):
-        return None
+        fecha_convertida = date(year, month, day)
+        #print(f"Fecha convertida (DD MMM YYYY): {fecha_convertida}")
+        return fecha_convertida
+
+    except (ValueError, KeyError) as e:
+        #print(f"Error al convertir la fecha: {e}")
+        return None    
 
 
 # =================================================================
@@ -350,93 +434,88 @@ def allowed_file(filename):
 
 
 # =================================================================
-def process_import(df, mappings, meeting_center_id):
-    print("Mapeo de columnas Antes:", mappings)  # Verifica el mapeo antes de procesar
-    updated = 0
+permanently_excluded_fields = ['gender', 'birth_date', 'fixed_address', 'lat', 'lon', 'preferred_name', 'short_name']
+
+def process_import(df, column_mapping, meeting_center_id):
+    """
+    Procesa la importación de datos de miembros desde un DataFrame.
+    """
+    # Renombrar las columnas del DataFrame según column_mapping
+    df = df.rename(columns={v: k for k, v in column_mapping.items() if v in df.columns})
+
+    # Limpiar posibles espacios en blanco adicionales en los nombres de las columnas
+    df.columns = df.columns.str.strip()
+
+    # Convertir arrival_date y birth_date usando la función convertir_texto_a_fecha
+    if 'arrival_date' in df.columns:
+        df['arrival_date'] = df['arrival_date'].apply(convertir_texto_a_fecha)
+    if 'birth_date' in df.columns:
+        df['birth_date'] = df['birth_date'].apply(convertir_texto_a_fecha)
+
+    # Asegurarnos de que la columna 'gender' no contenga valores vacíos o NaN
+    if df['gender'].isna().any():
+        print("Advertencia: Algunas filas tienen 'gender' como NaN. Revise los datos de entrada.")
+        df = df.dropna(subset=['gender'])  # Elimina las filas con 'gender' vacío
+
     added = 0
-    existing_members = {(m.full_name, m.birth_date): m for m in Member.query.all()}
+    updated = 0
 
+    # Obtenemos los miembros actuales en la base de datos para este centro de reunión
+    miembros_existentes = Member.query.filter_by(meeting_center_id=meeting_center_id).all()
+
+    # Creamos un set de los nombres completos (full_name) de los registros CSV
+    full_names_csv = {row['full_name'] for _, row in df.iterrows()}
+
+    # Iteramos sobre los miembros existentes en la base de datos
+    for miembro in miembros_existentes:
+        # Si el miembro no está en el archivo CSV (basado en el nombre completo)
+        if miembro.full_name not in full_names_csv:
+            # Actualizamos los campos moved_out y excluded
+            miembro.moved_out = True
+            miembro.excluded = True
+            db.session.add(miembro)  # Añadimos el cambio a la sesión
+            # updated += 1
+        else:
+            # Si está en el archivo CSV, actualizamos moved_out y excluded a False
+            miembro.moved_out = False
+            miembro.excluded = False
+            db.session.add(miembro)  # Añadimos el cambio a la sesión
+            # updated += 1
+
+    # Ahora procesamos los registros del CSV
     for _, row in df.iterrows():
-        try:
-            print(f"Procesando fila: {row.to_dict()}")  # 🔹 Agregar dentro del bucle
+        # Verificar que 'full_name' y 'gender' no sean nulos
+        if pd.isna(row['full_name']):
+            print(f"Error: Fila sin 'full_name' válido. Saltando fila...")
+            continue  # Saltar filas sin 'full_name'
 
-            full_name         = get_valid_value(row.get('full_name', ''))
-            birth_date        = convertir_texto_a_fecha(row.get('birth_date', ''))
-            gender            = get_valid_value(row.get('gender', ''))
-            marital_status    = get_valid_value(row.get('marital_status', ''))
-            address           = get_valid_value(row.get('address', ''))
-            city              = get_valid_value(row.get('city', ''))
-            state             = get_valid_value(row.get('state', ''))
-            zip_code          = get_valid_value(row.get('zip_code', ''))
-            priesthood        = get_valid_value(row.get('priesthood', ''))
-            priesthood_office = get_valid_value(row.get('priesthood_office', ''))
-            calling           = get_valid_value(row.get('calling', ''))
-            arrival_date      = convertir_texto_a_fecha(row.get('arrival_date', ''))
-            family_head       = get_valid_value(row.get('family_head', ''))
-            print(f"Full Name: {full_name}")
-            print(f"Birth Date: {birth_date}")
-            print(f"Gender: {gender}")
-            print(f"Marital Status: {marital_status}")
-            print(f"Address: {address}")
-            print(f"City: {city}")
-            print(f"State: {state}")
-            print(f"Zip Code: {zip_code}")
-            print(f"Priesthood: {priesthood}")
-            print(f"Priesthood Office: {priesthood_office}")
-            print(f"Calling: {calling}")
-            print(f"Arrival Date: {arrival_date}")
-            print(f"Family Head: {family_head}")
-            # Separar nombres
-            name_parts = full_name.split(',')
-            last_name  = name_parts[0].strip().split()[0]
-            first_name = name_parts[1].strip().split()[0]
+        if pd.isna(row['gender']):
+            print(f"Advertencia: Fila con 'gender' nulo. Saltando fila...")
+            continue  # Saltar filas con 'gender' vacío
 
-            if not full_name or not birth_date:
-                continue
+        # Buscar si el miembro ya existe
+        member = Member.query.filter_by(full_name=row['full_name'], meeting_center_id=meeting_center_id).first()
 
-            if (full_name, birth_date) in existing_members:
-                member = existing_members[(full_name, birth_date)]
-                member.marital_status    = marital_status
-                member.address           = address
-                member.city              = city
-                member.state             = state
-                member.zip_code          = zip_code
-                member.priesthood        = priesthood
-                member.priesthood_office = priesthood_office
-                member.calling           = calling
-                member.arrival_date      = arrival_date
-                member.family_head       = family_head
-                member.meeting_center_id = meeting_center_id
-                updated += 1
-            else:
-                new_member = Member(
-                    full_name         = full_name,
-                    preferred_name    = f"{first_name} {last_name}",
-                    short_name        = f"{last_name}, {first_name}",
-                    birth_date        = birth_date,
-                    gender            = gender,
-                    marital_status    = marital_status,
-                    address           = address,
-                    city              = city,
-                    state             = state,
-                    zip_code          = zip_code,
-                    priesthood        = priesthood,
-                    priesthood_office = priesthood_office,
-                    calling           = calling,
-                    arrival_date      = arrival_date,
-                    family_head       = family_head,
-                    meeting_center_id = meeting_center_id,
-                )
-                db.session.add(new_member)
-                added += 1
-        except Exception as e:
-            current_app.logger.error(f"Error procesando fila: {str(e)}")
+        if member:
+            # Si existe, actualizamos los campos
+            for field in column_mapping:
+                if field in row and not pd.isna(row[field]):
+                    setattr(member, field, row[field])
+            updated += 1
+        else:
+            # Si no existe, crear un nuevo miembro
+            # Aquí, excluimos 'full_name' de los campos que vamos a pasar al crear el miembro
+            member_data = {field: row[field] for field in column_mapping if field in row and not pd.isna(row[field])}
+            member_data['full_name'] = row['full_name']  # Aseguramos que 'full_name' esté explicitamente presente
+            new_member = Member(
+                meeting_center_id=meeting_center_id,
+                **member_data  # Usamos ** para pasar los campos de manera correcta
+            )
+            db.session.add(new_member)
+            added += 1
 
-    try:
-        db.session.commit()
-        print("🚀 Transacción completada con éxito.")
-    except Exception as e:
-        db.session.rollback()
-        print(f"⚠️ Error al guardar en la base de datos: {str(e)}")
+    # Commit a la base de datos
+    db.session.commit()
+    print("🚀 Transacción completada con éxito.")
 
-    return added, updated  # ✅ Agregar retorno al final
+    return added, updated

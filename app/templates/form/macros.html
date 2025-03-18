@@ -1,10 +1,11 @@
+<!-- app/templates/form/macro.html -->
 {% macro render_field(field, label_class="col-md-3 col-form-label custom-label", input_class="form-control custom-input", group_class="row mb-3") %}
 
 {% if field.type == "BooleanField" %}
 <div class="{{ group_class }}">
     <label for="{{ field.id }}" class="{{ label_class }}">{{ field.label }}</label>
     <div class="col-sm-9">
-        {{ field(class="form-check-input", id=field.id, style="transform: scale(2); margin-left: 8px;") }}
+        {{ field(class="form-check-input", id=field.id, style="transform: scale(1.5); margin-left: 8px;") }}
         {% if field.errors %}
             <div class="text-danger small mt-1">
                 {% for error in field.errors %}
@@ -33,7 +34,32 @@
 <div class="{{ group_class }}">
     <label for="{{ field.id }}" class="{{ label_class }}">{{ field.label }}</label>
     <div class="col-sm-9">
-        {{ field(class=input_class, id=field.id) }}
+        {% if field.type == "SelectField" %}
+            {{ field(class="form-select", id=field.id) }}
+
+        {% elif field.type == "RadioField" %}
+            {% for subfield in field %}
+                <div class="form-check">
+                    {{ subfield(class="form-check-input", id=subfield.id) }}
+                    <label class="form-check-label" for="{{ subfield.id }}">{{ subfield.label }}</label>
+                </div>
+            {% endfor %}
+
+        {% elif field.type in ["StringField", "EmailField", "PasswordField", "IntegerField", "DecimalField", "DateField", "TimeField"] %}
+            {{ field(class=input_class, id=field.id) }} 
+
+        {% elif field.type == "TextAreaField" %}
+            {{ field(class="form-control", id=field.id, rows=4) }}
+        
+        {% elif field.type == "FileField" %}
+            {{ field(class="form-control", id=field.id) }}
+
+        {% elif field.type == "ColorField" %}
+            {{ field(class="form-control form-control-color", id=field.id, type="color") }}
+
+        {% else %}
+            {{ field(class=input_class, id=field.id) }}
+        {% endif %}
         {% if field.errors %}
             <div class="text-danger small mt-1">
                 {% for error in field.errors %}

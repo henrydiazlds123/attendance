@@ -43,6 +43,7 @@ pybabel compile -d app/translations
 
 Para actualizar los archivos de traduccion:
 Identificar las cadenas nuevas y luego correr
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 pybabel extract -F app/babel.cfg -k _l -o app/messages.pot .
 
 actualizar los archivos .po existentes sin borrar lo anterior

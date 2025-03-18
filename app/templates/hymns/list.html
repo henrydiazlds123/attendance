@@ -3,12 +3,20 @@
 
 {% block content %}
     <h2>Himnos</h2>
-    <ul>
-        {% for agenda in agendas %}
-            <li>
-                <a href="{{ url_for('announcements.announcements', id=meeting.id) }}">{{ meeting.sunday_date }}</a>
-            </li>
-        {% endfor %}
-    </ul>
-    <a href="{{ url_for('announcements.add_announcement') }}">Agregar Nuevo Himno</a>
+    <a href="{{ url_for('hymns.add_hymn') }}">Agregar Nuevo Himno</a>
+    
+    <div class="container">
+        <div class="row">
+            {% for hymn in hymns %}
+                {% if loop.index0 % 3 == 0 %}
+                    </div><div class="row">
+                {% endif %}
+                <div class="col-md-4">
+                    <p>{{ hymn.number }} {{ hymn.title }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <a class="mb-5" href="{{ url_for('hymns.add_hymn') }}">Agregar Nuevo Himno</a>
 {% endblock %}

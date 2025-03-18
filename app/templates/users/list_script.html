@@ -1,0 +1,41 @@
+<script>
+
+  document.addEventListener('DOMContentLoaded', function () {
+
+    const table = document.getElementById("userTable");
+    const headers = table.querySelectorAll("thead th");
+    const tbody = table.querySelector("tbody");
+
+    headers.forEach((header, index) => {
+      if (index === headers.length - 1) return; // Evitar ordenar la columna de "Acciones"
+      
+      header.style.cursor = "pointer";
+      header.addEventListener("click", function () {
+          const isAscending = header.dataset.order === "asc";
+          const newOrder = isAscending ? "desc" : "asc";
+          header.dataset.order = newOrder;
+
+          sortTableByColumn(tbody, index, newOrder);
+      });
+    });
+
+    function sortTableByColumn(tbody, columnIndex, order) {
+      const rows = Array.from(tbody.querySelectorAll("tr"));
+
+      rows.sort((rowA, rowB) => {
+        const cellA = rowA.cells[columnIndex].textContent.trim().toLowerCase();
+        const cellB = rowB.cells[columnIndex].textContent.trim().toLowerCase();
+
+        const isNumeric = !isNaN(cellA) && !isNaN(cellB);
+        if (isNumeric) {
+          return order === "asc" ? cellA - cellB : cellB - cellA;
+        } else {
+          return order === "asc" ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
+        }
+      });
+
+      tbody.innerHTML = ""; // Limpiar tbody y agregar filas ordenadas
+      rows.forEach(row => tbody.appendChild(row));
+    }
+  });
+</script>

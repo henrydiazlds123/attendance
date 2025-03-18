@@ -1,90 +1,88 @@
-<!-- app/templates/imports/map_columns.html -->
 {% extends 'layout.html' %}
 
 {% block content %}
 <div class="container mt-4">
-    <h2>Match Columns</h2>
-    <p>Please map the columns from your file to the correct fields in the system.</p>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }}">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
+    <h2>{{_('Match Columns')}}</h2>
+    <p>{{_('Please map the columns from your file to the correct fields in the system and select which fields should NOT be updated if a member already exists.')}}</p>
 
     <form method="POST">
-
         <table class="table">
             <thead>
                 <tr>
-                    <th>Columna del Archivo</th>
-                    <th>Campo en la Base de Datos</th>
+                    <th>{{_('Database Fields')}}</th>
+                    <th>{{_('File Columns')}}</th>
+                    <th>{{_('Update?')}}</th>
                 </tr>
             </thead>
             <tbody>
-                {% for column in column_names %}
+                {% for field in all_fields %}
                 <tr>
-                    <td>{{ column }}</td>
                     <td>
-                        <select name="{{ column }}" class="form-control"
-                            {% if column in required_fields %} required {% endif %}>                            
-                            <option value="">-- Ignore --</option>                            
-
-                            {% for required_column in required_fields %}
-                                <option value="{{ required_column }}">
-                                    {{ required_column.replace('_', ' ').capitalize() }} (Required)
-                                </option>
-                            {% endfor %}
-
-                            {% for optional_field in optional_fields %}
-                                <option value="{{ optional_field }}">
-                                    {{ optional_field.replace('_', ' ').capitalize() }} (Optional)
-                                </option>
+                        {{ field.replace('_', ' ').capitalize() }}
+                        {% if field in required_fields %}
+                        <span class="text-danger">*</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <select name="{{ field }}" class="form-control" {% if field in required_fields %} required {% endif %}>
+                            <option value="">-- {{_('Select')}} --</option>
+                            {% for column in column_names %}
+                            <option value="{{ column }}" {% if column_mapping[field] == column %}selected{% endif %}>
+                                {{ column }}
+                            </option>
                             {% endfor %}
                         </select>
+                    </td>
+                    <td>
+                        {% if field not in permanently_excluded_fields %}
+                        <input type="checkbox" name="update_fields" value="{{ field }}" checked>
+                        {% else %}
+                        <span class="text-muted">{{_('Not editable')}}</span>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
 
-        <button type="submit" class="btn btn-primary mt-3">Confirm Mapping</button>
+        <p class="text-danger"><strong>* {{_('Requiered fileds')}}</strong></p>
+
+        <button type="submit" class="btn btn-primary mt-3">{{_('Confirm Mapping')}}</button>
     </form>
+
 </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("DOMContentLoaded", function () {
         const savedMapping = JSON.parse(localStorage.getItem("columnMapping")) || {};
+        const savedNoUpdate = JSON.parse(localStorage.getItem("noUpdateFields")) || {};
 
         document.querySelectorAll("select").forEach(select => {
             const columnName = select.name;
-            
-            // Primero, llenar desde la sesión de Flask si existe
-            const columnMapping = {{ column_mapping | tojson | safe }};
-            
-            if (columnMapping[columnName]) {
-                select.value = columnMapping[columnName];
-            }
-
-            // Luego, llenar desde localStorage si no hay datos en la sesión
-            if (!select.value && savedMapping[columnName]) {
+            if (savedMapping[columnName]) {
                 select.value = savedMapping[columnName];
             }
-
-            // Guardar cambios en localStorage al cambiar selección
             select.addEventListener("change", () => {
                 savedMapping[columnName] = select.value;
                 localStorage.setItem("columnMapping", JSON.stringify(savedMapping));
             });
         });
 
-        // Guardar en localStorage al enviar el formulario
+        document.querySelectorAll("input[type='checkbox']").forEach(checkbox => {
+            const fieldName = checkbox.value;
+            if (savedNoUpdate[fieldName] !== undefined) {
+                checkbox.checked = savedNoUpdate[fieldName];
+            }
+            checkbox.addEventListener("change", () => {
+                savedNoUpdate[fieldName] = checkbox.checked;
+                localStorage.setItem("noUpdateFields", JSON.stringify(savedNoUpdate));
+            });
+        });
+
         document.querySelector("form").addEventListener("submit", () => {
             localStorage.setItem("columnMapping", JSON.stringify(savedMapping));
+            localStorage.setItem("noUpdateFields", JSON.stringify(savedNoUpdate));
         });
     });
 </script>
-
 {% endblock %}
