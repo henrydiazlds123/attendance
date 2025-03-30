@@ -1,6 +1,6 @@
 # app/routes/announcements.py
 from flask import Blueprint, render_template, request, redirect, url_for
-from app.models import db, WardAnnouncements, SacramentAgenda
+from app.models import db, WardAnnouncements, Agenda
 
 bp_announcements = Blueprint('announcements', __name__)
 
@@ -20,5 +20,5 @@ def add_announcement():
         db.session.commit()
         return redirect(url_for('announcements.announcements'))
     
-    agendas = SacramentAgenda.query.all()
+    agendas = Agenda.query.all()
     return render_template('/announcements/add.html', agendas=agendas)

@@ -27,7 +27,7 @@
     <p class="mb-3"></p>
   </div>
 
-  {% if session['role'] == 'Admin' or session['role'] == 'Owner' %}
+  {% if session['role'] == 'Admin' or session['role'] == 'Owner' or session['role'] == 'Super' %}
 
   <div class="col-auto mb-2">
     <a class="btn btn-primary col-auto" href="{{ url_for('attendance.create_attendance') }}"><i

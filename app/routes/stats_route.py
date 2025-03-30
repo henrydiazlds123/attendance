@@ -1,10 +1,10 @@
-from flask                   import Blueprint, jsonify, render_template, request
-from flask_babel             import gettext as _
-from sqlalchemy              import func
-from app.models                  import db, Classes, Attendance
-from app.utils                   import *
-from datetime                import datetime
-from collections             import defaultdict
+from app.utils    import *
+from sqlalchemy   import func
+from datetime     import datetime
+from flask_babel  import gettext as _
+from collections  import defaultdict
+from app.models   import db, Classes, Attendance
+from flask        import Blueprint, jsonify, render_template, request
 
 bp_stats = Blueprint('stats', __name__)
 

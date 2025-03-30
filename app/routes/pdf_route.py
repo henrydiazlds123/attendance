@@ -44,7 +44,7 @@ def generate_all_pdfs():
 
 # =============================================================================================
 @bp_pdf.route('/generate_week', methods=['GET', 'POST'])
-@role_required('Admin', 'Super', 'Owner')
+@role_required('Admin', 'Super', 'Owner', 'User')
 def generate_week_pdfs():
     return redirect(url_for('pdf.generate_pdfs', type='semana_especifica'))  # redirige a la misma función para PDFs de la semana específica
 

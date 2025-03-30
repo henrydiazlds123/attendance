@@ -7,6 +7,8 @@
     const attendanceTbody    = document.querySelector('#with_attendance_table tbody');
     const submitButton       = document.getElementById('submit_attendance');
 
+    const previousWeekOption = rangeFilter.querySelector('option[value="previous_week"]');
+
     // Obtener textos antes de cualquier acción
     let texts = {};
     try {
@@ -14,6 +16,20 @@
     } catch (error) {
         console.error("Error fetching texts:", error);
     }
+
+    function updateTimeRangeVisibility() {
+      if (classFilter.value === "FS") {
+          previousWeekOption.hidden = false; // Mostrar la opción
+      } else {
+          previousWeekOption.hidden = true;  // Ocultar la opción
+      }
+    }
+
+    // Ocultar la opción por defecto si no está seleccionada la clase "FS"
+    updateTimeRangeVisibility();
+
+    // Evento para detectar cambios en la selección de clase
+    classFilter.addEventListener("change", updateTimeRangeVisibility);
 
     // Función para actualizar las tablas según la clase y meeting_center_id seleccionados
     function updateTables() {

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ _('New Agenda') }}</title>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            let hymnIndex = 0;
+            let speakerIndex = 0;
+            let announcementIndex = 0;
+            let businessIndex = 0;
+
+            // Obtener contenedores y plantillas
+            const hymnContainer = document.getElementById("hymn-list");
+            const hymnTemplate = document.getElementById("hymn-template").innerHTML;
+
+            const speakerContainer = document.getElementById("speaker-list");
+            const speakerTemplate = document.getElementById("speaker-template").innerHTML;
+
+            const announcementContainer = document.getElementById("announcement-list");
+            const announcementTemplate = document.getElementById("announcement-template").innerHTML;
+
+            const businessContainer = document.getElementById("business-list");
+            const businessTemplate = document.getElementById("business-template").innerHTML;
+
+            // Agregar himno
+            document.getElementById("add-hymn").addEventListener("click", function () {
+                let newHymn = hymnTemplate.replace(/__index__/g, hymnIndex++);
+                hymnContainer.insertAdjacentHTML("beforeend", newHymn);
+            });
+
+            // Agregar discursante
+            document.getElementById("add-speaker").addEventListener("click", function () {
+                let newSpeaker = speakerTemplate.replace(/__index__/g, speakerIndex++);
+                speakerContainer.insertAdjacentHTML("beforeend", newSpeaker);
+            });
+
+            // Agregar anuncio
+            document.getElementById("add-announcement").addEventListener("click", function () {
+                let newAnnouncement = announcementTemplate.replace(/__index__/g, announcementIndex++);
+                announcementContainer.insertAdjacentHTML("beforeend", newAnnouncement);
+            });
+
+            // Agregar asunto
+            document.getElementById("add-business").addEventListener("click", function () {
+                let newBusiness = businessTemplate.replace(/__index__/g, businessIndex++);
+                businessContainer.insertAdjacentHTML("beforeend", newBusiness);
+            });
+        });
+    </script>
+</head>
+<body>
+    <h2>{{ _('Create New Agenda') }}</h2>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <!-- Fecha -->
+        <label>Fecha:</label>
+        {{ form.sunday_date(class="form-control", onchange="window.location.href='/agenda/new?sunday_date=' + this.value") }}<br>
+
+        <!-- Director y Presidente -->
+        <label>Dirige:</label> {{ form.director_id }}<br>
+        <label>Preside:</label> {{ form.presider_id }}<br>
+
+        <!-- Oraciones -->
+        <label>Primera Oración:</label> {{ form.opening_prayer }}<br>
+        <label>Última Oración:</label> {{ form.closing_prayer }}<br>
+
+        <h3>{{ _('Hymns') }}</h3>
+        <div id="hymn-list">
+            {% for hymn in form.hymns %}
+                <div>
+                    <label>Himno {{ loop.index }}</label>
+                    <input type="text" name="hymns-{{ loop.index0 }}-number" value="{{ hymn.data.number if hymn.data else '' }}" />
+                    <input type="text" name="hymns-{{ loop.index0 }}-hymn_type" value="{{ hymn.hymn_type.data }}" />
+                </div>
+            {% endfor %}
+        </div>
+        <button type="button" id="add-hymn">{{ _('Agregar Himno') }}</button>
+
+        <h3>{{ _('Speakers') }}</h3>
+        <div id="speaker-list">
+            {% for speaker in form.speakers %}
+                {{ speaker.name.label }} {{ speaker.name }}
+                {{ speaker.topic.label }} {{ speaker.topic }}<br>
+            {% endfor %}
+        </div>
+        <button type="button" id="add-speaker">{{ _('Agregar Discursante') }}</button>
+
+        <h3>{{ _('Anouncements') }}</h3>
+        <div id="announcement-list">
+            {% for ann in form.announcements %}
+                {{ ann.announcement_text.label }} {{ ann.announcement_text }}<br>
+            {% endfor %}
+        </div>
+        <button type="button" id="add-announcement">{{ _('Agregar Anuncio') }}</button>
+
+        <h3>{{ _('Ward Business') }}</h3>
+        <div id="business-list">
+            {% for biz in form.business %}
+                {{ biz.agenda_id.label }} {{ biz.agenda_id }}
+                {{ biz.type.label }} {{ biz.type }}
+                {{ biz.member_id.label }} {{ biz.member_id }}<br>
+            {% endfor %}
+        </div>
+        <button type="button" id="add-business">{{ _('Agregar Asunto') }}</button>
+
+        <br><br>
+        <button type="submit">{{ _('Guardar Agenda') }}</button>
+    </form>
+
+    <!-- Templates para agregar dinámicamente campos -->
+    <template id="hymn-template">
+        <div>
+            <input type="number" name="hymns-__index__-hymn_number" placeholder="Número de Himno">
+            <select name="hymns-__index__-hymn_type">
+                <option value="opening_hymn_id">{{ _('1er Himno') }}</option>
+                <option value="sacrament_hymn_id">{{ _('Himno Sacramental') }}</option>
+                <option value="intermediate_hymn_id">{{ _('Himno Intermedio') }}</option>
+                <option value="closing_hymn_id">{{ _('Último Himno') }}</option>
+            </select><br>
+        </div>
+    </template>
+
+    <template id="speaker-template">
+        <div>
+            <input type="text" name="speakers-__index__-name" placeholder="{{ _('Speaker\'s Name') }}">
+            <input type="text" name="speakers-__index__-topic" placeholder="{{ _('Topic') }}"><br>
+        </div>
+    </template>
+
+    <template id="announcement-template">
+        <div>
+            <textarea name="announcements-__index__-announcement_text" placeholder="{{ _('Texto del Anuncio') }}"></textarea><br>
+        </div>
+    </template>
+
+    <template id="business-template">
+        <div>
+            <select name="business-__index__-type">
+                <option value="release">{{ _('Liberación') }}</option>
+                <option value="calling">{{ _('Llamamiento') }}</option>
+                <option value="welcome">{{ _('Bienvenida') }}</option>
+                <option value="confirmation">{{ _('Confirmación') }}</option>
+                <option value="priesthood">{{ _('Sacerdocio') }}</option>
+                <option value="baby_blessing">{{ _('Bendición de Bebé') }}</option>
+            </select><br>
+            <input type="text" name="business-__index__-agenda_id" placeholder="{{ _('ID del Asunto') }}">
+            <input type="text" name="business-__index__-member_id" placeholder="{{ _('Miembro') }}">
+            <input type="text" name="business-__index__-calling_name" placeholder="{{ _('Llamamiento') }}">
+            <input type="text" name="business-__index__-baby_name" placeholder="{{ _('Nombre del Bebé') }}">
+            <input type="text" name="business-__index__-blessing_officiant_id" placeholder="{{ _('Oficiante de la Bendición') }}">
+            <input type="text" name="business-__index__-meeting_center_id" placeholder="{{ _('Centro de Reunión') }}"><br>
+        </div>
+    </template>
+</body>
+</html>

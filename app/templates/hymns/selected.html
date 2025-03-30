@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Himnos</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable@12.1.0/dist/handsontable.full.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/handsontable@12.1.0/dist/handsontable.full.min.js"></script>
+    
+</head>
+
+<body>
+    <h2>Seleccionar Himnos para el Trimestre</h2>
+
+    <div id="hymns-table"></div>
+    <button onclick="saveData()">Guardar</button>
+
+    <script>
+        const sundays = {{ sundays|tojson }};  // Lista de domingos desde Flask
+        const hymnsData = {{ hymns_data|tojson }};  // Datos de la BD
+    
+        //console.table(sundays);
+        //console.table(hymnsData);
+    
+        // 🔥 Función para formatear la fecha en "5 Jan"
+        function formatDate(dateString) {
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const dateObj = new Date(dateString + "T00:00:00");  // Asegurarse que la fecha esté en formato local
+            return `${dateObj.getDate()} ${months[dateObj.getMonth()]}`;
+        }
+        
+        function parseFechaUTC(fechaStr) {
+            let partes = fechaStr.split("-");
+            return new Date(Date.UTC(partes[0], partes[1] - 1, partes[2]));
+        }
+        
+    
+        // Formatear los encabezados de la tabla con fechas amigables
+        const headers = ["Himno"].concat(sundays.map(date => formatDate(date)));
+        //const headers = ["Himno"].concat(sundays.map(date => date));
+    
+        // Generar estructura inicial de la tabla con datos guardados
+        const data = [
+            ["Director"].concat(sundays.map(date => hymnsData[date]?.Director || "")),
+            ["Pianista"].concat(sundays.map(date => hymnsData[date]?.Pianista || "")),
+            ["Primer Himno"].concat(sundays.map(date => hymnsData[date]?.["Primer Himno"] || "")),
+            ["Himno Sacramental"].concat(sundays.map(date => hymnsData[date]?.["Himno Sacramental"] || "")),
+            ["Himno Intermedio"].concat(sundays.map(date => hymnsData[date]?.["Himno Intermedio"] || "")),
+            ["Ultimo Himno"].concat(sundays.map(date => hymnsData[date]?.["Ultimo Himno"] || ""))
+        ];
+    
+        // 🔥 Función para sugerir valores en las celdas de Director y Pianista
+        function getSuggestedValues(hymnsData, field) {
+            return sundays.map(date => {
+                return hymnsData[date] && hymnsData[date][field] ? hymnsData[date][field] : '';
+            });
+        }
+    
+        // Inicializar Handsontable
+        const container = document.getElementById('hymns-table');
+        const hotInstance = new Handsontable(container, {
+            data: data,
+            rowHeaders: true,
+            colHeaders: headers,
+            fixedColumnsStart: 1,
+            columns: [
+                { readOnly: true }, 
+                ...sundays.map(() => ({}))  // Las columnas de domingo
+            ],
+            licenseKey: "non-commercial-and-evaluation",
+    
+            // Usar autocompletar para las celdas de Director y Pianista
+            cells: (row, col) => {
+                const cellProperties = {};
+                const fieldNames = ["Director", "Pianista"];
+                if (row === 0 && fieldNames.includes(headers[col])) {
+                    // Configura un editor de autocompletar en la fila de Director y Pianista
+                    cellProperties.editor = 'autocomplete';
+                    cellProperties.source = getSuggestedValues(hymnsData, headers[col]);
+                }
+                return cellProperties;
+            }
+        });
+    
+        // 🔥 Guardar los datos al presionar el botón
+        function saveData() {
+            const editedData = hotInstance.getData();
+            const formattedData = editedData.map(row => {
+                let entry = { hymn_name: row[0] };
+                sundays.forEach((date, index) => {
+                    entry[date] = row[index + 1];
+                });
+                return entry;
+            });
+    
+            fetch('/hymns/agenda', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formattedData)
+            }).then(response => response.json())
+              .then(data => alert(data.message));
+        }
+    </script>
+    
+    
+</body>
+
+</html>

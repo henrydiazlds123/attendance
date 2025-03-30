@@ -11,7 +11,7 @@
                     {% if session['role'] != 'Operator'%}
                         <!-- <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'auth.index' else '' }}" href="{{ url_for('auth.index') }}"><i class="bi bi-house-fill"></i> {{_('Home') }}</a></li> -->
                         <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'attendance.attendance_report' else '' }}" href="{{ url_for('attendance.attendance_report') }}"><i class="bi bi-file-earmark-spreadsheet"></i> {{ _('Report') }}</a></li>
-                        <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'pdf.list_pdfs' else '' }}" href="{{ url_for('pdf.list_pdfs') }}"><i class="bi bi-file-earmark-pdf"></i>  PDFs</a></li>
+                        <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'pdf.list_pdfs' else '' }}" href="{{ url_for('pdf.list_pdfs') }}"><i class="bi bi-qr-code-scan"></i>  QR's</a></li>
 
                         
                         <li class="nav-item dropdown">

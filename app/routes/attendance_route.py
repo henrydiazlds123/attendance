@@ -2,7 +2,7 @@ import csv
 import io
 from flask          import Blueprint, Response, jsonify, render_template, redirect, request, send_file, session, url_for, flash, make_response
 from flask_babel    import gettext as _
-from sqlalchemy     import func, extract, desc, asc
+from sqlalchemy     import func, extract, desc, asc, or_
 from sqlalchemy.orm import joinedload
 from app.config     import Config
 from app.models     import db, Classes, Attendance, MeetingCenter, Setup, NameCorrections
@@ -732,12 +732,11 @@ def get_monthly_attendance(student_name):
 def register_attendance():
     meeting_center_id = get_meeting_center_id()
     sunday_date_str   = get_last_sunday()  # Retorna una cadena, e.g. "2025-02-09"
+    
     sunday_date       = datetime.strptime(sunday_date_str, "%Y-%m-%d").date()
     sunday_week       = (get_next_sunday().day - 1) // 7 + 1
     role              = session.get('role')
     organization_id   = session.get('organization_id')
-
-    print(f"Organization id: {organization_id}")
 
     time_range = request.args.get('time_range', 'last_two_weeks')
 
@@ -784,20 +783,20 @@ def register_attendance():
         # Registrar asistencia si no existe
         for student_name in student_names:
             existing = Attendance.query.filter_by(
-                student_name=student_name,
-                class_id=cls.id,
-                sunday_date=sunday_date,
-                meeting_center_id=meeting_center_id
+                student_name      = student_name,
+                class_id          = cls.id,
+                sunday_date       = sunday_date,
+                meeting_center_id = meeting_center_id
             ).first()
             if not existing:
                 new_attendance = Attendance(
-                    student_name=student_name,
-                    class_id=cls.id,
-                    class_code=class_code,
-                    sunday_date=sunday_date,  # Objeto date
-                    sunday_code=1111,
-                    meeting_center_id=meeting_center_id,
-                    submit_date=datetime.now(),
+                    student_name      = student_name,
+                    class_id          = cls.id,
+                    class_code        = class_code,
+                    sunday_date       = sunday_date,       # Objeto date
+                    sunday_code       = 1111,
+                    meeting_center_id = meeting_center_id,
+                    submit_date       = datetime.now(),
                 )
                 db.session.add(new_attendance)
         try:
@@ -823,13 +822,13 @@ def register_attendance():
             db.session.query(Attendance.student_name)
             .filter(
                 Attendance.meeting_center_id == meeting_center_id,
-                Attendance.class_code == class_code,
-                Attendance.sunday_date >= start_date,  # Filtramos por el rango de tiempo
+                or_(Attendance.class_code == class_code, class_code == "FS"),  # Permite incluir todos si class_code es "FS"
+                Attendance.sunday_date >= start_date,
                 ~Attendance.student_name.in_(
                     db.session.query(Attendance.student_name)
                     .filter(
                         Attendance.meeting_center_id == meeting_center_id,
-                        Attendance.class_code == class_code,
+                        or_(Attendance.class_code == class_code, class_code == "FS"),
                         Attendance.sunday_date == sunday_date
                     )
                 )
@@ -838,6 +837,7 @@ def register_attendance():
             .order_by(Attendance.student_name)
             .all()
         )
+
         # Extraemos los nombres que ya tienen asistencia registrada
         attendance_student_names = [record.student_name for record in attendance_members]
 
@@ -870,6 +870,8 @@ def filter_attendance():
 
     meeting_center_id = get_meeting_center_id()
     sunday_date = get_last_sunday()
+
+
     
     # Si sunday_date es una cadena, conviértela a date
     if isinstance(sunday_date, str):
@@ -877,7 +879,9 @@ def filter_attendance():
 
     time_range = request.args.get('time_range', 'last_two_weeks')
 
-    if time_range == 'last_two_weeks':
+    if time_range == 'previous_week':
+        start_date = sunday_date - timedelta(weeks=1)
+    elif time_range == 'last_two_weeks':
         start_date = sunday_date - timedelta(weeks=2)
     elif time_range == 'last_month':
         start_date = sunday_date - timedelta(days=30)  # Aproximado a 30 días
@@ -909,13 +913,13 @@ def filter_attendance():
         db.session.query(Attendance.student_name)
         .filter(
             Attendance.meeting_center_id == meeting_center_id,
-            Attendance.class_code == selected_class,
-            Attendance.sunday_date >= start_date,  # Filtramos por el rango de tiempo
+            or_(Attendance.class_code == selected_class, selected_class == "FS"),  # Permite incluir todos si class_code es "FS"
+            Attendance.sunday_date >= start_date,
             ~Attendance.student_name.in_(
                 db.session.query(Attendance.student_name)
                 .filter(
                     Attendance.meeting_center_id == meeting_center_id,
-                    Attendance.class_code == selected_class,
+                    or_(Attendance.class_code == selected_class, selected_class == "FS"),
                     Attendance.sunday_date == sunday_date
                 )
             )
@@ -924,6 +928,8 @@ def filter_attendance():
         .order_by(Attendance.student_name)
         .all()
     )
+
+    
     # Extraemos los nombres que ya tienen asistencia registrada
     attendance_student_names = [record.student_name for record in attendance_members]
 

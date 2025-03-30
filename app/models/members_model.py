@@ -1,6 +1,6 @@
+# app/models/members.py
 from datetime import date
 from app.models import db
-
 
 class Member(db.Model):
     id                = db.Column(db.Integer, primary_key=True)
@@ -14,20 +14,25 @@ class Member(db.Model):
     priesthood_office = db.Column(db.String(50))
     address           = db.Column(db.String(255))
     city              = db.Column(db.String(100))
-    state             = db.Column(db.String(50))
+    state            = db.Column(db.String(50))
     zip_code          = db.Column(db.String(15))
-    sector            = db.Column(db.String(50))
-    lat               = db.Column(db.Float)
-    lon               = db.Column(db.Float)
-    fixed_address     = db.Column(db.String(100))
-    excluded          = db.Column(db.Boolean, default=False)
-    new               = db.Column(db.Boolean, default=False)
-    calling           = db.Column(db.String(100))
-    arrival_date      = db.Column(db.Date)
-    moved_out         = db.Column(db.Boolean, default=False)
-    active            = db.Column(db.Boolean, default=True)
+    sector           = db.Column(db.String(50))
+    lat              = db.Column(db.Float)
+    lon              = db.Column(db.Float)
+    fixed_address    = db.Column(db.String(100))
+    excluded         = db.Column(db.Boolean, default=False)
+    new              = db.Column(db.Boolean, default=False)
+    calling          = db.Column(db.String(100))
+    arrival_date     = db.Column(db.Date)
+    moved_out        = db.Column(db.Boolean, default=False)
+    active           = db.Column(db.Boolean, default=True)
+    family_head      = db.Column(db.String(100))
     meeting_center_id = db.Column(db.Integer, db.ForeignKey('meeting_center.id'), nullable=False)
-    family_head       = db.Column(db.String(100))
+
+    #meeting_center   = db.relationship('MeetingCenter', backref='members_list')
+    meeting_center   = db.relationship('MeetingCenter', back_populates='members')
+
+    #speakers        = db.relationship('Speaker', backref='member', lazy=True)
 
     # Constructor personalizado para calcular los nombres
     def __init__(self, **kwargs):
@@ -39,17 +44,16 @@ class Member(db.Model):
         """Método para calcular preferred_name y short_name solo si están vacíos"""
         if self.full_name:
             if not self.preferred_name:  # Solo calcula si preferred_name está vacío
-                name_parts = self.full_name.split(',')
-                last_name = name_parts[0].strip().split()[0]
-                first_name = name_parts[1].strip().split()[0]
+                name_parts          = self.full_name.split(',')
+                last_name           = name_parts[0].strip().split()[0]
+                first_name          = name_parts[1].strip().split()[0]
                 self.preferred_name = f"{first_name} {last_name}"
 
             if not self.short_name:  # Solo calcula si short_name está vacío
-                name_parts = self.full_name.split(',')
-                last_name = name_parts[0].strip().split()[0]
-                first_name = name_parts[1].strip().split()[0]
+                name_parts      = self.full_name.split(',')
+                last_name       = name_parts[0].strip().split()[0]
+                first_name      = name_parts[1].strip().split()[0]
                 self.short_name = f"{last_name}, {first_name}"
-
 
     def _format_fields(self):
         """Método para formatear address, city y state a título"""
@@ -59,7 +63,6 @@ class Member(db.Model):
             self.city = self.city.title() or ""
         if self.state:
             self.state = self.state.title() or ""
-
 
     def age(self):
         if self.birth_date:

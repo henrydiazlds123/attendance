@@ -14,6 +14,7 @@ class BaseConfig:
     MOUNTAIN_TIME                  = datetime.now(MOUNTAIN_TZ)  # Get the current time in Mountain Time
     CURRENT_DATE                   = MOUNTAIN_TIME.date()  # Solo la fecha
     LANGUAGES                      = ['en', 'es', 'pt']
+    WTF_CSRF_ENABLED               = True
     SESSION_PERMANENT              = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     GOOGLE_MAPS_API_KEY            = os.getenv('GOOGLE_MAPS_API_KEY', 'default-google-key')

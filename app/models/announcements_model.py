@@ -1,10 +1,14 @@
-# app/models/announcements.py
-from datetime   import date
+# app/models/ward_announcements.py
 from app.models import db
 
-
 class WardAnnouncements(db.Model):
+    __tablename__ = 'ward_announcements'
     id                = db.Column(db.Integer, primary_key=True)
-    agenda_id         = db.Column(db.Integer, db.ForeignKey('sacrament_agenda.id'), nullable=False)
-    details           = db.Column(db.Text, nullable=False)
-    meeting_center_id = db.Column(db.Integer, db.ForeignKey('meeting_center.id'), nullable=False)
+    agenda_id         = db.Column(db.Integer, db.ForeignKey('agenda.id'), nullable=False)
+    announcement_text = db.Column(db.String(500), nullable=True)
+    
+    agenda = db.relationship('Agenda', back_populates='announcements', overlaps="ward_announcements_list")
+    
+    __table_args__ = (
+        db.UniqueConstraint('agenda_id', 'announcement_text', name='uq_ward_announcement_unique'),
+    )

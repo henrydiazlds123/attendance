@@ -1554,7 +1554,7 @@ msgstr "El usuario %(username)s ahora es un Super Usuario."
 
 #: app/routes/users_route.py:229
 msgid "Edit User Profile"
-msgstr "Editar Perfil de Psuario"
+msgstr "Editar Perfil de Usuario"
 
 #: app/routes/users_route.py:230
 msgid "Update Profile"

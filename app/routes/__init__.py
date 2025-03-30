@@ -8,6 +8,7 @@ from .admin_route             import bp_admin
 from .stats_route             import bp_stats
 from .classes_route           import bp_classes
 from .register_route          import bp_register
+from .bishopric_route         import bp_bishopric
 from .attendance_route        import bp_attendance
 from .organization_route      import bp_organization
 from .import_member           import bp_import
@@ -18,9 +19,8 @@ from .members_route           import bp_members
 from .speakers_route          import bp_speakers
 from .bussines_route          import bp_bussines
 from .announcements_route     import bp_announcements
-from .sacrament_meeting_route import bp_sacrament_meeting
+from .agendas_route           import bp_agenda
 
-#bp = Blueprint('routes', __name__)
 
 def register_blueprints(app):
     app.register_blueprint(bp_auth)
@@ -32,6 +32,7 @@ def register_blueprints(app):
     app.register_blueprint(bp_import, url_prefix='/import')
     app.register_blueprint(bp_classes, url_prefix='/classes')
     app.register_blueprint(bp_register, url_prefix='/register')
+    app.register_blueprint(bp_bishopric, url_prefix='/bishopric')
     app.register_blueprint(bp_attendance, url_prefix='/attendance')
     app.register_blueprint(bp_correction, url_prefix='/name_correction')
     app.register_blueprint(bp_organization, url_prefix='/organizations')
@@ -41,4 +42,4 @@ def register_blueprints(app):
     app.register_blueprint(bp_speakers, url_prefix='/speakers')
     app.register_blueprint(bp_bussines, url_prefix='/bussines')
     app.register_blueprint(bp_announcements, url_prefix='/announcements')
-    app.register_blueprint(bp_sacrament_meeting, url_prefix='/sacrament_meetings')
+    app.register_blueprint(bp_agenda, url_prefix='/agenda')

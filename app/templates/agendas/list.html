@@ -1,13 +1,33 @@
 {% extends 'layout.html' %}
 
 {% block content %}
-    <h2>Agendas</h2>
-    <ul>
-        {% for agenda in agendas %}
-            <li>
-                <a href="{{ url_for('announcements.announcements', id=meeting.id) }}">{{ meeting.sunday_date }}</a>
-            </li>
-        {% endfor %}
-    </ul>
-    <a href="{{ url_for('announcements.add_announcement') }}">Agregar Anuncios</a>
+    <h2>Agendas Sacramentales</h2>
+    <a href="{{ url_for('agenda.new_agenda') }}" class="btn btn-primary">Agregar Nueva</a>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Preside</th>
+                <th>Dirige</th>
+                <th>Centro de Reunión</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for meeting in meetings %}
+                <tr>
+                    <td>{{ meeting.sunday_date }}</td>
+                    <td>{{ meeting.presider.name }}</td>
+                    <td>{{ meeting.director.name }}</td>
+                    <td>{{ meeting.meeting_center.name }}</td>
+                    <td>
+                        <a href="{{ url_for('agenda.edit_agenda', id=meeting.id) }}" class="btn btn-warning">Editar</a>
+                        <form action="{{ url_for('agenda.delete_agenda', id=meeting.id) }}" method="post" style="display:inline;">
+                            <button type="submit" class="btn btn-danger" onclick="return confirm('¿Seguro que deseas eliminar esta reunión?')">Eliminar</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 {% endblock %}

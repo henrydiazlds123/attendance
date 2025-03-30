@@ -1,8 +1,8 @@
-from flask                   import Blueprint, jsonify, request, session
-from flask_babel             import gettext as _
-from app.models                  import db, Classes, Attendance, MeetingCenter, Setup, NameCorrections
-from app.utils                   import *
-from datetime                import datetime, timedelta
+from flask        import Blueprint, jsonify, request, session
+from flask_babel  import gettext as _
+from app.models   import db, Classes, Attendance, MeetingCenter, Setup, NameCorrections
+from app.utils    import *
+from datetime     import datetime, timedelta
 
 
 bp_register = Blueprint('register', __name__)
