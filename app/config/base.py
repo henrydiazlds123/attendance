@@ -8,7 +8,7 @@ load_dotenv()
 
 
 class BaseConfig:
-    BASE_DIR                       = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))  # Directorio raíz del proyecto
+    BASE_DIR                       = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))  
     SECRET_KEY                     = os.getenv('SECRET_KEY', 'default-secret-key')
     MOUNTAIN_TZ                    = pytz.timezone("America/Denver")  # Define Mountain Time Zone
     MOUNTAIN_TIME                  = datetime.now(MOUNTAIN_TZ)  # Get the current time in Mountain Time

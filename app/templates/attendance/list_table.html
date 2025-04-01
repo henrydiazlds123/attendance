@@ -22,7 +22,7 @@
   <tbody>
     {% for attendance in attendances %}
     <tr>
-      <td scope="row">{{ loop.index + ((request.args.get('page', 1)|int) - 1) * (request.args.get('per_page', 10)|int) }}</td>
+      <td scope="row">{{ loop.index + ((request.args.get('page', 1)|int) - 1) * (request.args.get('per_page', 150)|int) }}</td>
       <td>
         {% if attendance.student_name in corrected_names %}
           <input type="checkbox" disabled>

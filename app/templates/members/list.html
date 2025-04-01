@@ -89,7 +89,7 @@
             <label for="perPageSelect">{{ _('Records per page') }}: </label>
             <select id="perPageSelect" class="form-select" style="width: auto;" onchange="fetchMembers()">
                 {% set per_page_values = [10, 25, 50, 100, 150, 'All'] %}
-                {% set default_per_page = per_page if per_page is defined else 50 %}
+                {% set default_per_page = per_page if per_page is defined else 150 %}
                 {% for option in per_page_values %}
                 <option value="{{ option }}" {% if option==default_per_page %}selected{% endif %}>{{ option }}
                 </option>

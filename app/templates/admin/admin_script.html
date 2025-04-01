@@ -169,7 +169,7 @@
 
                 // Establecer el meeting center seleccionado desde localStorage
                 const selectedMeetingCenterId = localStorage.getItem('selectedMeetingCenterId') || 'all';
-                meetingCenterSelector.value = selectedMeetingCenterId;
+                meetingCenterSelector.value   = selectedMeetingCenterId;
 
                 // Actualizar la tabla y el footer al cargar la página
                 updateNameCorrectionsTable(selectedMeetingCenterId);

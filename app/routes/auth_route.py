@@ -19,32 +19,32 @@ def login():
 
         if user and user.check_password(password):
             meeting_center = MeetingCenter.query.get(user.meeting_center_id)
-            session['user_id']               = user.id
-            session['user_name']             = user.name
-            session['username']              = user.username
-            session['user_lastname']         = user.lastname
-            session['user_email']            = user.email
-            session['role']                  = user.role  # Guarda el rol del usuario
-            session['organization_id']       = user.organization_id
+            session['user_id']         = user.id
+            session['user_name']       = user.name
+            session['username']        = user.username
+            session['user_lastname']   = user.lastname
+            session['user_email']      = user.email
+            session['role']            = user.role  # Guarda el rol del usuario
+            session['organization_id'] = user.organization_id
 
             # Aquí es donde cambiamos el comportamiento:
             # Si el 'Owner' ya seleccionó un 'meeting_center_id', usarlo
             if user.role == 'Owner':
                 selected_meeting_center_id = session.get('meeting_center_id', 'all')  # Traer el valor de la sesión
                 if selected_meeting_center_id == 'all':
-                    session['meeting_center_name'] = _('All Meeting Centers')
+                    session['meeting_center_name']   = _('All Meeting Centers')
                     session['meeting_center_number'] = 'N/A'
                 else:
                     meeting_center = MeetingCenter.query.get(selected_meeting_center_id)
                     if meeting_center:
-                        session['meeting_center_name'] = meeting_center.name
+                        session['meeting_center_name']   = meeting_center.name
                         session['meeting_center_number'] = meeting_center.unit_number
                     else:
-                        session['meeting_center_name'] = _('Unknown')
+                        session['meeting_center_name']   = _('Unknown')
                         session['meeting_center_number'] = 'N/A'
             else:
-                session['meeting_center_id'] = meeting_center.id
-                session['meeting_center_name'] = meeting_center.name
+                session['meeting_center_id']     = meeting_center.id
+                session['meeting_center_name']   = meeting_center.name
                 session['meeting_center_number'] = meeting_center.unit_number
 
             # Si "Remember Me" está marcado, guarda la cookie
