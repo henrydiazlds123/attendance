@@ -9,57 +9,61 @@ attendance
 │  │  ├─ production.py
 │  │  └─ __init__.py
 │  ├─ forms
-│  │  ├─ announcement.py
-│  │  ├─ attendance.py
-│  │  ├─ auth.py
-│  │  ├─ business.py
-│  │  ├─ clase.py
-│  │  ├─ hymn.py
-│  │  ├─ meeting_center.py
-│  │  ├─ member.py
-│  │  ├─ organization.py
-│  │  ├─ sacrament_meeting.py
-│  │  ├─ speaker.py
-│  │  ├─ user.py
+│  │  ├─ agenda_form.py
+│  │  ├─ announcement_form.py
+│  │  ├─ attendance_form.py
+│  │  ├─ auth_form.py
+│  │  ├─ business_form.py
+│  │  ├─ clase_form.py
+│  │  ├─ hymn_form.py
+│  │  ├─ meeting_center_form.py
+│  │  ├─ member_form.py
+│  │  ├─ organization_form.py
+│  │  ├─ selected_hymns_form.py
+│  │  ├─ speaker_form.py
+│  │  ├─ user_form.py
 │  │  └─ __init__.py
 │  ├─ messages.pot
 │  ├─ models
-│  │  ├─ announcements.py
-│  │  ├─ attendances.py
-│  │  ├─ base.py
-│  │  ├─ bishoprics.py
-│  │  ├─ business.py
-│  │  ├─ classes.py
-│  │  ├─ hymns.py
-│  │  ├─ meeting_centers.py
-│  │  ├─ members.py
-│  │  ├─ organizations.py
-│  │  ├─ sacrament_agendas.py
-│  │  ├─ sacrament_meetings.py
-│  │  ├─ speakers.py
-│  │  ├─ users.py
+│  │  ├─ agenda_model.py
+│  │  ├─ announcements_model.py
+│  │  ├─ attendances_model.py
+│  │  ├─ base_model.py
+│  │  ├─ bishoprics_model.py
+│  │  ├─ business_model.py
+│  │  ├─ classes_model.py
+│  │  ├─ hymns_model.py
+│  │  ├─ meeting_centers_model.py
+│  │  ├─ members_model.py
+│  │  ├─ organizations_model.py
+│  │  ├─ prayers_model.py
+│  │  ├─ selected_hymns_model.py
+│  │  ├─ speakers_model.py
+│  │  ├─ users_model.py
 │  │  └─ __init__.py
 │  ├─ passenger_wsgi.py
-│  ├─ requirements.txt
 │  ├─ routes
-│  │  ├─ admin.py
-│  │  ├─ announcements.py
-│  │  ├─ attendance.py
-│  │  ├─ auth.py
-│  │  ├─ bussines.py
-│  │  ├─ centers.py
-│  │  ├─ classes.py
-│  │  ├─ hymns.py
-│  │  ├─ members.py
-│  │  ├─ name_correction.py
-│  │  ├─ organizations.py
-│  │  ├─ pdf.py
-│  │  ├─ register.py
-│  │  ├─ sacrament_meeting.py
-│  │  ├─ speakers.py
-│  │  ├─ stats.py
-│  │  ├─ swal.py
-│  │  ├─ users.py
+│  │  ├─ admin_route.py
+│  │  ├─ agendas_route.py
+│  │  ├─ announcements_route.py
+│  │  ├─ attendance_route.py
+│  │  ├─ auth_route.py
+│  │  ├─ bishopric_route.py
+│  │  ├─ bussines_route.py
+│  │  ├─ centers_route.py
+│  │  ├─ classes_route.py
+│  │  ├─ hymns_route copy.py
+│  │  ├─ hymns_route.py
+│  │  ├─ import_member.py
+│  │  ├─ members_route.py
+│  │  ├─ name_correction_route.py
+│  │  ├─ organization_route.py
+│  │  ├─ pdf_route.py
+│  │  ├─ register_route.py
+│  │  ├─ speakers_route.py
+│  │  ├─ stats_route.py
+│  │  ├─ swal_route.py
+│  │  ├─ users_route.py
 │  │  └─ __init__.py
 │  ├─ static
 │  │  ├─ css
@@ -70,23 +74,8 @@ attendance
 │  │  │     ├─ es.png
 │  │  │     ├─ lang.svg
 │  │  │     └─ pt.png
-│  │  ├─ js
-│  │  │  └─ scripts.js
-│  │  └─ locales
-│  │     ├─ pivot.cs.coffee
-│  │     ├─ pivot.da.coffee
-│  │     ├─ pivot.de.coffee
-│  │     ├─ pivot.es.coffee
-│  │     ├─ pivot.fr.coffee
-│  │     ├─ pivot.it.coffee
-│  │     ├─ pivot.jp.coffee
-│  │     ├─ pivot.nl.coffee
-│  │     ├─ pivot.pl.coffee
-│  │     ├─ pivot.pt.coffee
-│  │     ├─ pivot.ru.coffee
-│  │     ├─ pivot.sq.coffee
-│  │     ├─ pivot.tr.coffee
-│  │     └─ pivot.zh.coffee
+│  │  └─ js
+│  │     └─ scripts.js
 │  ├─ templates
 │  │  ├─ admin
 │  │  │  ├─ admin.html
@@ -95,7 +84,9 @@ attendance
 │  │  │  ├─ non_attendance.html
 │  │  │  └─ with_attendance.html
 │  │  ├─ agendas
-│  │  │  ├─ add.html.html
+│  │  │  ├─ add.html
+│  │  │  ├─ form copy.html
+│  │  │  ├─ form.html
 │  │  │  └─ list.html
 │  │  ├─ announcements
 │  │  │  ├─ add.html
@@ -116,6 +107,8 @@ attendance
 │  │  │  ├─ login.html
 │  │  │  └─ login_script.html
 │  │  ├─ base.html
+│  │  ├─ bishopric
+│  │  │  └─ manage.html
 │  │  ├─ business
 │  │  │  ├─ add.html
 │  │  │  └─ list.html
@@ -126,19 +119,22 @@ attendance
 │  │  │  └─ 4xx.html
 │  │  ├─ form
 │  │  │  ├─ form.html
-│  │  │  └─ macros.html
+│  │  │  ├─ macros.html
+│  │  │  └─ member_form.html
 │  │  ├─ hymns
 │  │  │  ├─ add.html
-│  │  │  └─ list.html
+│  │  │  ├─ list.html
+│  │  │  └─ selected.html
 │  │  ├─ index.html
 │  │  ├─ layout.html
 │  │  ├─ meeting_centers
 │  │  │  └─ list.html
 │  │  ├─ members
-│  │  │  ├─ add.html
 │  │  │  ├─ list.html
 │  │  │  ├─ list_script.html
-│  │  │  └─ pivot.html
+│  │  │  ├─ pivot.html
+│  │  │  ├─ profile copy.html
+│  │  │  └─ profile.html
 │  │  ├─ organizations
 │  │  │  └─ list.html
 │  │  ├─ partials
@@ -153,10 +149,6 @@ attendance
 │  │  │  ├─ list.html
 │  │  │  └─ list_script.html
 │  │  ├─ reset_name.html
-│  │  ├─ sacrament_meetings
-│  │  │  ├─ add.html
-│  │  │  ├─ edit.html
-│  │  │  └─ list.html
 │  │  ├─ speakers
 │  │  │  ├─ add.html
 │  │  │  └─ list.html
@@ -164,7 +156,8 @@ attendance
 │  │  │  ├─ stats.html
 │  │  │  └─ stats_script.html
 │  │  └─ users
-│  │     └─ list.html
+│  │     ├─ list.html
+│  │     └─ list_script.html
 │  ├─ translations
 │  │  ├─ es
 │  │  │  └─ LC_MESSAGES
@@ -177,10 +170,8 @@ attendance
 │  ├─ utils.py
 │  └─ __init__.py
 ├─ instance
-│  ├─ attendance.db
-│  ├─ attendance_dev.db
-│  └─ attendance_dev_519.db
-├─ routes.py
+│  └─ attendance_dev.db
+├─ requirements.txt
 └─ run.py
 
 ```

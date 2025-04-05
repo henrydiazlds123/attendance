@@ -131,12 +131,10 @@ def profile(member_id):
 @role_required('Admin', 'Owner')
 def get_members():
 
-    all = len(Member.query.all())
-    print(f"All: {all}")
-
-    page       = request.args.get('page', 1, type=int)
-    per_page   = request.args.get('per_page', all, type=int)  # Valores predeterminados
-    print(f"🔍 Parámetros recibidos en el servidor -> page: {page}, per_page: {per_page}")
+    all      = len(Member.query.all())
+    page     = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', all, type=int)  # Valores predeterminados
+    #print(f"🔍 Parámetros recibidos en el servidor -> page: {page}, per_page: {per_page}")
     
     query = Member.query
     

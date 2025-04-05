@@ -125,7 +125,7 @@ def map_columns():
         else:
             df = pd.read_excel(file_path)
 
-        df.columns = df.columns.str.strip()
+        df.columns   = df.columns.str.strip()
         column_names = df.columns.tolist()
     except Exception as e:
         flash(_('Error reading the file: %(error)s') %{'error': {str(e)}},'danger')
@@ -148,7 +148,7 @@ def map_columns():
 
     if request.method == 'POST':
         column_mapping = request.form.to_dict()
-        update_fields = request.form.getlist('update_fields')
+        update_fields  = request.form.getlist('update_fields')
         session['column_mapping'] = column_mapping
         session['update_fields'] = update_fields
 

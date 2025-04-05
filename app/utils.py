@@ -434,7 +434,7 @@ def allowed_file(filename):
 
 
 # =================================================================
-permanently_excluded_fields = ['gender', 'birth_date', 'fixed_address', 'lat', 'lon', 'preferred_name', 'short_name']
+# permanently_excluded_fields = ['gender', 'birth_date', 'fixed_address', 'lat', 'lon', 'preferred_name', 'short_name']
 
 def process_import(df, column_mapping, meeting_center_id):
     """
@@ -519,3 +519,21 @@ def process_import(df, column_mapping, meeting_center_id):
     print("🚀 Transacción completada con éxito.")
 
     return added, updated
+
+
+# =============================================================================================
+def get_sundays(start_date, end_date):
+    """Genera una lista de domingos entre dos fechas."""
+    # Ajusta la fecha de inicio al próximo domingo si no es domingo
+    current = start_date
+    if current.weekday() != 6:  # Si no es domingo
+        days_to_add = 6 - current.weekday()  # Días hasta el siguiente domingo
+        current += timedelta(days=days_to_add)
+    
+    sundays = []
+    while current <= end_date:
+        sundays.append(current.strftime('%Y-%m-%d'))
+        current += timedelta(weeks=1)  # Avanzar una semana
+
+    return sundays
+

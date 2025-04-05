@@ -66,9 +66,11 @@ def get_settings():
     
     # Devolver los valores en formato JSON
     return jsonify({
-        'code_verification': code_verification_setting.value if code_verification_setting else 'null',
+        'code_verification' : code_verification_setting.value if code_verification_setting else 'null',
         'bypass_restriction': bypass_restriction_setting.value if bypass_restriction_setting else 'null'
     })
+
+
 # =============================================================================================  
 @bp_admin.route('/bypass', methods=['POST'])
 @login_required
@@ -117,5 +119,3 @@ def admin_data():
         }
     # Devolver los datos del meeting center como JSON
     return jsonify(meeting_center)
-
-

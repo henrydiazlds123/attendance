@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/handsontable/10.0.0/handsontable.full.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/handsontable/10.0.0/handsontable.full.min.js"></script>
+</head>
+<body>
+    <h1>Agenda</h1>
+    
+    <div id="example"></div>
+
+    <script>
+        // Aquí formateamos los datos de Flask para Handsontable
+        var agendaData = {{ agenda | tojson }};
+        
+        var data = [];
+        var headers = ["Joven Discursante", "Tema", "Primer Discursante", "Tema", "Segundo Discursante", "Tema", "Tercer Discursante", "Tema"];
+        var sundayDates = Object.keys(agendaData);
+
+        sundayDates.forEach(function(date) {
+            var row = [date]; // Empezamos con la fecha
+            var sundayData = agendaData[date];
+
+            // Para cada miembro en un domingo
+            var members = Object.values(sundayData);
+            members.forEach(function(member) {
+                row.push(member.member_name);  // Nombre del miembro
+                row.push(member.topic);        // Tema del discurso
+            });
+
+            // Si el número de miembros no es suficiente para completar la fila, añadimos campos vacíos
+            while (row.length < headers.length) {
+                row.push('');
+            }
+
+            data.push(row);
+        });
+
+        var container = document.getElementById('example');
+        var hot = new Handsontable(container, {
+            data: data,
+            colHeaders: headers,
+            rowHeaders: sundayDates,
+            licenseKey: 'non-commercial-and-evaluation'
+        });
+    </script>
+</body>
+</html>

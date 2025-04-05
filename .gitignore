@@ -6,8 +6,10 @@ __pycache__
 README.md
 migrations
 note.txt
+raw_data.csv
 qr_codes/*
 !qr_codes/.gitkeep
 favicon/*
 !favicon/.gitkeep
 imports/*
+locales/*

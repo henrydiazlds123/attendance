@@ -110,6 +110,7 @@ div > label[for="csrf_token"] {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 1;
+  line-clamp:1;
 }
 
 .large-checkbox {
@@ -161,11 +162,10 @@ td a[type="button"] {
 
 td button[type="button"] i, 
 td a[type="button"] i {
-    font-size: 0.75rem;  /* Reduce el tamaño del icono */
-    padding: 0;          /* Elimina cualquier padding extra */
-    /* margin: 0;           Asegura que no haya margen adicional */
-    line-height: 1;      /* Ajusta la altura de línea para hacerlo más compacto */
-    vertical-align: middle; /* Asegura una alineación correcta dentro del botón */
+    font-size     : 0.75rem;  /* Reduce el tamaño del icono */
+    padding       : 0;        /* Elimina cualquier padding extra */
+    line-height   : 1;        /* Ajusta la altura de línea para hacerlo más compacto */
+    vertical-align: middle;   /* Asegura una alineación correcta dentro del botón */
 }
 
 table {
@@ -174,9 +174,9 @@ table {
 
 table th, 
 table td {
-  padding: 4px 8px; /* Reduce el espacio interno en celdas */
-  line-height: 1.2; /* Reduce la altura de línea para hacerlas más compactas */
-  vertical-align: middle; /* Asegura que el contenido esté alineado */
+  padding       : 4px 8px;  /* Reduce el espacio interno en celdas */
+  line-height   : 1.2;      /* Reduce la altura de línea para hacerlas más compactas */
+  vertical-align: middle;   /* Asegura que el contenido esté alineado */
 }
 
 table th {
@@ -191,11 +191,11 @@ table th {
 
 /* Establecer un tamaño máximo y centrado para los gráficos */
 .chart-container {
-  position: relative;
-  width: 100%;
-  max-width: 800px; /* Ajusta según necesidad */
-  min-height: 350px; /* Asegura una mejor visualización */
-  margin: auto; /* Centra el gráfico */
+  position  : relative;
+  width     : 100%;
+  max-width : 800px;     /* Ajusta según necesidad */
+  min-height: 350px;     /* Asegura una mejor visualización */
+  margin    : auto;      /* Centra el gráfico */
 }
 
 .langSelector {
@@ -209,19 +209,21 @@ table th {
 }
 
 input[type="checkbox"].toggle-column {
-  -webkit-appearance: none;  /* Elimina el estilo predeterminado en navegadores como Safari */
-  -moz-appearance: none;     /* Elimina el estilo predeterminado en Firefox */
-  appearance: none;          /* Elimina el estilo predeterminado en otros navegadores */
-    /* Borde del checkbox */
-  border-radius: 4px;        /* Bordes redondeados */
-  cursor: pointer;          /* Cambia el cursor al pasar sobre el checkbox */
+  -webkit-appearance: none;     /* Elimina el estilo predeterminado en navegadores como Safari */
+  -moz-appearance   : none;     /* Elimina el estilo predeterminado en Firefox */
+  appearance        : none;     /* Elimina el estilo predeterminado en otros navegadores */
+  border-radius     : 4px;      /* Bordes redondeados */
+  cursor            : pointer;  /* Cambia el cursor al pasar sobre el checkbox */
 }
 
 /* Estilo del icono del checkbox (como el 'checkmark') */
 input[type="checkbox"].toggle-column:checked::before {
-  content: '\2713';           /* El símbolo del 'checkmark' */
-
+  content    : '\2713';  /* El símbolo del 'checkmark' */
   line-height: 20px;
-  color: white;               /* Color blanco para el 'checkmark' */
+  color      : white;    /* Color blanco para el 'checkmark' */
 
+}
+
+.dialog-card {
+  box-shadow: 0 3px 10px rgb(0 0 0 / 0.2);
 }
