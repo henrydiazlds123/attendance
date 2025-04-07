@@ -1,51 +1,131 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agenda</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/handsontable/10.0.0/handsontable.full.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/handsontable/10.0.0/handsontable.full.min.js"></script>
+    <title>Agenda de Oradores</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable@12.1.0/dist/handsontable.full.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/handsontable@12.1.0/dist/handsontable.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
+
 <body>
-    <h1>Agenda</h1>
-    
-    <div id="example"></div>
+    <h2>Seleccionar Oradores para el Trimestre</h2>
+
+    <div id="speakers-table"></div>
+    <button onclick="saveData()">Guardar</button>
 
     <script>
-        // Aquí formateamos los datos de Flask para Handsontable
-        var agendaData = {{ agenda | tojson }};
-        
-        var data = [];
-        var headers = ["Joven Discursante", "Tema", "Primer Discursante", "Tema", "Segundo Discursante", "Tema", "Tercer Discursante", "Tema"];
-        var sundayDates = Object.keys(agendaData);
+        const sundays = {{ sundays| tojson }};        // Lista de domingos desde Flask
+        const speakersData = {{ speakers_data| tojson }};  // Datos de los oradores desde la base de datos
+        const youthMembers = {{ youth_members| tojson }}; // Miembros jóvenes
+        const adultMembers = {{ adult_members| tojson }}; // Miembros adultos
 
-        sundayDates.forEach(function(date) {
-            var row = [date]; // Empezamos con la fecha
-            var sundayData = agendaData[date];
+        console.table(speakersData);  // Verificar la estructura de los datos
 
-            // Para cada miembro en un domingo
-            var members = Object.values(sundayData);
-            members.forEach(function(member) {
-                row.push(member.member_name);  // Nombre del miembro
-                row.push(member.topic);        // Tema del discurso
+        // Encabezados de las columnas (fechas)
+        const headers = ["Speaker/Topic"].concat(sundays.map(date => formatDate(date)));
+
+        // Estructura de la tabla
+        const data = [
+            ["Youth Speaker"].concat(sundays.map(date => speakersData[date]?.["Youth Speaker"] !== undefined ? speakersData[date]["Youth Speaker"] : "")),
+            ["Youth Topic"].concat(sundays.map(date => speakersData[date]?.["Youth Topic"] !== undefined ? speakersData[date]["Youth Topic"] : "")),
+            ["1st Speaker"].concat(sundays.map(date => speakersData[date]?.["1st Speaker"] !== undefined ? speakersData[date]["1st Speaker"] : "")),
+            ["1st Topic"].concat(sundays.map(date => speakersData[date]?.["1st Topic"] !== undefined ? speakersData[date]["1st Topic"] : "")),
+            ["2nd Speaker"].concat(sundays.map(date => speakersData[date]?.["2nd Speaker"] !== undefined ? speakersData[date]["2nd Speaker"] : "")),
+            ["2nd Topic"].concat(sundays.map(date => speakersData[date]?.["2nd Topic"] !== undefined ? speakersData[date]["2nd Topic"] : "")),
+            ["3rd Speaker"].concat(sundays.map(date => speakersData[date]?.["3rd Speaker"] !== undefined ? speakersData[date]["3rd Speaker"] : "")),
+            ["3rd Topic"].concat(sundays.map(date => speakersData[date]?.["3rd Topic"] !== undefined ? speakersData[date]["3rd Topic"] : ""))
+        ];
+
+        // Inicializar Handsontable
+        const container = document.getElementById('speakers-table');
+        const hotInstance = new Handsontable(container, {
+            data: data,  // Los datos de oradores y temas
+            colHeaders: headers,  // Los encabezados que ya definiste
+            rowHeaders: true,
+            fixedColumnsStart: 1,
+            
+            columns: [
+                { readOnly: true },  // La primera columna no se editará (Youth Speaker, Topic, etc.)
+
+                ...sundays.map((date, index) => {
+                    return {
+                        type: 'text',  // Predeterminamos todas las celdas como texto
+                        readOnly: false
+                    };
+                })
+            ],
+            cells: (row, col) => {
+                const cellProperties = {};
+
+                // Si estamos en una fila de "Speaker" (índices 0, 2, 4, 6, 8)
+                if (row % 2 === 0) {
+                    if (row === 0) {
+                        // Row 0: Youth Speaker (dropdown con miembros juveniles)
+                        cellProperties.type = 'dropdown';
+                        cellProperties.source = youthMembers.map(member => member.preferred_name);
+                        cellProperties.strict = true;
+                    } else {
+                        // Rows 2, 4, 6, 8: Adult Speaker (dropdown con miembros adultos)
+                        cellProperties.type = 'dropdown';
+                        cellProperties.source = adultMembers.map(member => member.preferred_name);
+                        cellProperties.strict = true;
+                    }
+                } else {
+                    // Si es una fila de "Topic" (índices 1, 3, 5, 7)
+                    cellProperties.type = 'text';  // Tipo de campo de texto
+                }
+
+                return cellProperties;
+            },
+            licenseKey: 'non-commercial-and-evaluation',
+        });
+
+        // Función para guardar los datos
+        function saveData() {
+            const editedData = hotInstance.getData();
+            const formattedData = editedData.map(row => {
+                let entry = {};
+                sundays.forEach((date, index) => {
+                    entry[date] = row[index + 1];  // Se toma el dato para cada domingo
+                });
+                return entry;
             });
 
-            // Si el número de miembros no es suficiente para completar la fila, añadimos campos vacíos
-            while (row.length < headers.length) {
-                row.push('');
-            }
+            fetch('agenda', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formattedData)
+            }).then(response => {
+                if (!response.ok) return response.json().then(data => { throw data });
+                return response.json();
+            }).then(async data => {
+                const texts = await fetch('/swal/get_swal_texts').then(res => res.json());
+                Swal.fire({
+                    icon: 'success',
+                    title: texts.successTitle,
+                    text: data.message || texts.successMessage
+                });
+            }).catch(async err => {
+                const texts = await fetch('/swal/get_swal_texts').then(res => res.json());
+                Swal.fire({
+                    icon: 'error',
+                    title: texts.errorTitle,
+                    text: err.error || texts.errorMessage
+                });
+            });
+        }
 
-            data.push(row);
-        });
-
-        var container = document.getElementById('example');
-        var hot = new Handsontable(container, {
-            data: data,
-            colHeaders: headers,
-            rowHeaders: sundayDates,
-            licenseKey: 'non-commercial-and-evaluation'
-        });
+        // Función para formatear las fechas
+        function formatDate(dateString) {
+            const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+            const dateObj = new Date(dateString + "T00:00:00");  // Convertir la fecha a formato local
+            return `${dateObj.getDate()} ${months[dateObj.getMonth()]}`;
+        }
     </script>
+
 </body>
+
 </html>

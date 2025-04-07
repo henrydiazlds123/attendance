@@ -5,8 +5,8 @@ from wtforms.validators import DataRequired
 from wtforms            import DateField, SelectField
 
 class SelectedHymnsForm(FlaskForm):
-    sunday_date          = DateField('Date', validators=[DataRequired()])
-    opening_hymn_id      = SelectField('Opening Hymn', coerce=int, choices=[])
-    sacrament_hymn_id    = SelectField('Sacrament Hymn', coerce=int, choices=[])
-    intermediate_hymn_id = SelectField('Intermediate/Special Hymn', coerce=int, choices=[])
-    closing_hymn_id      = SelectField('Closing Hymn', coerce=int, choices=[])
+    sunday_date          = DateField(_('Date'), validators=[DataRequired()])
+    opening_hymn_id      = SelectField(_('Opening Hymn'), coerce=int, choices=[])
+    sacrament_hymn_id    = SelectField(_('Sacrament Hymn'), coerce=int, choices=[])
+    intermediate_hymn_id = SelectField(_('Intermediate/Special Hymn'), coerce=int, choices=[])
+    closing_hymn_id      = SelectField(_('Closing Hymn'), coerce=int, choices=[])

@@ -1,9 +1,9 @@
 # app/routes/admin.py
 from app.utils   import *
-from flask       import Blueprint, jsonify, render_template, redirect, request, url_for, flash
 from flask_babel import gettext as _
-from app.models  import db, Attendance, MeetingCenter, Setup, NameCorrections
 from flask       import request, flash, redirect, url_for, render_template
+from app.models  import db, Attendance, MeetingCenter, Setup, NameCorrections
+from flask       import Blueprint, jsonify, render_template, redirect, request, url_for, flash
 
 bp_admin = Blueprint('admin', __name__)
 

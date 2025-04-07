@@ -151,6 +151,7 @@ attendance
 │  │  ├─ reset_name.html
 │  │  ├─ speakers
 │  │  │  ├─ add.html
+│  │  │  ├─ agenda.html
 │  │  │  └─ list.html
 │  │  ├─ stats
 │  │  │  ├─ stats.html

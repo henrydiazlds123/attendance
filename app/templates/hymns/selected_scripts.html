@@ -1,0 +1,252 @@
+<script>
+  const sundays      = {{ sundays_data| tojson }};   // Lista de domingos desde Flask
+  const hymnsData    = {{ hymns_data| tojson }};     // Datos de la BD
+  const hymnMap      = {{ hymn_map| tojson }};       // Lista de himnos desde Flask
+  const speakersData = {{ speakers_data| tojson }};
+
+  console.table(hymnsData); // Verificar los datos de himnos
+
+
+  // Formatear los encabezados de la tabla con fechas amigables
+  const headers = ["Speakers / Hymns"].concat(
+    sundays.map(date => {
+      const fecha = new Date(date + 'T12:00:00Z'); // Forzar hora media para evitar desfase
+      return fecha.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+    })
+  );
+
+  // Generar estructura inicial de la tabla
+  const data = [
+    generateRow("Youth Speaker"),
+    generateRow("Youth Topic"),
+    generateRow("1st Speaker"),
+    generateRow("1st Topic"),
+    generateRow("2nd Speaker"),
+    generateRow("2nd Topic"),
+    generateRow("3rd Speaker"),
+    generateRow("3rd Topic"),
+    generateRow(""),
+    generateRow("Music Director"),
+    generateRow("Pianist"),
+    generateRow("Opening Hymn"),
+    generateRow("Sacrament Hymn"),
+    generateRow("Intermediate Hymn"),
+    generateRow("Closing Hymn")
+  ];
+
+
+  // Inicializar Handsontable
+  const container = document.getElementById('hymns-table');
+
+  const hotInstance = new Handsontable(container, {
+    data: data,
+    rowHeaders: true,
+    contextMenu: true,
+    colHeaders: headers,
+    manualRowResize: true,
+    fixedColumnsStart: 1,
+    manualColumnResize: true,
+    className: 'htLeft htMiddle',
+    hiddenColumns: {
+      columns: [1],
+      indicators: true,
+    },
+    columns: [
+      { readOnly: true, className: 'htRight' }, // Columna de encabezado
+      ...sundays.map(() => ({
+        readOnly: false, // Editable por defecto
+        className: "htLeft", // Alineación a la izquierda (opcional)
+      }))  // Las columnas de domingo
+    ],
+    licenseKey: "non-commercial-and-evaluation",
+
+    cells: (row, col) => {
+      const cellProperties = {};
+      const rowName = data[row][0]; // Obtener el nombre de la fila
+      const fieldNames = ["Music Director", "Pianist"];
+      
+      if (rowName === "") {
+        cellProperties.readOnly = false; // Hacer la celda de solo lectura
+        cellProperties.renderer = dividerRenderer; // Aplicar un renderizador personalizado
+      } else {
+        cellProperties.renderer = ellipsisRenderer; // Aplicar puntos suspensivos
+      }
+
+      if (col > 0) {
+        
+        // Configurar autocompletado para Director y Pianista
+        if (fieldNames.includes(headers[col])) {
+          cellProperties.editor = 'autocomplete';
+          cellProperties.source = Array.from(new Set(sundays.flatMap(date => hymnsData[date]?.[headers[col]] || [])));
+          cellProperties.strict = false; // Permitir entradas personalizadas
+        }
+        
+        // Si el valor es 0, asegúrate de que se muestre como '0' en la celda
+        if (hymnsData[sundays[col - 1]] && hymnsData[sundays[col - 1]][headers[col]] === 0) {
+          cellProperties.renderer = (instance, td, row, col, prop, value) => {
+            td.textContent = value === 0 ? '0' : value;
+          };
+        }
+        // Si la fila pertenece a speakers o topics, hacerla solo lectura
+        if (rowName.includes("Speaker") || rowName.includes("Topic")) {
+          cellProperties.className = "htDimmed"; // Aplicar clase para atenuar el texto 
+        }
+        // Para himnos, aplicamos renderer personalizado
+        if (rowName.includes("Hymn")) {
+          cellProperties.renderer = hymnRenderer;
+        }
+        return cellProperties;
+      }
+    },
+  });
+
+  // 🔥
+  function hymnRenderer(instance, td, row, col, prop, value, cellProperties) {
+    Handsontable.renderers.TextRenderer.apply(this, arguments);
+    td.textContent = formatHymnValue(value);
+  }
+
+  // 🔥
+  function ellipsisRenderer(instance, td, row, col, prop, value, cellProperties) {
+    Handsontable.renderers.TextRenderer.apply(this, arguments); // Usar el renderizador predeterminado
+    td.style.maxWidth     = "200px";     // Ancho máximo
+    td.style.whiteSpace   = "nowrap";    // Evitar saltos de línea
+    td.style.overflow     = "hidden";    // Ocultar el contenido que excede
+    td.style.textOverflow = "ellipsis";  // Agregar puntos suspensivos
+  }
+
+  // 🔥
+  function dividerRenderer(instance, td, row, col, prop, value, cellProperties) {
+    td.innerHTML          = "";                // Limpiar el contenido de la celda
+    td.style.background   = "#e0e0e0";         // Color de fondo gris claro
+    td.style.height       = "2px";             // Altura fija para la línea divisoria
+    td.style.borderBottom = "1px solid #ccc";  // Línea divisoria
+  }
+
+  // 🔥 Función auxiliar para generar una fila con valores predeterminados
+  function generateRow(rowName, defaultValue = "") {
+    return [rowName].concat(sundays.map(date => {
+      const isSpeaker = rowName.includes("Speaker") || rowName.includes("Topic");
+      const data = isSpeaker ? speakersData[date] : hymnsData[date];
+
+      if (rowName === "Music Director" || rowName === "Pianist") {
+        const value = data?.[rowName] || "";
+        return value === 0 ? "0" : value || ""; // Manejar explícitamente el valor 0
+      } else if (isSpeaker) {
+        const value = data?.[rowName];
+        return value === 0 ? "0" : value || "";
+      } else {
+        return formatFieldValue(data?.[rowName], rowName);
+      }
+    }));
+  }
+
+  // 🔥 Función auxiliar para formatear valores de celda
+  function formatFieldValue(value, fieldName) {
+    if (value === 0) {
+      return "0"; // Mostrar ceros en cualquier campo
+    }
+  
+    if (fieldName.includes("Himno")) {
+      return formatHymnValue(value); // Formatear himnos si no es cero
+    }
+  
+    return value || ""; // Mantener el valor original para otros campos
+  }
+
+  // 🔥 
+  function formatHymnValue(value) {
+    if (!value) return "";
+    // Ahora accedemos directamente al himno usando el ID como clave en el objeto hymnMap
+    const hymn = hymnMap[value];  // hymnMap es un objeto, no un array, así que usamos el valor como clave
+    return hymn ? `#${hymn.number} "${hymn.title}"` : value;
+  }
+
+  // 🔥 Función para sugerir valores en las celdas de Director y Pianista
+
+
+  // 🔥 Función para extraer el número de himno
+  function extractHymnNumber(value) {
+    if (typeof value === 'string' && value.trim().startsWith('#')) {
+      const numberPart = value.split('-')[0].replace('#', '').trim();
+      return parseInt(numberPart) || null;  // Si no se puede convertir, dejamos null
+    }
+    return value;  // Si ya es número o vacío, lo dejamos como está
+  }
+
+  // 🔥 Guardar los datos al presionar el botón
+  function saveData() {
+    const editedData = hotInstance.getData();
+
+    const formattedData = editedData.map(row => {
+      let entry = { hymn_name: row[0] };
+      sundays.forEach((date, index) => {
+        const rawValue = row[index + 1];
+        if (entry.hymn_name.includes('Himno')) {
+          // Procesar solo los himnos
+          entry[date] = extractHymnNumber(rawValue) || null;
+        } else if (entry.hymn_name === "Music Director" || entry.hymn_name === "Pianist") {
+          // Mantener el texto original para Director y Pianista
+          entry[date] = rawValue || null; // Usar null en lugar de ""
+        } else {
+          // Para otros campos, mantener el valor original
+          entry[date] = rawValue || null;
+        }
+      });
+      return entry;
+    });
+
+    fetch('agenda', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formattedData)
+    })
+      .then(response => {
+        if (!response.ok) throw response.json();
+        return response.json();
+      })
+      .then(async data => {
+        const texts = await fetch('/swal/get_swal_texts').then(res => res.json());
+        Swal.fire({
+          icon: 'success',
+          title: texts.successTitle,
+          text: data.message || texts.successMessage
+        });
+        //}).then(() => location.reload());
+      })
+      .catch(async err => {
+        const texts = await fetch('/swal/get_swal_texts').then(res => res.json());
+        Swal.fire({
+          icon: 'error',
+          title: texts.errorTitle,
+          text: err.error || texts.errorMessage
+        });
+      });
+  }
+  // 🔥
+  function customRenderer(instance, td, row, col, prop, value, cellProperties) {
+    Handsontable.renderers.TextRenderer.apply(this, arguments);
+    
+    if (value === 0) {
+      td.textContent = '0';
+    }
+  }
+
+
+  // Evento para capturar cambios en la tabla
+  hotInstance.addHook('afterChange', (changes, source) => {
+    if (source === 'loadData' || !changes) return;
+
+    changes.forEach(([rowIndex, columnIndex, oldValue, newValue]) => {
+      const rowName = data[rowIndex][0];
+      const sunday = sundays[columnIndex - 1];
+
+      if (!sunday) return;
+
+      if (rowName.includes("Hymn")) {
+        if (!hymnsData[sunday]) hymnsData[sunday] = {};
+        hymnsData[sunday][rowName] = newValue;
+      }
+    });
+  });
+</script>

@@ -3,48 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agregar Orador</title>
-    <!-- Agregar Bootstrap para estilos básicos -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Create Speaker</title>
 </head>
 <body>
-    <div class="container mt-5">
-        <h1>Agregar Orador</h1>
-        <form method="POST">
-            {{ form.hidden_tag() }}  <!-- Para proteger contra CSRF -->
-            
-            <div class="mb-3">
-                <label for="name" class="form-label">Nombre del Orador</label>
-                {{ form.name(class="form-control") }}
-                {% for error in form.name.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                {% endfor %}
-            </div>
-
-            <div class="mb-3">
-                <label for="topic" class="form-label">Tema</label>
-                {{ form.topic(class="form-control") }}
-                {% for error in form.topic.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                {% endfor %}
-            </div>
-
-            <div class="mb-3">
-                <label for="agenda_id" class="form-label">Agenda</label>
-                {{ form.agenda_id(class="form-control") }}
-                {% for error in form.agenda_id.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                {% endfor %}
-            </div>
-
-            <button type="submit" class="btn btn-primary">Guardar</button>
-        </form>
-        <br>
-        <a href="{{ url_for('speakers.speakers') }}" class="btn btn-secondary">Volver a la lista</a>
-    </div>
-
-    <!-- Agregar los scripts necesarios -->
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+    <h1>Create Speaker</h1>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div>
+            {{ form.sunday_date.label }}<br>
+            {{ form.sunday_date(class="form-control") }}
+        </div>
+        <div>
+            {{ form.youth_speaker_id.label }}<br>
+            {{ form.youth_speaker_id(class="form-control") }}
+        </div>
+        <div>
+            {{ form.youth_topic.label }}<br>
+            {{ form.youth_topic(class="form-control") }}
+        </div>
+        <div>
+            {{ form.speaker_1_id.label }}<br>
+            {{ form.speaker_1_id(class="form-control") }}
+        </div>
+        <div>
+            {{ form.topic_1.label }}<br>
+            {{ form.topic_1(class="form-control") }}
+        </div>
+        <div>
+            {{ form.speaker_2_id.label }}<br>
+            {{ form.speaker_2_id(class="form-control") }}
+        </div>
+        <div>
+            {{ form.topic_2.label }}<br>
+            {{ form.topic_2(class="form-control") }}
+        </div>
+        <div>
+            {{ form.speaker_3_id.label }}<br>
+            {{ form.speaker_3_id(class="form-control") }}
+        </div>
+        <div>
+            {{ form.topic_3.label }}<br>
+            {{ form.topic_3(class="form-control") }}
+        </div>
+        <div>
+            {{ form.meeting_center_id.label }}<br>
+            {{ form.meeting_center_id(class="form-control") }}
+        </div>
+        <div>
+            {{ form.submit(class="btn btn-primary") }}
+        </div>
+    </form>
 </body>
 </html>

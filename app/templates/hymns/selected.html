@@ -5,130 +5,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro de Himnos</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable@12.1.0/dist/handsontable.full.min.css">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable/styles/handsontable.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable/styles/ht-theme-main.min.css" />
+
     <script src="https://cdn.jsdelivr.net/npm/handsontable@12.1.0/dist/handsontable.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
+    <style>
+        .htCore td {
+            max-width: 200px; /* Ancho máximo de la celda */
+            white-space: nowrap; /* Evitar saltos de línea */
+            overflow: hidden; /* Ocultar el contenido que excede el ancho */
+            text-overflow: ellipsis; /* Agregar puntos suspensivos (...) */
+        }
+        .htDimmed {
+            /*color: #999; /* Color de texto gris claro */
+            /*background-color: #f9f9f9; /* Fondo gris claro */
+            pointer-events: none; /* Desactivar interacciones con el mouse */
+        }
+    </style>
+
+
 </head>
 
 <body>
     <h2>Seleccionar Himnos para el Trimestre</h2>
-
-    <div id="hymns-table"></div>
+    <div id="hymns-table" class="ht-theme-main-dark-auto"></div>
     <button onclick="saveData()">Guardar</button>
-
-    <script>
-        const sundays = {{ sundays|tojson }};  // Lista de domingos desde Flask
-        const hymnsData = {{ hymns_data|tojson }};  // Datos de la BD
-    
-        //console.table(sundays);
-        //console.table(hymnsData);
-    
-        // 🔥 Función para formatear la fecha en "5 Jan"
-        function formatDate(dateString) {
-            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            const dateObj = new Date(dateString + "T00:00:00");  // Asegurarse que la fecha esté en formato local
-            return `${dateObj.getDate()} ${months[dateObj.getMonth()]}`;
-        }
-        
-        function parseFechaUTC(fechaStr) {
-            let partes = fechaStr.split("-");
-            return new Date(Date.UTC(partes[0], partes[1] - 1, partes[2]));
-        }
-    
-        // Formatear los encabezados de la tabla con fechas amigables
-        const headers = ["Himno"].concat(sundays.map(date => formatDate(date)));
-    
-        // Generar estructura inicial de la tabla con datos guardados
-        const data = [
-        ["Director"].concat(sundays.map(date => hymnsData[date]?.Director || "")),
-        ["Pianista"].concat(sundays.map(date => hymnsData[date]?.Pianista || "")),
-        ["Primer Himno"].concat(sundays.map(date => hymnsData[date]?.["Primer Himno"] !== undefined ? hymnsData[date]["Primer Himno"] : "")),
-        ["Himno Sacramental"].concat(sundays.map(date => hymnsData[date]?.["Himno Sacramental"] !== undefined ? hymnsData[date]["Himno Sacramental"] : "")),
-        ["Himno Intermedio"].concat(sundays.map(date => hymnsData[date]?.["Himno Intermedio"] !== undefined ? hymnsData[date]["Himno Intermedio"] : "")),
-        ["Ultimo Himno"].concat(sundays.map(date => hymnsData[date]?.["Ultimo Himno"] !== undefined ? hymnsData[date]["Ultimo Himno"] : ""))
-        ];
-
-    
-        // 🔥 Función para sugerir valores en las celdas de Director y Pianista
-        function getSuggestedValues(hymnsData, field) {
-            return sundays.map(date => {
-                return hymnsData[date] && hymnsData[date][field] ? hymnsData[date][field] : '';
-            });
-        }
-    
-        // Inicializar Handsontable
-        const container = document.getElementById('hymns-table');
-        const hotInstance = new Handsontable(container, {
-            data: data,
-            rowHeaders: true,
-            colHeaders: headers,
-            fixedColumnsStart: 1,
-            columns: [
-                { readOnly: true }, 
-                ...sundays.map(() => ({}))  // Las columnas de domingo
-            ],
-            licenseKey: "non-commercial-and-evaluation",
-    
-            // Usar autocompletar para las celdas de Director y Pianista
-            cells: (row, col) => {
-                const cellProperties = {};
-                const fieldNames = ["Director", "Pianista"];
-                if (row === 0 && fieldNames.includes(headers[col])) {
-                    // Configura un editor de autocompletar en la fila de Director y Pianista
-                    cellProperties.editor = 'autocomplete';
-                    cellProperties.source = getSuggestedValues(hymnsData, headers[col]);
-                }
-            
-                // Si el valor es 0, asegúrate de que se muestre como '0' en la celda
-                if (hymnsData[sundays[col - 1]] && hymnsData[sundays[col - 1]][headers[col]] === 0) {
-                    cellProperties.renderer = (instance, td, row, col, prop, value) => {
-                        td.textContent = value === 0 ? '0' : value;
-                    };
-                }
-            
-                return cellProperties;
-            }
-        });
-    
-        // 🔥 Guardar los datos al presionar el botón
-        function saveData() {
-            const editedData = hotInstance.getData();
-            const formattedData = editedData.map(row => {
-                let entry = { hymn_name: row[0] };
-                sundays.forEach((date, index) => {
-                    entry[date] = row[index + 1];
-                });
-                return entry;
-            });
-
-            fetch('agenda', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formattedData)
-            }).then(response => {
-                if (!response.ok) return response.json().then(data => { throw data });
-                return response.json();
-            }).then(async data => {
-                const texts = await fetch('/swal/get_swal_texts').then(res => res.json());
-                Swal.fire({
-                    icon: 'success',
-                    title: texts.successTitle,
-                    text: data.message || texts.successMessage
-                });
-            }).catch(async err => {
-                const texts = await fetch('/swal/get_swal_texts').then(res => res.json());
-                Swal.fire({
-                    icon: 'error',
-                    title: texts.errorTitle,
-                    text: err.error || texts.errorMessage
-                });
-            });
-        }
-
-    </script>
-    
-    
+    {% include 'hymns/selected_scripts.html' %}
 </body>
 
 </html>
