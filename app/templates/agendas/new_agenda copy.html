@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{{ _('New Agenda') }}</title>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            let announcementIndex = {{ form.announcements| length }};
+            let businessIndex     = {{ form.business| length }};
+
+            function addElement(container, template, index) {
+                let newElement = template.replace(/__index__/g, index);
+                container.insertAdjacentHTML("beforeend", newElement);
+            }
+
+            document.getElementById("add-announcement").addEventListener("click", function () {
+                addElement(document.getElementById("announcement-list"), document.getElementById("announcement-template").innerHTML, announcementIndex++);
+            });
+
+            document.getElementById("add-business").addEventListener("click", function () {
+                addElement(document.getElementById("business-list"), document.getElementById("business-template").innerHTML, businessIndex++);
+            });
+        });
+    </script>
+</head>
+
+<body>
+    <h1>{{ _('Create Agenda') }}</h1>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+
+        <div>
+            {{ form.sunday_date.label }} {{ form.sunday_date() }}
+        </div>
+
+        <div>
+            {{ form.meeting_center_id.label }} {{ form.meeting_center_id() }}
+        </div>
+
+        <h3>Hymns</h3>
+        <div>
+            {{ form.opening_hymn_id.label }} {{ form.opening_hymn_id() }}
+        </div>
+        <div>
+            {{ form.sacrament_hymn_id.label }} {{ form.sacrament_hymn_id() }}
+        </div>
+        <div>
+            {{ form.intermediate_hymn_id.label }} {{ form.intermediate_hymn_id() }}
+        </div>
+        <div>
+            {{ form.closing_hymn_id.label }} {{ form.closing_hymn_id() }}
+        </div>
+
+        <h3>{{ _('Speakers') }}</h3>
+        {% for speaker_form in form.speakers %}
+        <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
+            <div>{{ speaker_form.youth_speaker_id.label }} {{ speaker_form.youth_speaker_id(class="form-control") }}</div>
+            <div>{{ speaker_form.youth_topic.label }} {{ speaker_form.youth_topic(class="form-control") }}</div>
+            <div>{{ speaker_form.speaker_1_id.label }} {{ speaker_form.speaker_1_id(class="form-control") }}</div>
+            <div>{{ speaker_form.topic_1.label }} {{ speaker_form.topic_1(class="form-control") }}</div>
+            <div>{{ speaker_form.speaker_2_id.label }} {{ speaker_form.speaker_2_id(class="form-control") }} </div>
+            <div>{{ speaker_form.topic_2.label }} {{ speaker_form.topic_2(class="form-control") }}</div>
+        </div>
+        {% endfor %}
+
+
+        <h3>Announcements</h3>
+        <div id="announcement-list">
+            {% for announcement_form in form.announcements %}
+            <div>
+                {{ announcement_form.announcement_text.label }}
+                {{ announcement_form.announcement_text(class="form-control") }}
+            </div>
+            {% endfor %}
+        </div>
+        <button type="button" id="add-announcement">Add Announcement</button>
+
+        <h3>Ward Business (relevos, llamamientos, bienvenidas...)</h3>
+<div id="business-list">
+    {% for business_form in form.business %}
+    <div>
+        {{ business_form.business_type.label }}{{ business_form.business_type(class="form-control") }}
+        {{ business_form.member_id.label }}{{ business_form.member_id(class="form-control") }}
+        {{ business_form.calling_name.label }}{{ business_form.calling_name(class="form-control") }}
+        {{ business_form.baby_name.label }} {{ business_form.baby_name(class="form-control") }}
+        {{ business_form.blessing_officiant_id.label }}{{ business_form.blessing_officiant_id(class="form-control") }}
+    </div>
+    {% endfor %}
+</div>
+<button type="button" id="add-business">Add Business</button>
+
+        <div>
+            {{ form.submit() }}
+        </div>
+    </form>
+
+    <!-- Templates -->
+    <script type="text/template" id="speaker-template">
+        <div>
+            Speaker <input type="text" name="speakers-__index__-speaker_name">
+        </div>
+    </script>
+
+    <script type="text/template" id="announcement-template">
+        <div>
+            <!-- Asegúrate de usar el campo de formulario completo, no el campo directamente -->
+            Announcement Text <input type="text" name="announcements-__index__-announcement_text">
+            Agenda <select name="announcements-__index__-agenda_id">
+                {% for agenda in form.agenda_id.choices %}
+                    <option value="{{ agenda[0] }}">{{ agenda[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </script>
+
+    <script type="text/template" id="business-template">
+        <div>
+            Type <select name="business-__index__-type">
+                <option value="release">Release</option>
+                <option value="calling">Calling</option>
+                <option value="welcome">Welcome</option>
+                <option value="confirmation">Confirmation</option>
+                <option value="priesthood">Priesthood</option>
+                <option value="baby_blessing">Baby Blessing</option>
+            </select>
+            Member ID <input type="text" name="business-__index__-member_id">
+            Calling Name <input type="text" name="business-__index__-calling_name">
+            Baby Name <input type="text" name="business-__index__-baby_name">
+            Blessing Officiant ID <input type="text" name="business-__index__-blessing_officiant_id">
+            Meeting Center ID <input type="text" name="business-__index__-meeting_center_id">
+        </div>
+    </script>
+</body>
+
+</html>

@@ -41,7 +41,7 @@ def add_hymn():
 
 # =============================================================================================
 # @bp_hymns.route('/agenda', methods=['GET', 'POST'])
-# def hymns_agenda():
+# def agenda():
 #     meeting_center_id = 1  # Temporalmente fijo
 
 #     if request.method == 'POST':
@@ -142,7 +142,7 @@ def add_hymn():
 
 
 @bp_hymns.route('/agenda', methods=['GET', 'POST'])
-def hymns_agenda():
+def agenda():
     meeting_center_id = 1  # Temporalmente fijo
 
     if request.method == 'POST':

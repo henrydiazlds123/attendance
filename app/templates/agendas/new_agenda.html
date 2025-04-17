@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ _('New Agenda') }}</title>
+
+</head>
+<body>
+    <h1>{{ _('Create Agenda') }}</h1>
+    <form id="agenda-form" method="POST">
+        {{ form.hidden_tag() }}
+
+        <!-- Fecha -->
+        <div class="form-group">
+            {{ form.sunday_date.label }} 
+            {{ form.sunday_date(id="date-field", class="form-control") }}
+        </div>
+
+        <!-- Preside -->
+        <div class="form-group">
+            {{ form.presider_id.label }} 
+            {{ form.presider_id(id="presider", class="form-control") }}
+        </div>
+
+        <!-- Dirije -->
+        <div class="form-group">
+            {{ form.director_id.label }} 
+            {{ form.director_id(id="director", class="form-control") }}
+        </div>
+
+
+        <!-- Oraciones -->
+        <div class="form-group">
+            {{ form.opening_prayer.label }} 
+            {{ form.opening_prayer(id="opening-prayer", class="form-control") }}
+        </div>
+        <div class="form-group">
+            {{ form.closing_prayer.label }} 
+            {{ form.closing_prayer(id="closing-prayer", class="form-control") }}
+        </div>
+
+        <!-- Himnos -->
+        <h3>Himnos</h3>
+        <div class="form-group">
+            {{ form.music_director.label }} 
+            {{ form.music_director(id="music-director", class="form-control") }}
+        </div>
+        <div class="form-group">
+            {{ form.pianist.label }} 
+            {{ form.pianist(id="pianist", class="form-control") }}  
+        </div>
+
+        <div class="form-group">
+            {{ form.opening_hymn_id.label }} 
+            {{ form.opening_hymn_id(id="opening-hymn-id", class="form-control") }}
+        </div>
+        <div class="form-group">
+            {{ form.sacrament_hymn_id.label }} 
+            {{ form.sacrament_hymn_id(id="sacrament-hymn-id", class="form-control") }}
+        </div>  
+        <div class="form-group">
+            {{ form.intermediate_hymn_id.label }} 
+            {{ form.intermediate_hymn_id(id="intermediate-hymn-id", class="form-control") }}
+        </div>
+        <div class="form-group">
+            {{ form.closing_hymn_id.label }} 
+            {{ form.closing_hymn_id(id="closing-hymn-id", class="form-control") }}
+        </div>
+
+
+        <!-- Anuncios -->
+        <h3>Announcements</h3>
+        <div id="announcement-list"></div>
+        <button type="button" id="add-announcement">Agregar Anuncio</button>
+
+        <!-- Asuntos de la Congregación -->
+        <h3>Ward Business</h3>
+        <div id="business-list"></div>
+        <button type="button" id="add-business">Agregar Asunto</button>
+
+        <!-- Oradores -->
+        <!-- <h3>Speakers</h3>
+        <div id="speaker-list"></div> -->
+        <h3>{{ _('Speakers') }}</h3>
+<div id="speaker-list">
+    {% for speaker_form in form.speakers %}
+    <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
+        <div>
+            {{ speaker_form.youth_speaker_id.label }}
+            {{ speaker_form.youth_speaker_id(class="form-control") }}
+        </div>
+        <div>
+            {{ speaker_form.youth_topic.label }}
+            {{ speaker_form.youth_topic(class="form-control") }}
+        </div>
+        <div>
+            {{ speaker_form.speaker_1_id.label }}
+            {{ speaker_form.speaker_1_id(class="form-control") }}
+        </div>
+        <div>
+            {{ speaker_form.topic_1.label }}
+            {{ speaker_form.topic_1(class="form-control") }}
+        </div>
+        <div>
+            {{ speaker_form.speaker_2_id.label }}
+            {{ speaker_form.speaker_2_id(class="form-control") }}
+        </div>
+        <div>
+            {{ speaker_form.topic_2.label }}
+            {{ speaker_form.topic_2(class="form-control") }}
+        </div>
+        <div>
+            {{ speaker_form.speaker_3_id.label }}
+            {{ speaker_form.speaker_3_id(class="form-control") }}
+        </div>
+        <div>
+            {{ speaker_form.topic_3.label }}
+            {{ speaker_form.topic_3(class="form-control") }}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+        
+
+        <!-- Botón de Envío -->
+        <div class="form-group">
+            {{ form.submit(class="btn btn-primary") }}
+        </div>
+    </form>
+
+    <!-- Plantillas para Elementos Dinámicos -->
+    <script type="text/template" id="announcement-template">
+        <div class="dynamic-list">
+            <label>Contenido del Anuncio</label>
+            <input type="text" name="announcements[]" class="form-control">
+        </div>
+    </script>
+
+    <script type="text/template" id="business-template">
+        <div class="dynamic-list">
+            <label>Tipo de Asunto</label>
+            <select name="business[]" class="form-control">
+                <option value="release">Relevo</option>
+                <option value="calling">Llamamiento</option>
+                <option value="welcome">Bienvenida</option>
+            </select>
+            <label>Contenido del Asunto</label>
+            <input type="text" name="business-content[]" class="form-control">
+        </div>
+    </script>
+
+
+    <script type="text/template" id="speaker-template">
+        <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
+            <div>
+                <label>Youth Speaker</label>
+                <input name="speakers-__index__-youth_speaker_id" class="form-control"></input>
+            </div>
+            <div>
+                <label>Youth Topic</label>
+                <input type="text" name="speakers-__index__-youth_topic" class="form-control">
+            </div>
+            <div>
+                <label>Speaker 1</label>
+                <input name="speakers-__index__-speaker_1_id" class="form-control"></input>
+            </div>
+            <div>
+                <label>Topic 1</label>
+                <input type="text" name="speakers-__index__-topic_1" class="form-control">
+            </div>
+            <div>
+                <label>Speaker 2</label>
+                <input name="speakers-__index__-speaker_2_id" class="form-control"></input>
+            </div>
+            <div>
+                <label>Topic 2</label>
+                <input type="text" name="speakers-__index__-topic_2" class="form-control">
+            </div>
+            <div>
+                <label>Speaker 3</label>
+                <input name="speakers-__index__-speaker_3_id" class="form-control"></input>
+            </div>
+            <div>
+                <label>Topic 3</label>
+                <input type="text" name="speakers-__index__-topic_3" class="form-control">
+            </div>
+        </div>
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const dateField             = document.getElementById('date-field');
+            const directorField         = document.getElementById('director');
+            const presiderField         = document.getElementById('presider');
+            const musicDirectorField    = document.getElementById('music-director');
+            const pianistField          = document.getElementById('pianist');
+            const openingHymnField      = document.getElementById('opening-hymn-id');
+            const sacramentHymnField    = document.getElementById('sacrament-hymn-id');
+            const intermediateHymnField = document.getElementById('intermediate-hymn-id');
+            const closingHymnField      = document.getElementById('closing-hymn-id');
+
+            // Función para cargar datos desde la API
+            async function loadAgendaData(date) {
+                try {
+                    const response = await fetch(`api?date=${date}`);
+                    
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    const data = await response.json();
+                    console.log(data);
+                    console.table(data);
+
+                    // Rellenar campos generales
+                    directorField.value = data.director_id || '';
+                    presiderField.value = data.presider_id || '';
+
+                    // Rellenar himnos
+                    if (data.hymns.length > 0) {
+                        const hymn = data.hymns[0]; // Tomamos el primer conjunto de himnos
+                        musicDirectorField.value = hymn.music_director || '';
+                        pianistField.value = hymn.pianist || '';
+                        openingHymnField.value = hymn.opening_hymn_id || '';
+                        sacramentHymnField.value = hymn.sacrament_hymn_id || '';
+                        intermediateHymnField.value = hymn.intermediate_hymn_id || '';
+                        closingHymnField.value = hymn.closing_hymn_id || '';
+                    }
+
+                    // Rellenar anuncios
+                    const announcementList = document.getElementById('announcement-list');
+                    announcementList.innerHTML = '';
+                    data.announcements.forEach(announcement => {
+                        const template = document.getElementById('announcement-template').innerHTML;
+                        const newElement = template.replace(/__index__/g, '');
+                        announcementList.insertAdjacentHTML('beforeend', newElement);
+                        const input = announcementList.lastElementChild.querySelector('input');
+                        input.value = announcement.content || '';
+                    });
+
+                    // Rellenar asuntos
+                    const businessList = document.getElementById('business-list');
+                    businessList.innerHTML = '';
+                    data.business.forEach(business => {
+                        const template = document.getElementById('business-template').innerHTML;
+                        const newElement = template.replace(/__index__/g, '');
+                        businessList.insertAdjacentHTML('beforeend', newElement);
+                        const select = businessList.lastElementChild.querySelector('select');
+                        const input = businessList.lastElementChild.querySelector('input');
+                        select.value = business.type || '';
+                        input.value = business.content || '';
+                    });
+
+                    // Rellenar oradores
+                    const speakerList = document.getElementById('speaker-list');
+                    speakerList.innerHTML = '';
+                    data.speakers.forEach(speaker => {
+                        const template = document.getElementById('speaker-template').innerHTML;
+                        const newElement = template.replace(/__index__/g, '');
+                        speakerList.insertAdjacentHTML('beforeend', newElement);
+                        const inputs = speakerList.lastElementChild.querySelectorAll('input');
+                        inputs[0].value = speaker.youth_speaker_id || '';
+                        inputs[1].value = speaker.youth_topic || '';
+                        inputs[2].value = speaker.speaker_1_id || '';
+                        inputs[3].value = speaker.topic_1 || '';
+                        inputs[4].value = speaker.speaker_2_id || '';
+                        inputs[5].value = speaker.topic_2 || '';
+                        inputs[6].value = speaker.speaker_3_id || '';
+                        inputs[7].value = speaker.topic_3 || ''
+                    });
+                } catch (error) {
+                    console.error('Error al cargar la agenda:', error);
+                    alert('Ocurrió un error al cargar la agenda.');
+                }
+            }
+
+            // Evento al cambiar la fecha
+            dateField.addEventListener('change', function () {
+                const selectedDate = this.value;
+                if (selectedDate) {
+                    loadAgendaData(selectedDate);
+                }
+            });
+
+            // Agregar anuncio
+            document.getElementById('add-announcement').addEventListener('click', function () {
+                const template = document.getElementById('announcement-template').innerHTML;
+                const newElement = template.replace(/__index__/g, '');
+                document.getElementById('announcement-list').insertAdjacentHTML('beforeend', newElement);
+            });
+
+            // Agregar asunto
+            document.getElementById('add-business').addEventListener('click', function () {
+                const template = document.getElementById('business-template').innerHTML;
+                const newElement = template.replace(/__index__/g, '');
+                document.getElementById('business-list').insertAdjacentHTML('beforeend', newElement);
+            });
+        });
+    </script>
+</body>
+</html>

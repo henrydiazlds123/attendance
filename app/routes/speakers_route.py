@@ -68,14 +68,14 @@ def add_speaker():
         db.session.commit()
 
         flash('Speaker added successfully!', 'success')
-        return redirect(url_for('speakers.speakers_agenda'))  # Redirige a la tabla Excel
+        return redirect(url_for('speakers.agenda'))  # Redirige a la tabla Excel
 
     return render_template('speakers/add.html', form=form)
 
 
 # =============================================================================================
 @bp_speakers.route('/agenda', methods=['GET', 'POST'])
-def speakers_agenda():
+def agenda():
     meeting_center_id = 1  # Asegúrate de asignar el ID del centro de reunión adecuado
 
     today = datetime.today()
@@ -182,10 +182,10 @@ def speakers_agenda():
                     meeting_center_id=meeting_center_id
                 )
                 db.session.add(speaker_entry)
-                print(f"New speaker entry added for {sunday_date}")
+                # print(f"New speaker entry added for {sunday_date}")
 
             # Actualizar los roles del orador
-            print(f"Saving speaker entry for {sunday_date}: {roles}")
+            # print(f"Saving speaker entry for {sunday_date}: {roles}")
             speaker_entry.youth_speaker_id = roles.get('Youth Speaker', None)
             speaker_entry.youth_topic      = roles.get('Youth Topic', None)
             speaker_entry.speaker_1_id     = roles.get('1st Speaker', None)

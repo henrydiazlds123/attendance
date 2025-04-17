@@ -1,190 +1,210 @@
 # app/routes/agenda.py
-from datetime import datetime
-from flask       import Blueprint, flash, render_template, redirect, request, url_for
-from app.forms.hymn_form import HymnForm
-from app.models  import db, Agenda, Bishopric, Member, SelectedHymns, WardAnnouncements, Speaker, WardBusiness
-from app.forms   import AgendaForm
+from flask       import Blueprint, flash, jsonify, render_template, redirect, request, url_for
+from app.forms import HymnForm, AgendaForm
+from app.models  import db, Agenda, Bishopric, Member, SelectedHymns, WardAnnouncements, Speaker, WardBusiness, Hymns, MeetingCenter
+from sqlalchemy.orm import joinedload
 from flask_babel import gettext as _
-
-from app.models.hymns_model import Hymns
 
 
 bp_agenda = Blueprint('agenda', __name__)
 
 
-# =============================================================================================
-@bp_agenda.route('/')
-def list_agendas():
-    meetings = Agenda.query.order_by(Agenda.sunday_date.desc()).all()
-    return render_template('/agendas/list.html', meetings=meetings)
+def get_agenda_by_date(date):
+    return Agenda.query.options(
+        joinedload(Agenda.prayers),
+        joinedload(Agenda.announcements),
+        joinedload(Agenda.hymns),
+        joinedload(Agenda.director),
+        joinedload(Agenda.presider),
+    ).filter_by(sunday_date=date).first()
 
+def get_hymns_by_date(date):
+    return SelectedHymns.query.filter_by(sunday_date=date).all()
 
-# =============================================================================================
-@bp_agenda.route('/edit/<int:id>', methods=['GET', 'POST'])
-def edit_agenda(id):
-    meeting = Agenda.query.get_or_404(id)
-    form = AgendaForm(obj=meeting)
-    if form.validate_on_submit():
-        meeting.sunday_date       = form.sunday_date.data
-        meeting.director_id       = form.director_id.data
-        meeting.presider_id       = form.presider_id.data
-        meeting.closing_prayer    = form.closing_prayer.data
-        meeting.meeting_center_id = form.meeting_center_id.data
-        db.session.commit()
-        flash(_('Sacrament Meeting Agenda Updated'), "success")
-        return redirect(url_for('agenda.list_agendas'))
-    return render_template('agendas/form.html', form=form)
-
-
-# =============================================================================================
-@bp_agenda.route('/delete/<int:id>', methods=['POST'])
-def delete_agenda(id):
-    meeting = Agenda.query.get_or_404(id)
-    db.session.delete(meeting)
-    db.session.commit()
-    flash("Agenda deleted", "danger")
-    return redirect(url_for('agenda.list_agendas'))
-
+def get_speakers_by_date(date):
+    return Speaker.query.filter_by(sunday_date=date).all()
 
 # =============================================================================================
 @bp_agenda.route('/new', methods=['GET', 'POST'])
 def new_agenda():
-    meeting_center_id = 1
+    date = request.args.get('date')
+    print(date)
     form = AgendaForm()
 
-    # Llenar opciones de dropdown desde la base de datos
-    form.director_id.choices = [(b.id, b.member.preferred_name) for b in Bishopric.query.all()]
-    form.presider_id.choices = [(b.id, b.member.preferred_name) for b in Bishopric.query.all()]
+    # Poblar choices de la base de datos
+    form.director_id.choices          = [(b.id, b.member.preferred_name) for b in Bishopric.query.all()]
+    form.presider_id.choices          = [(b.id, b.member.preferred_name) for b in Bishopric.query.all()]
+    form.meeting_center_id.choices    = [(m.id, m.name) for m in MeetingCenter.query.all()]
+    hymns                             = Hymns.query.all()
+    hymn_choices                      = [(h.number, h.title) for h in hymns]
+    form.opening_hymn_id.choices      = hymn_choices
+    form.sacrament_hymn_id.choices    = hymn_choices
+    form.intermediate_hymn_id.choices = hymn_choices
+    form.closing_hymn_id.choices      = hymn_choices
 
-    if request.method == 'GET' and request.args.get('sunday_date'):
-        sunday_date = request.args.get('sunday_date')
+    if request.method == 'POST':
 
-        # Convertir string a datetime.date
-        try:
-            sunday_date = datetime.strptime(sunday_date, '%Y-%m-%d').date()
-        except ValueError:
-            flash('Formato de fecha inválido', 'danger')
-            return redirect(url_for('new_agenda'))
+        if form.validate_on_submit():
+            # Crear agenda
+            agenda = Agenda(
+                sunday_date          = form.sunday_date.data,
+                meeting_center_id    = form.meeting_center_id.data,
+                director_id          = form.director_id.data,
+                presider_id          = form.presider_id.data,
+                opening_prayer       = form.opening_prayer.data,
+                closing_prayer       = form.closing_prayer.data,
+                opening_hymn_id      = form.opening_hymn_id.data,
+                sacrament_hymn_id    = form.sacrament_hymn_id.data,
+                intermediate_hymn_id = form.intermediate_hymn_id.data,
+                closing_hymn_id      = form.closing_hymn_id.data
+            )
+            db.session.add(agenda)
 
-        form.sunday_date.data = sunday_date  
+            # Oradores
+            for speaker_form in form.speakers:
+                if speaker_form.speaker_name.data:  # Accede al campo específico
+                    speaker = Speaker(name=speaker_form.speaker_name.data, agenda=agenda)
+                    db.session.add(speaker)
 
-        # Intentar cargar una agenda existente
-        agenda = Agenda.query.filter_by(sunday_date=sunday_date, meeting_center_id=meeting_center_id).first()
-        if agenda:
-            form.director_id.data = agenda.director_id
-            form.presider_id.data = agenda.presider_id
-            form.opening_prayer.data = agenda.opening_prayer
-            form.closing_prayer.data = agenda.closing_prayer
+            # Anuncios
+            for announcement_form in form.announcements:  # Itera sobre los formularios
+                if announcement_form.announcement_text.data:  # Accede al campo específico
+                    announcement = WardAnnouncements(
+                        text=announcement_form.announcement_text.data,
+                        agenda=agenda
+                    )
+                    db.session.add(announcement)
 
-        # selected_hymns = SelectedHymns.query.filter_by(sunday_date=sunday_date, meeting_center_id=meeting_center_id).first()
-        # if selected_hymns:
-        #     form.hymns.entries = []  # Limpiar entradas previas
-        #     hymns_data = [
-        #         (selected_hymns.opening_hymn_id, 'Opening'),
-        #         (selected_hymns.sacrament_hymn_id, 'Sacrament'),
-        #         (selected_hymns.intermediate_hymn_id, 'Intermediate'),
-        #         (selected_hymns.closing_hymn_id, 'Closing')
-        #     ]
+            # Asuntos de barrio
+            for business_form in form.business:  # Itera sobre los formularios
+                if business_form.text.data:  # Accede al campo específico
+                    business = WardBusiness(text=business_form.text.data, agenda=agenda)
+                    db.session.add(business)
 
-        #     for hymn_id, hymn_type in hymns_data:
-        #         if hymn_id:  # Solo agregar si hay un himno asignado
-        #             hymn = Hymns.query.get(hymn_id)
-        #             if hymn:
-        #                 form.hymns.append_entry({'number': hymn.number, 'hymn_type': hymn_type})
-        selected_hymns = SelectedHymns.query.filter_by(sunday_date=sunday_date, meeting_center_id=meeting_center_id).first()
-        if selected_hymns:
-            form.hymns.entries = []  # Limpiar entradas previas
-            hymns_data = [
-                (selected_hymns.opening_hymn_id, 'Opening'),
-                (selected_hymns.sacrament_hymn_id, 'Sacrament'),
-                (selected_hymns.intermediate_hymn_id, 'Intermediate'),
-                (selected_hymns.closing_hymn_id, 'Closing')
-            ]
+            db.session.commit()
+            flash('Agenda created successfully!', 'success')
+            return redirect(url_for('bp_agenda.new_agenda'))
+        
+        elif request.method == 'GET' and date:
+            existing_agenda = get_agenda_by_date(date)
+            if existing_agenda:
+                # Precargar campos simples
+                form.director_id.data = existing_agenda.director_id
+                form.presider_id.data = existing_agenda.presider_id
+                form.opening_prayer.data = existing_agenda.opening_prayer
+                form.closing_prayer.data = existing_agenda.closing_prayer
+                form.meeting_center_id.data = existing_agenda.meeting_center_id
 
-            for hymn_id, hymn_type in hymns_data:
-                if hymn_id:  # Solo agregar si hay un himno asignado
-                    hymn = Hymns.query.get(hymn_id)
-                    if hymn:
-                        hymn_entry = {
-                            'hymn_number': hymn.number if hymn.number else '',  # Cambiar 'number' por 'hymn_number'
-                            'hymn_type': hymn_type
-                        }
-                        form.hymns.append_entry(hymn_entry)  # Asignar el diccionario con datos directamente
- 
+                # Precargar himnos
+                for hymn in existing_agenda.hymns:
+                    hymn_form = HymnForm()
+                    hymn_form.hymn_id.choices = form.hymns.form.hymn_id.choices
+                    hymn_form.hymn_id.data = hymn.hymn_id
+                    hymn_form.type.data = hymn.type
+                    form.hymns.append_entry(hymn_form)
 
-        print(form.hymns.data)
+                # Precargar anuncios
+                for announcement in existing_agenda.announcements:
+                    form.announcements.append_entry({'announcement': announcement.announcement})
+
+                # Precargar asuntos de barrio
+                for business in existing_agenda.business_items:
+                    form.business.append_entry({'business_item': business.business_item})
+
+                # Precargar oradores
+                for speaker in existing_agenda.speakers:
+                    form.speakers.append_entry({
+                        'name': speaker.name,
+                        'topic': speaker.topic
+                    })
+
+    return render_template('agendas/new_agenda.html', form=form)
 
 
-        # Cargar discursos (independiente de la agenda)
-        speakers = Speaker.query.filter_by(sunday_date=sunday_date, meeting_center_id=meeting_center_id).all()
-        if speakers:
-            form.speakers.entries = []
-            for speaker in speakers:
-                form.speakers.append_entry({'name': speaker.name, 'topic': speaker.topic})
+# =============================================================================================
+@bp_agenda.route('api')
+def api_get_agenda():
+    date = request.args.get('date')
+    if not date:
+        return jsonify({'error': 'Missing date parameter'}), 400
 
-    if form.validate_on_submit():
-        # Crear nueva agenda
-        agenda = Agenda(
-            sunday_date       = form.sunday_date.data,
-            director_id       = form.director_id.data,
-            presider_id       = form.presider_id.data,
-            opening_prayer    = form.opening_prayer.data,
-            closing_prayer    = form.closing_prayer.data,
-            meeting_center_id = meeting_center_id
-        )
-        db.session.add(agenda)
+    # Buscar la agenda por fecha
+    agenda = get_agenda_by_date(date)
 
-        # Guardar himnos (solo si no existían)
-        for hymn_form in form.hymns.data:
-            existing_hymn = SelectedHymns.query.filter_by(
-                sunday_date       = agenda.sunday_date,
-                hymn_number       = hymn_form['number'],
-                meeting_center_id = meeting_center_id
-            ).first()
-            if not existing_hymn:
-                hymn = SelectedHymns(sunday_date=agenda.sunday_date, hymn_number=hymn_form['number'], hymn_type=hymn_form['hymn_type'], meeting_center_id=meeting_center_id)
-                db.session.add(hymn)
+    # Si no existe una agenda, inicializar un diccionario vacío
+    if not agenda:
+        agenda_data = {
+            'director_id': None,
+            'presider_id': None,
+            'opening_prayer': None,
+            'closing_prayer': None,
+            'hymns': [],
+            'announcements': [],
+            'business': [],
+            'prayers': [],
+        }
+    else:
+        # Formatear los datos de la agenda existente
+        agenda_data = {
+            'director_id': agenda.director_id,
+            'presider_id': agenda.presider_id,
+            'opening_prayer': agenda.opening_prayer,
+            'closing_prayer': agenda.closing_prayer,
+            'hymns': [
+                {
+                    'music_director'      : hymn.music_director,
+                    'pianist'             : hymn.pianist,
+                    'opening_hymn_id'     : hymn.opening_hymn_id,
+                    'sacrament_hymn_id'   : hymn.sacrament_hymn_id,
+                    'intermediate_hymn_id': hymn.intermediate_hymn_id,
+                    'closing_hymn_id'     : hymn.closing_hymn_id,
+                }
+                for hymn in agenda.hymns
+            ],
+            'announcements': [
+                {'id': a.id, 'content': a.content}
+                for a in agenda.announcements
+            ],
+            'business': [
+                {'id': b.id, 'content': b.content}
+                for b in agenda.ward_business
+            ],
+            'prayers': [
+                {'id': p.id, 'type': p.type, 'name': p.name}
+                for p in agenda.prayers
+            ],
+        }
 
-        # Guardar anuncios
-        for ann in form.announcements.data:
-            existing_announcement = WardAnnouncements.query.filter_by(sunday_date=agenda.sunday_date, text=ann['announcement_text']).first()
-            if not existing_announcement:
-                announcement = WardAnnouncements(sunday_date=agenda.sunday_date, text=ann['announcement_text'])
-                db.session.add(announcement)
+    # Buscar himnos, oradores y otros datos relacionados con la fecha
+    hymns_for_date = get_hymns_by_date(date)
+    speakers_for_date = get_speakers_by_date(date)
 
-        # Guardar discursos (solo si no existían)
-        for spk in form.speakers.data:
-            existing_speaker = Speaker.query.filter_by(
-                sunday_date       = agenda.sunday_date,
-                name              = spk['name'],
-                meeting_center_id = meeting_center_id
-            ).first()
-            if not existing_speaker:
-                speaker = Speaker(sunday_date=agenda.sunday_date, name=spk['name'], topic=spk['topic'], meeting_center_id=meeting_center_id)
-                db.session.add(speaker)
+    # Agregar los himnos y oradores a la respuesta
+    agenda_data['hymns'].extend([
+        {
+            'music_director'      : hymn.music_director,
+            'pianist'             : hymn.pianist,
+            'opening_hymn_id'     : hymn.opening_hymn_id,
+            'sacrament_hymn_id'   : hymn.sacrament_hymn_id,
+            'intermediate_hymn_id': hymn.intermediate_hymn_id,
+            'closing_hymn_id'     : hymn.closing_hymn_id,
+        }
+        for hymn in hymns_for_date
+    ])
 
-        # Guardar negocios del barrio (solo si no existían)
-        for biz in form.business.data:
-            existing_business = WardBusiness.query.filter_by(
-                sunday_date       = agenda.sunday_date,
-                member_id         = biz['member_id'],
-                meeting_center_id = meeting_center_id
-            ).first()
-            if not existing_business:
-                business = WardBusiness(
-                    sunday_date           = agenda.sunday_date,
-                    type                  = biz['type'],
-                    member_id             = biz['member_id'],
-                    calling_name          = biz['calling_name'],
-                    baby_name             = biz['baby_name'],
-                    blessing_officiant_id = biz['blessing_officiant_id'],
-                    meeting_center_id     = meeting_center_id
-                )
-                db.session.add(business)
+    agenda_data['speakers'] = [
+        {
+            'youth_speaker_id': speaker.youth_speaker_id,
+            'youth_topic': speaker.youth_topic,
+            'speaker_1_id': speaker.speaker_1_id,
+            'topic_1': speaker.topic_1,
+            'speaker_2_id': speaker.speaker_2_id,
+            'topic_2': speaker.topic_2,
+            'speaker_3_id': speaker.speaker_3_id,
+            'topic_2': speaker.topic_2
+        }
+        for speaker in speakers_for_date
+    ]
 
-        db.session.commit()
-        flash('Agenda creada exitosamente', 'success')
-        return redirect(url_for('index'))
-
-    return render_template('agendas/form.html', form=form)
-
+    # Devolver la respuesta
+    return jsonify(agenda_data)

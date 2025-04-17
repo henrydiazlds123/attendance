@@ -1,17 +1,12 @@
-<!-- templates/speakers/agenda.html -->
-
 {% extends "layout.html" %}
 
 {% block title %}{{ _('Attendance | Hymns') }}{% endblock %}
 
 {% block head %}
-
-<script src="https://cdn.jsdelivr.net/npm/handsontable@12.1.0/dist/handsontable.full.min.js"></script> 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable/styles/handsontable.min.css" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable/styles/ht-theme-main.min.css" />
 
-
-
+<script src="https://cdn.jsdelivr.net/npm/handsontable@12.1.0/dist/handsontable.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
     .htCore td {
@@ -29,23 +24,17 @@
     .row {
         --bs-gutter-x: 0rem;
       }
-
-    thead>tr>th:not(:first-child) {
-        background-color: #254ac6 !important;
-        color: white
-      }
     
 </style>
 
 
 {% endblock %}
 
-{% block pageTitle %}<i class="bi bi-megaphone"></i> {{ _('Selected Speakers') }}{% endblock %}
+{% block pageTitle %}<i class="bi bi-file-music"></i> {{ _('Selected Hymns') }}{% endblock %}
 {% block content %}
-<h2>{{_('Select Speakers for the Quater')}}</h2>
-<div id="speakers-table" class="ht-theme-main-dark-auto"></div>
+<h2>Seleccionar Himnos para el Trimestre</h2>
+<div id="hymns-table" class="ht-theme-main-dark-auto"></div>
 
-{% include 'speakers/agenda_scripts.html' %}
-
+{% include 'hymns/agenda_scripts.html' %}
 
 {% endblock %}

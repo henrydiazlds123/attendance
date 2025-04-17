@@ -80,4 +80,4 @@ def reset_name():
 @bp_auth.route('/')
 def index():
     #return render_template('index.html')
-    return redirect('/hymns/agenda', code=302)
+    return redirect('/agenda/new', code=302)

@@ -1,0 +1,342 @@
+<script>
+    const sundays = {{ sundays| tojson }};
+    const speakersData = {{ speakers_data| tojson }};
+    const youthMembers = {{ youth_members| tojson }};
+    const adultMembers = {{ adult_members| tojson }};
+
+
+    // Formatear los encabezados de la tabla con fechas amigables
+    const headers = ["Speakers / Topics"].concat(
+        sundays.map(date => {
+            const fecha = new Date(date + 'T12:00:00Z'); // Forzar hora media para evitar desfase
+            return fecha.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+        })
+    );
+
+    const firstRowRenderer = (instance, td, ...rest) => {
+        Handsontable.renderers.TextRenderer(instance, td, ...rest);
+        td.style.fontWeight = 'bold';
+        td.style.color = '#001212';
+        td.style.background = '#f4d03f';
+    };
+
+    const secondRowRenderer = (instance, td, ...rest) => {
+        Handsontable.renderers.TextRenderer(instance, td, ...rest);
+        td.style.fontWeight = 'light';
+        td.style.color = '#001212';
+        td.style.background = '#fdefbd';
+    };
+
+    const selectRowRenderer = (instance, td, ...rest) => {
+        Handsontable.renderers.TextRenderer(instance, td, ...rest);
+        td.style.fontWeight = 'bold';
+        td.style.color = '#001212';
+        td.style.background = '#4da6ff';
+    };
+
+    function generalCellRenderer(instance, td, row, col, prop, value, cellProperties) {
+        Handsontable.renderers.TextRenderer(instance, td, row, col, prop, value, cellProperties);
+    
+        // Limpiar estilos previos
+        td.style.backgroundColor = '';
+        td.style.color = '';
+        td.style.fontWeight = '';
+        
+        const selectedType = sundayTypeSelections[col - 1]; // Recordando que col 0 es encabezado
+    
+        if (col > 0) {
+            if (["General Conference", "Stake Conference", "Fast Sunday", "Primary Presentation"].includes(selectedType)) {
+                td.style.backgroundColor = '#254ac6'; // Azul
+                td.style.color = 'white';
+            } else {
+                // Estilo general de filas
+                if (row % 2 === 0) {
+                    td.style.backgroundColor = '#f4d03f'; // Estilo de firstRowRenderer
+                    td.style.color = '#001212';
+                    td.style.fontWeight = 'bold';
+                } else {
+                    td.style.backgroundColor = '#fdefbd'; // Estilo de secondRowRenderer
+                    td.style.color = '#001212';
+                }
+            }
+        }
+    };
+    
+
+    const data = [
+        generateRow("Youth Speaker"),
+        generateRow("Youth Topic"),
+        generateRow("1st Speaker"),
+        generateRow("1st Topic"),
+        generateRow("2nd Speaker"),
+        generateRow("2nd Topic"),
+        generateRow("3rd Speaker"),
+        generateRow("3rd Topic")
+    ];
+    const sundayTypes = [
+        "Regular",
+        "High Priest",
+        "Stake Conference",
+        "Ward Conference",
+        "General Conference",
+        "Primary Presentation",
+        "Fifth Sunday",
+        "Fast Sunday"
+
+    ];
+
+    const container = document.getElementById('speakers-table');
+
+    const sundayTypeSelections = Array(sundays.length).fill('Regular');
+
+    const hot = new Handsontable(container, {
+        data: data,
+        colHeaders: headers,
+        autoWrapRow: true,
+        autoWrapCol: true,
+        fixedColumnsStart: 1,
+        mergeCells: [],
+        className: 'htRight',
+        columns: [
+            { readOnly: true }, // Primera columna es solo lectura
+
+            ...sundays.map((date, index) => {
+                return {
+                    type: 'dropdown', // Todas las demás columnas son dropdowns
+                    source: youthMembers.map(member => member.preferred_name), // Fuente para Youth Speaker
+                    strict: false,
+                    className: 'htCenter',
+                    renderer: generalCellRenderer
+                };
+            })
+        ],
+        licenseKey: 'non-commercial-and-evaluation',
+
+        cells: (row, col) => {
+            const cellProperties = {};
+            cellProperties.renderer = generalCellRenderer;
+            if (col > 0) { // Evitamos la primera columna
+                if (row % 2 === 0) {
+                    cellProperties.type = 'dropdown';
+                    cellProperties.strict = false;
+                    if (row === 0) {
+                        cellProperties.source = youthMembers.map(member => member.preferred_name);
+                    } else {
+                        cellProperties.source = adultMembers.map(member => member.preferred_name);
+                    }
+                } else {
+                    cellProperties.type = 'text';
+                }
+            }
+            return cellProperties;
+        },
+
+
+
+        afterGetColHeader: function (col, TH, row, td, cellProperties) {
+            if (col === 0) return; // Saltamos la primera columna
+
+            // Evitamos duplicar el select si ya existe
+            if (!TH.querySelector('select')) {
+                const select = document.createElement('select');
+
+                // Regular será el valor por defecto, pero no aparece en la lista
+                const defaultOption = document.createElement('option');
+                defaultOption.value = 'Regular';
+                defaultOption.textContent = 'Regular';
+                select.appendChild(defaultOption);
+
+                sundayTypes.forEach(type => {
+                    if (type !== 'Regular') {
+                        const option = document.createElement('option');
+                        option.value = type;
+                        option.textContent = type;
+                        select.appendChild(option);
+                    }
+                });
+
+                select.value = sundayTypeSelections[col - 1];
+
+                select.addEventListener('change', function () {
+                    const selectedType = this.value;
+                    sundayTypeSelections[col - 1] = selectedType;
+
+                    // Aquí luego aplicaremos las condiciones para actualizar las celdas debajo
+                    console.log(`Columna ${col} seleccionó ${selectedType}`);
+
+                    // Ejemplo: podrías llamar a una función para actualizar celdas
+                    updateColumnBasedOnSundayType(col, selectedType);
+                });
+
+                TH.appendChild(select);
+            }
+        },
+
+
+    });
+
+    // 🔥 Función auxiliar para generar una fila con valores predeterminados
+    function generateRow(rowName, defaultValue = "") {
+        return [rowName].concat(sundays.map(date => {
+            const isSpeaker = rowName.includes("Speaker") || rowName.includes("Topic");
+            const data = isSpeaker ? speakersData[date] : hymnsData[date];
+
+            if (isSpeaker) {
+                const value = data?.[rowName];
+                return value === 0 ? "0" : value || "";
+            } else {
+                return formatFieldValue(data?.[rowName], rowName);
+            }
+        }));
+    }
+
+    // 🔥 Función auxiliar para formatear valores de celda
+    function formatFieldValue(value, fieldName) {
+        if (value === 0) {
+            return "0"; // Mostrar ceros en cualquier campo
+        }
+        return value || ""; // Mantener el valor original para otros campos
+    }
+
+    // 🔥
+    function saveData() {
+        const editedData = hot.getData();
+        const formattedData = editedData.map(row => {
+            let entry = {};
+            sundays.forEach((date, index) => {
+                entry[date] = row[index + 1];
+            });
+            return entry;
+        });
+
+        fetch('agenda', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formattedData)
+        }).then(response => {
+            if (!response.ok) return response.json().then(data => { throw data });
+            return response.json();
+        })
+    }
+
+    // 🔥 Evento para capturar cambios en la tabla
+    hot.addHook('afterChange', (changes, source) => {
+        if (source === 'loadData' || !changes) return;
+
+        changes.forEach(([rowIndex, columnIndex, oldValue, newValue]) => {
+            const rowName = data[rowIndex][0];
+            const sunday = sundays[columnIndex - 1];
+
+            if (!sunday) return;
+
+            if (rowName.includes("Speaker") || rowName.includes("Topic")) {
+                if (!speakersData[sunday]) speakersData[sunday] = {};
+                speakersData[sunday][rowName] = newValue;
+            }
+        });
+        saveData();
+    });
+
+    // Función para aplicar estilo dinámico al <select>
+    function applyStyleToSelect(selectElement, type) {
+        // Reset estilos
+        selectElement.style.backgroundColor = '';
+        selectElement.style.color = '';
+
+        switch (type) {
+
+            case "High Priest":
+                selectElement.style.backgroundColor = 'red'; // Azul
+                selectElement.style.color = 'white';
+                break;
+            case "Stake Conference":
+                selectElement.style.backgroundColor = '#28a745'; // Verde
+                selectElement.style.color = 'white';
+                break;
+            case "Ward Conference":
+                selectElement.style.backgroundColor = '#ffc107'; // Amarillo
+                selectElement.style.color = 'black';
+                break;
+            case "General Conference":
+                selectElement.style.backgroundColor = 'green'; // Rojo
+                selectElement.style.color = 'yellow';
+                break;
+            case "Primary Presentation":
+                selectElement.style.backgroundColor = '#17a2b8'; // Cyan
+                selectElement.style.color = 'white';
+                break;
+            case "Fifth Sunday":
+                selectElement.style.backgroundColor = '#6f42c1'; // Morado
+                selectElement.style.color = 'white';
+                break;
+            case "Fast Sunday":
+                selectElement.style.backgroundColor = 'yellow'; // Naranja
+                selectElement.style.color = 'black';
+                break;
+            default:
+                selectElement.style.backgroundColor = 'transparent';
+                selectElement.style.color = '#254ac6';
+                break;
+        }
+    }
+
+    // Cuando cambia la selección, actualizamos estilos y ejecutamos lógica
+    function handleSundayTypeChange(event, col) {
+        const selectedType = event.target.value;
+        sundayTypeSelections[col - 1] = selectedType;
+
+        applyStyleToSelect(event.target, selectedType);
+
+        updateColumnBasedOnSundayType(col, selectedType);
+    }
+
+    // Función para actualizar celdas de la columna según selección
+    function updateColumnBasedOnSundayType(col, selectedType) {
+        const specialTypes = ["General Conference", "Stake Conference", "Fast Sunday", "Primary Presentation"];
+    
+        for (let row = 0; row < hot.countRows(); row++) {
+            const cellMeta = hot.getCellMeta(row, col);
+            
+            if (specialTypes.includes(selectedType)) {
+                // Aplicar estilos a la celda
+                const cell = hot.getCell(row, col);
+                if (cell) {
+                    cell.style.backgroundColor = '#254ac6'; // Azul
+                    cell.style.color = 'transparent';
+                }
+    
+                // Limpiar el valor de la celda
+                hot.setDataAtCell(row, col, '');
+    
+                // Hacer la celda solo lectura
+                cellMeta.readOnly = true;
+            } else {
+                // Resetear estilos y habilitar edición
+                const cell = hot.getCell(row, col);
+                if (cell) {
+                    cell.style.backgroundColor = '';
+                    cell.style.color = '';
+                }
+    
+                cellMeta.readOnly = false;
+            }
+        }
+    
+        // Importante: volver a renderizar la tabla para que se vean los cambios
+        hot.render();
+    }
+    
+
+    // 👇 Cuando generas los selects dinámicamente, asegúrate de conectar la función
+    document.querySelectorAll('thead > tr > th').forEach((th, index) => {
+        const select = th.querySelector('select');
+        if (select) {
+            // Aplica el estilo inicial según el valor seleccionado por defecto
+            applyStyleToSelect(select, select.value);
+
+            // Escucha los cambios de selección
+            select.addEventListener('change', (event) => handleSundayTypeChange(event, index));
+        }
+    });
+
+</script>

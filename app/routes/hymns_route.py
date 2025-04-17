@@ -41,7 +41,7 @@ def add_hymn():
 
 # =============================================================================================
 @bp_hymns.route('/agenda', methods=['GET', 'POST'])
-def hymns_agenda():
+def agenda():
     meeting_center_id = 1  # Temporalmente fijo
 
     if request.method == 'POST':
@@ -152,4 +152,4 @@ def hymns_agenda():
             "3rd Topic"    : entry.topic_3
         }
 
-    return render_template("hymns/selected.html", sundays_data=sundays_data, hymns_data=hymns_data, hymn_map=hymn_map, speakers_data=speakers_data)
+    return render_template("hymns/agenda.html", sundays_data=sundays_data, hymns_data=hymns_data, hymn_map=hymn_map, speakers_data=speakers_data)

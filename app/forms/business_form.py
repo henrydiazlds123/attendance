@@ -1,4 +1,4 @@
-# app/forms/business.py
+# app/forms/business_form.py
 from flask_wtf          import FlaskForm
 from flask_babel        import _
 from wtforms.validators import DataRequired, Optional
@@ -7,8 +7,8 @@ from wtforms            import StringField, SelectField, IntegerField, SubmitFie
 
 
 class WardBusinessForm(FlaskForm):
-    agenda_id = IntegerField(_('Agenda ID'), validators=[DataRequired()])
-    type      = SelectField(
+    agenda_id     = IntegerField(_('Agenda ID'), validators=[DataRequired()])
+    business_type = SelectField(
         _('Type'),
         choices=[
             ('release', _('Release')),
@@ -25,4 +25,4 @@ class WardBusinessForm(FlaskForm):
     baby_name             = StringField(_('Baby Name'), validators=[Optional()])
     blessing_officiant_id = IntegerField(_('Blessing Officiant ID'), validators=[Optional()])
     meeting_center_id     = IntegerField(_('Meeting Center ID'), validators=[DataRequired()])
-    submit                = SubmitField(_('Submit'))
+

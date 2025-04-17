@@ -4,7 +4,7 @@
   const hymnMap      = {{ hymn_map| tojson }};       // Lista de himnos desde Flask
   const speakersData = {{ speakers_data| tojson }};
 
-  //console.table(hymnsData); // Verificar los datos de himnos
+  console.table(hymnsData); // Verificar los datos de himnos
 
 
   // Formatear los encabezados de la tabla con fechas amigables
@@ -37,20 +37,32 @@
 
   // Inicializar Handsontable
   const container = document.getElementById('hymns-table');
+  const firstRowRenderer = (instance, td, ...rest) => {
+    Handsontable.renderers.TextRenderer(instance, td, ...rest);
+    td.style.fontWeight = 'bold';
+    td.style.color = '#001212';
+    td.style.background = '#f4d03f';
+  };
+  const secondRowRenderer = (instance, td, ...rest) => {
+    Handsontable.renderers.TextRenderer(instance, td, ...rest);
+    td.style.fontWeight = 'light';
+    td.style.color = '#001212';
+    td.style.background = '#fdefbd';
+  };
 
   const hotInstance = new Handsontable(container, {
     data: data,
     rowHeaders: true,
-    contextMenu: true,
+    //contextMenu: true,
     colHeaders: headers,
     manualRowResize: true,
     fixedColumnsStart: 1,
     manualColumnResize: true,
     className: 'htLeft htMiddle',
-    hiddenColumns: {
-      columns: [1],
-      indicators: true,
-    },
+    //hiddenColumns: {
+      //columns: [1],
+      //indicators: true,
+    //},
     columns: [
       { readOnly: true, className: 'htRight' }, // Columna de encabezado
       ...sundays.map(() => ({
@@ -65,14 +77,13 @@
       const rowName = data[row][0]; // Obtener el nombre de la fila
       const fieldNames = ["Music Director", "Pianist"];
       
-      if (rowName === "") {
-        cellProperties.readOnly = false; // Hacer la celda de solo lectura
-        cellProperties.renderer = dividerRenderer; // Aplicar un renderizador personalizado
-      } else {
-        cellProperties.renderer = ellipsisRenderer; // Aplicar puntos suspensivos
-      }
+      
 
       if (col > 0) {
+        if (rowName === "") {
+          cellProperties.readOnly = false; // Hacer la celda de solo lectura
+          cellProperties.renderer = dividerRenderer; // Aplicar un renderizador personalizado
+        }
         
         // Configurar autocompletado para Director y Pianista
         if (fieldNames.includes(headers[col])) {
@@ -88,8 +99,17 @@
           };
         }
         // Si la fila pertenece a speakers o topics, hacerla solo lectura
+        if (rowName.includes("Speaker"))  {
+          cellProperties.renderer = firstRowRenderer; // uses lookup map
+        }
+        else{
+          cellProperties.renderer = secondRowRenderer; // uses lookup map
+        }
+        
+        // Si la fila pertenece a speakers o topics, hacerla solo lectura
         if (rowName.includes("Speaker") || rowName.includes("Topic")) {
           cellProperties.className = "htDimmed"; // Aplicar clase para atenuar el texto 
+
         }
         // Para himnos, aplicamos renderer personalizado
         if (rowName.includes("Hymn")) {
@@ -104,15 +124,6 @@
   function hymnRenderer(instance, td, row, col, prop, value, cellProperties) {
     Handsontable.renderers.TextRenderer.apply(this, arguments);
     td.textContent = formatHymnValue(value);
-  }
-
-  // 🔥
-  function ellipsisRenderer(instance, td, row, col, prop, value, cellProperties) {
-    Handsontable.renderers.TextRenderer.apply(this, arguments); // Usar el renderizador predeterminado
-    td.style.maxWidth     = "200px";     // Ancho máximo
-    td.style.whiteSpace   = "nowrap";    // Evitar saltos de línea
-    td.style.overflow     = "hidden";    // Ocultar el contenido que excede
-    td.style.textOverflow = "ellipsis";  // Agregar puntos suspensivos
   }
 
   // 🔥
@@ -146,9 +157,11 @@
     if (value === 0) {
       return "0"; // Mostrar ceros en cualquier campo
     }
-    if (fieldName.includes("Hymn")) {
-      return value === 0 ? "0" : formatHymnValue(value); // Formatear solo los himnos
+  
+    if (fieldName.includes("Himno")) {
+      return formatHymnValue(value); // Formatear himnos si no es cero
     }
+  
     return value || ""; // Mantener el valor original para otros campos
   }
 
@@ -172,7 +185,7 @@
     return value;  // Si ya es número o vacío, lo dejamos como está
   }
 
-  // 🔥 Guardar los datos al presionar el botón
+  // 🔥 Guardar los datos
   function saveData() {
     const editedData = hotInstance.getData();
 
@@ -202,24 +215,8 @@
       .then(response => {
         if (!response.ok) throw response.json();
         return response.json();
-      })
-      .then(async data => {
-        const texts = await fetch('/swal/get_swal_texts').then(res => res.json());
-        Swal.fire({
-          icon: 'success',
-          title: texts.successTitle,
-          text: data.message || texts.successMessage
-        });
-        //}).then(() => location.reload());
-      })
-      .catch(async err => {
-        const texts = await fetch('/swal/get_swal_texts').then(res => res.json());
-        Swal.fire({
-          icon: 'error',
-          title: texts.errorTitle,
-          text: err.error || texts.errorMessage
-        });
       });
+      
   }
   // 🔥
   function customRenderer(instance, td, row, col, prop, value, cellProperties) {
@@ -246,5 +243,6 @@
         hymnsData[sunday][rowName] = newValue;
       }
     });
+    saveData();
   });
 </script>

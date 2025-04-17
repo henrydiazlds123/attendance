@@ -4,11 +4,11 @@
 
         let membersContainer = document.getElementById('members_list_container');
 
-        const table = document.getElementById("membersTable");
-        const headers = table.querySelectorAll("thead th");
-        const tbody = table.querySelector("tbody");
-        let currentPage = 1;
-        let currentPerPage = 10;
+        const table          = document.getElementById("membersTable");
+        const headers        = table.querySelectorAll("thead th");
+        const tbody          = table.querySelector("tbody");
+        let   currentPage    = 1;
+        let   currentPerPage = 10;
 
         headers.forEach((header, index) => {
             if (index === headers.length - 1) return; // Evitar ordenar la columna de "Acciones"
@@ -47,15 +47,15 @@
             currentPerPage = perPageSelect.value === "All" ? 99999 : parseInt(perPageSelect.value);
             
             let params = {
-                family: document.getElementById('filterFamily').value,
-                name: document.getElementById('filterName').value,
-                gender: document.getElementById('filterGender').value,
-                category: document.getElementById('filterCategory').value,
-                sector: document.getElementById('filterSector').value,
+                family     : document.getElementById('filterFamily').value,
+                name       : document.getElementById('filterName').value,
+                gender     : document.getElementById('filterGender').value,
+                category   : document.getElementById('filterCategory').value,
+                sector     : document.getElementById('filterSector').value,
                 has_calling: document.getElementById('filterHasCalling').value,
-                condition: document.getElementById('filterCondition').value,
-                per_page: currentPerPage,
-                page: currentPage
+                condition  : document.getElementById('filterCondition').value,
+                per_page   : currentPerPage,
+                page       : currentPage
             };
 
             try {
@@ -121,8 +121,8 @@
                 }
                 // Números de página (máximo 5 visibles)
                 let maxVisiblePages = 10;
-                let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-                let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+                let startPage       = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+                let endPage         = Math.min(totalPages, startPage + maxVisiblePages - 1);
 
                 if (endPage - startPage < maxVisiblePages - 1) {
                     startPage = Math.max(1, endPage - maxVisiblePages + 1);
