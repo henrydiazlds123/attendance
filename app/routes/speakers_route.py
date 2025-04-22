@@ -110,6 +110,7 @@ def agenda():
 
     if request.method == 'POST':
         data = request.json
+        #print(f'data: {data}')
 
         if not data:
             return jsonify({'status': 'error', 'message': 'No data received from frontend'}), 400
@@ -208,6 +209,7 @@ def agenda():
     # GET
     today      = datetime.today()
     start_date = datetime(today.year, (today.month - 1) // 3 * 3 + 1, 1)
+    #start_date = datetime(2025,1, 1)
     end_date   = start_date + timedelta(days=90)
     sundays    = get_sundays(start_date, end_date)
 

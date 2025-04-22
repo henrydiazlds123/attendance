@@ -1,10 +1,11 @@
 # app/routes/agenda.py
+from datetime import datetime, timedelta
 from flask       import Blueprint, flash, jsonify, render_template, redirect, request, url_for
 from app.forms import HymnForm, AgendaForm
 from app.models  import db, Agenda, Bishopric, Member, SelectedHymns, WardAnnouncements, Speaker, WardBusiness, Hymns, MeetingCenter
 from sqlalchemy.orm import joinedload
 from flask_babel import gettext as _
-
+from app.utils      import *
 
 bp_agenda = Blueprint('agenda', __name__)
 
@@ -208,3 +209,105 @@ def api_get_agenda():
 
     # Devolver la respuesta
     return jsonify(agenda_data)
+
+
+
+
+@bp_agenda.route('/test', methods=['GET', 'POST'])
+def agenda():
+    role = session.get('role', 'Music')
+
+    #meeting_center_id = get_meeting_center_id()
+    meeting_center_id = session.get('meeting_center_id', 1)  # Asegúrate de asignar el ID del centro de reunión adecuado
+
+    today = datetime.today()
+
+    active_members = Member.query.filter(
+        Member.active == True,
+        Member.meeting_center_id == meeting_center_id,
+        Member.birth_date.isnot(None)
+    ).order_by(Member.preferred_name)
+
+    youth_cutoff  = today.replace(year=today.year - 11)
+    senior_cutoff = today.replace(year=today.year - 17)
+
+    youth_members = active_members.filter(
+        Member.birth_date.between(senior_cutoff, youth_cutoff)
+    ).all()
+
+    adult_members = active_members.filter(
+        Member.birth_date < senior_cutoff
+    ).all()
+
+    # Convertir los objetos Member a un formato serializable
+    youth_members_serializable = [
+        {"preferred_name": member.preferred_name, "id": member.id}  # Añadir otros campos necesarios
+        for member in youth_members
+    ]
+
+    adult_members_serializable = [
+        {"preferred_name": member.preferred_name, "id": member.id}  # Añadir otros campos necesarios
+        for member in adult_members
+    ]
+    
+    # GET
+    today        = datetime.today()
+    start_date   = datetime(today.year, (today.month - 1) // 3 * 3 + 1, 1)
+    end_date     = start_date + timedelta(days=90)
+    sundays_data = get_sundays(start_date, end_date)
+
+    saved_speakers = Speaker.query.filter_by(meeting_center_id=meeting_center_id).all()
+    speakers_data = {}
+
+    # Recopilar los oradores guardados en la base de datos
+    for entry in saved_speakers:
+        date_str = entry.sunday_date.strftime('%Y-%m-%d')
+        speakers_data[date_str] = {
+            "Youth Speaker": entry.youth_speaker_id,
+            "Youth Topic"  : entry.youth_topic,
+            "1st Speaker"  : entry.speaker_1_id,
+            "1st Topic"    : entry.topic_1,
+            "2nd Speaker"  : entry.speaker_2_id,
+            "2nd Topic"    : entry.topic_2,
+            "3rd Speaker"  : entry.speaker_3_id,
+            "3rd Topic"    : entry.topic_3
+        }
+    saved_hymns    = SelectedHymns.query.filter_by(meeting_center_id=meeting_center_id).all()
+
+    # Obtén todos los himnos necesarios para combinar número y título
+    hymn_ids = set()
+    for entry in saved_hymns:
+        hymn_ids.update([ 
+            entry.opening_hymn_id,
+            entry.sacrament_hymn_id,
+            entry.intermediate_hymn_id,
+            entry.closing_hymn_id
+        ])
+
+
+    # Consulta los himnos una sola vez
+    hymn_map = {hymn.number: {'number': hymn.number, 'title': hymn.title} for hymn in Hymns.query.all()}
+    used_hymns = get_hymn_usage(meeting_center_id)
+
+    hymns_data = {}
+    for entry in saved_hymns:
+        date_str = entry.sunday_date.strftime('%Y-%m-%d')
+        hymns_data[date_str] = {
+            "Chorister"   : entry.music_director,
+            "Accompanist"          : entry.pianist,
+            "Opening Hymn"     : entry.opening_hymn_id,
+            "Sacrament Hymn"   : entry.sacrament_hymn_id,
+            "Intermediate Hymn": entry.intermediate_hymn_id,
+            "Closing Hymn"     : entry.closing_hymn_id
+        }
+
+    
+    return render_template('agendas/test.html', 
+        youth_members=youth_members_serializable, 
+        adult_members=adult_members_serializable,
+        speakers_data=speakers_data,
+        sundays_data=sundays_data, 
+        hymns_data=hymns_data, 
+        hymn_map=hymn_map,
+        used_hymns=used_hymns,
+        role=role)

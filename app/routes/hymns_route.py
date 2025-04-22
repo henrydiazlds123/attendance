@@ -46,6 +46,7 @@ def agenda():
 
     if request.method == 'POST':
         data = request.json  # Datos desde la tabla
+        #print(f'Data: {data}')
         date_map = {}  # Reorganizar los datos por fecha
 
         # Agrupar datos por fecha
@@ -92,8 +93,8 @@ def agenda():
             db.session.add(hymn_entry)
 
             # Asignaciones seguras para cada himno
-            assign_if_present(hymn_entry, 'music_director', hymns.get('Music Director'))
-            assign_if_present(hymn_entry, 'pianist', hymns.get("Pianist"))
+            assign_if_present(hymn_entry, 'music_director', hymns.get('Chorister'))
+            assign_if_present(hymn_entry, 'pianist', hymns.get("Accompanist"))
             assign_if_present_int(hymn_entry, 'opening_hymn_id', hymns.get("Opening Hymn"))
             assign_if_present_int(hymn_entry, 'sacrament_hymn_id', hymns.get("Sacrament Hymn"))
             assign_if_present_int(hymn_entry, 'intermediate_hymn_id', hymns.get("Intermediate Hymn"))
@@ -106,6 +107,7 @@ def agenda():
     # GET
     today        = datetime.today()
     start_date   = datetime(today.year, (today.month - 1) // 3 * 3 + 1, 1)
+    #start_date   = datetime(2025, 1, 1)
     end_date     = start_date + timedelta(days=90)
     sundays_data = get_sundays(start_date, end_date)
 
@@ -130,8 +132,8 @@ def agenda():
     for entry in saved_hymns:
         date_str = entry.sunday_date.strftime('%Y-%m-%d')
         hymns_data[date_str] = {
-            "Music Director"   : entry.music_director,
-            "Pianist"          : entry.pianist,
+            "Chorister"   : entry.music_director,
+            "Accompanist"          : entry.pianist,
             "Opening Hymn"     : entry.opening_hymn_id,
             "Sacrament Hymn"   : entry.sacrament_hymn_id,
             "Intermediate Hymn": entry.intermediate_hymn_id,

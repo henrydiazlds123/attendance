@@ -1,3 +1,4 @@
+<!-- /templates/hymns/agenda_scripts.html -->
 <script>
   const sundays      = {{ sundays_data| tojson }};   // Lista de domingos desde Flask
   const hymnsData    = {{ hymns_data| tojson }};     // Datos de la BD
@@ -26,43 +27,49 @@
     generateRow("3rd Speaker"),
     generateRow("3rd Topic"),
     generateRow(""),
-    generateRow("Music Director"),
-    generateRow("Pianist"),
+    generateRow("Chorister"),
+    generateRow("Accompanist"),
     generateRow("Opening Hymn"),
     generateRow("Sacrament Hymn"),
     generateRow("Intermediate Hymn"),
     generateRow("Closing Hymn")
   ];
-
+  const sundayTypes = [
+    "Regular",
+    "High Priest",
+    "Stake Conference",
+    "Ward Conference",
+    "General Conference",
+    "Primary Presentation",
+    "Fifth Sunday",
+    "Fast Sunday"
+  ];
 
   // Inicializar Handsontable
   const container = document.getElementById('hymns-table');
+  const savedSelections      = localStorage.getItem('sundayTypeSelections');
+  const sundayTypeSelections = savedSelections ? JSON.parse(savedSelections) : Array(sundays.length).fill('Regular');
   const firstRowRenderer = (instance, td, ...rest) => {
     Handsontable.renderers.TextRenderer(instance, td, ...rest);
     td.style.fontWeight = 'bold';
-    td.style.color = '#001212';
+    td.style.color      = '#001212';
     td.style.background = '#f4d03f';
   };
   const secondRowRenderer = (instance, td, ...rest) => {
     Handsontable.renderers.TextRenderer(instance, td, ...rest);
     td.style.fontWeight = 'light';
-    td.style.color = '#001212';
+    td.style.color      = '#001212';
     td.style.background = '#fdefbd';
   };
 
   const hotInstance = new Handsontable(container, {
     data: data,
     rowHeaders: true,
-    //contextMenu: true,
     colHeaders: headers,
     manualRowResize: true,
     fixedColumnsStart: 1,
     manualColumnResize: true,
     className: 'htLeft htMiddle',
-    //hiddenColumns: {
-      //columns: [1],
-      //indicators: true,
-    //},
     columns: [
       { readOnly: true, className: 'htRight' }, // Columna de encabezado
       ...sundays.map(() => ({
@@ -75,7 +82,7 @@
     cells: (row, col) => {
       const cellProperties = {};
       const rowName = data[row][0]; // Obtener el nombre de la fila
-      const fieldNames = ["Music Director", "Pianist"];
+      const fieldNames = ["Chorister", "Accompanist"];
       
       
 
@@ -123,13 +130,41 @@
   // 🔥
   function hymnRenderer(instance, td, row, col, prop, value, cellProperties) {
     Handsontable.renderers.TextRenderer.apply(this, arguments);
-    td.textContent = formatHymnValue(value);
+    td.textContent     = formatHymnValue(value);
+
+    const rowName      = data[row]?.[0] || "";
+    const isSpeakerRow = rowName.includes("Speaker") || rowName.includes("Topic");
+    const selectedType = sundayTypeSelections[col - 1]; // Recordando que col 0 es encabezado
+    
+    if (col > 0) {
+      if (["General Conference", "Stake Conference"].includes(selectedType)) {
+        td.style.backgroundColor = '#254ac6';      // Azul
+        td.style.color           = 'transparent';
+      } else if (["Fast Sunday", "Primary Presentation"].includes(selectedType) && isSpeakerRow) {
+        td.style.backgroundColor = '#254ac6';     // Azul
+        td.style.color           = 'transparet';
+      }
+      else {
+        // Estilo general de filas
+        if (row % 2 === 0) {
+          td.style.backgroundColor = '#f4d03f';  // Estilo de firstRowRenderer
+          td.style.color           = '#001212';
+          if (isSpeakerRow) {
+            td.style.fontWeight    = 'bold';
+          }
+          td.style.fontWeight      = 'light';
+        } else {
+          td.style.backgroundColor = '#fdefbd';  // Estilo de secondRowRenderer
+          td.style.color           = '#001212';
+        }
+      }
+    }
   }
 
   // 🔥
   function dividerRenderer(instance, td, row, col, prop, value, cellProperties) {
     td.innerHTML          = "";                // Limpiar el contenido de la celda
-    td.style.background   = "#e0e0e0";         // Color de fondo gris claro
+    td.style.background   = "#212529";            // Color de fondo gris claro
     td.style.height       = "2px";             // Altura fija para la línea divisoria
     td.style.borderBottom = "1px solid #ccc";  // Línea divisoria
   }
@@ -140,7 +175,7 @@
       const isSpeaker = rowName.includes("Speaker") || rowName.includes("Topic");
       const data = isSpeaker ? speakersData[date] : hymnsData[date];
 
-      if (rowName === "Music Director" || rowName === "Pianist") {
+      if (rowName === "Chorister" || rowName === "Accompanist") {
         const value = data?.[rowName] || "";
         return value === 0 ? "0" : value || ""; // Manejar explícitamente el valor 0
       } else if (isSpeaker) {
@@ -173,9 +208,6 @@
     return hymn ? `#${hymn.number} "${hymn.title}"` : value;
   }
 
-  // 🔥 Función para sugerir valores en las celdas de Director y Pianista
-
-
   // 🔥 Función para extraer el número de himno
   function extractHymnNumber(value) {
     if (typeof value === 'string' && value.trim().startsWith('#')) {
@@ -196,7 +228,7 @@
         if (entry.hymn_name.includes('Himno')) {
           // Procesar solo los himnos
           entry[date] = extractHymnNumber(rawValue) || null;
-        } else if (entry.hymn_name === "Music Director" || entry.hymn_name === "Pianist") {
+        } else if (entry.hymn_name === "Chorister" || entry.hymn_name === "Accompanist") {
           // Mantener el texto original para Director y Pianista
           entry[date] = rawValue || null; // Usar null en lugar de ""
         } else {

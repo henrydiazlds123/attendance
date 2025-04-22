@@ -6,12 +6,12 @@ import pandas as pd
 import requests
 import logging
 import unicodedata
-from   sqlalchemy   import func
+from   sqlalchemy   import func, union_all
 from   app.config   import Config
 from   functools    import wraps
 from   flask_babel  import format_date, gettext as _
 from   datetime     import date, datetime, timedelta
-from   app.models   import Attendance, Classes, db, Setup, Member
+from   app.models   import Attendance, Classes, db, Setup, Member, SelectedHymns, Hymns
 from   flask        import flash, logging, redirect, session, url_for, request, g
 
 
@@ -534,6 +534,42 @@ def get_sundays(start_date, end_date):
     while current <= end_date:
         sundays.append(current.strftime('%Y-%m-%d'))
         current += timedelta(weeks=1)  # Avanzar una semana
-
     return sundays
 
+# =============================================================================================
+def get_hymn_usage(meeting_center_id):
+    # Subconsultas filtradas por centro de reunión y no nulas
+    opening = db.session.query(SelectedHymns.opening_hymn_id.label("hymn_id")).filter(
+        SelectedHymns.meeting_center_id == meeting_center_id,
+        SelectedHymns.opening_hymn_id.isnot(None)
+    )
+    sacrament = db.session.query(SelectedHymns.sacrament_hymn_id.label("hymn_id")).filter(
+        SelectedHymns.meeting_center_id == meeting_center_id,
+        SelectedHymns.sacrament_hymn_id.isnot(None)
+    )
+    intermediate = db.session.query(SelectedHymns.intermediate_hymn_id.label("hymn_id")).filter(
+        SelectedHymns.meeting_center_id == meeting_center_id,
+        SelectedHymns.intermediate_hymn_id.isnot(None)
+    )
+    closing = db.session.query(SelectedHymns.closing_hymn_id.label("hymn_id")).filter(
+        SelectedHymns.meeting_center_id == meeting_center_id,
+        SelectedHymns.closing_hymn_id.isnot(None)
+    )
+
+    # Unimos todos los himnos seleccionados
+    union_query = union_all(opening, sacrament, intermediate, closing).subquery()
+
+    # Unimos con Hymns por id para extraer el número y título, pero agrupamos por número
+    result = (
+        db.session.query(
+            Hymns.number,
+            Hymns.title,
+            func.count().label("frequency")
+        )
+        .join(union_query, Hymns.number == union_query.c.hymn_id)
+        .group_by(Hymns.number, Hymns.title)
+        .order_by(func.count().desc(), Hymns.number)
+        .all()
+    )
+
+    return result
