@@ -2,13 +2,12 @@
 import os
 import tempfile
 import pandas as pd
-
-from app.utils   import *
-from flask       import Blueprint, Response, render_template, redirect, request, url_for, flash
-from flask_babel import gettext as _
-from app.models  import MeetingCenter
-from flask       import request, flash, redirect, url_for, render_template
-from werkzeug.utils import secure_filename
+from   app.utils      import *
+from   flask          import Blueprint, Response, render_template, redirect, request, url_for, flash
+from   flask_babel    import gettext as _
+from   app.models     import MeetingCenter
+from   flask          import request, flash, redirect, url_for, render_template
+from   werkzeug.utils import secure_filename
 
 bp_import = Blueprint('import', __name__)
 
@@ -38,20 +37,20 @@ def upload_file():
     meeting_centers = MeetingCenter.query.all()
     
     if request.method == 'POST':
-        file = request.files.get('file')
+        file              = request.files.get('file')
         meeting_center_id = request.form.get('meeting_center_id')
 
         if not file or not allowed_file(file.filename):
             flash(_('You must select a valid file.'), "danger")
             return redirect(url_for('import.upload_file'))
         
-        filename = secure_filename(file.filename)
-        temp_dir = tempfile.gettempdir()  # Obtiene la carpeta temporal del sistema
+        filename  = secure_filename(file.filename)
+        temp_dir  = tempfile.gettempdir()  # Obtiene la carpeta temporal del sistema
         file_path = os.path.join(temp_dir, filename)
         file.save(file_path)
 
         # Guardar datos en sesión para la vista de mapeo
-        session['uploaded_file'] = file_path
+        session['uploaded_file']     = file_path
         session['meeting_center_id'] = meeting_center_id
 
         return redirect(url_for('import.map_columns'))  # Redirigir a la vista de mapeo
@@ -67,7 +66,6 @@ def import_members():
     file_path         = session.get('uploaded_file')
     meeting_center_id = get_meeting_center_id()
     column_mapping    = session.get('column_mapping')
-
 
     if not file_path or not meeting_center_id or not column_mapping:
         flash(_('Missing data. Please reload the file.'), "danger")
@@ -142,15 +140,14 @@ def map_columns():
         'arrival_date', 'calling', 'family_head'
     ]
     
-    optional_fields = [field for field in all_fields if field not in required_fields]
-
+    optional_fields             = [field for field in all_fields if field not in required_fields]
     permanently_excluded_fields = ['gender', 'birth_date', 'fixed_address', 'lat', 'lon', 'preferred_name', 'short_name']
 
     if request.method == 'POST':
-        column_mapping = request.form.to_dict()
-        update_fields  = request.form.getlist('update_fields')
+        column_mapping            = request.form.to_dict()
+        update_fields             = request.form.getlist('update_fields')
         session['column_mapping'] = column_mapping
-        session['update_fields'] = update_fields
+        session['update_fields']  = update_fields
 
         flash(_('Column mapping saved successfully.'), "success")
         return redirect(url_for('import.import_members'))

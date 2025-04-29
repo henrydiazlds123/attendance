@@ -19,16 +19,13 @@ def list_pdfs():
     OUTPUT_DIR = get_output_dir()
     
     # Verificar si hay clases asociadas al meeting center
-    has_classes       = Classes.query.filter_by(meeting_center_id=meeting_center_id, is_active=True).first() is not None
-    
+    has_classes       = Classes.query.filter_by(meeting_center_id=meeting_center_id, is_active=True).first() is not None    
     # Verificar si hay clases 'Main' o 'Extra' activas
     has_main_classes  = Classes.query.filter_by(meeting_center_id=meeting_center_id, is_active=True, class_type='Main').first() is not None
-
-    has_extra_classes = Classes.query.filter_by(meeting_center_id=meeting_center_id, is_active=True, class_type='Extra').first() is not None
-     
+    has_extra_classes = Classes.query.filter_by(meeting_center_id=meeting_center_id, is_active=True, class_type='Extra').first() is not None     
     if not os.path.exists(OUTPUT_DIR):
-      os.makedirs(OUTPUT_DIR)  # Crea el directorio si no existe
-      
+        os.makedirs(OUTPUT_DIR)  # Crea el directorio si no existe
+    
     directory = os.path.join(os.getcwd(), OUTPUT_DIR)
     pdf_files = os.listdir(directory)
     
@@ -163,14 +160,14 @@ def generate_pdfs():
         c.line(567, 0, 567, page_height)
         c.line(0, 22.5, page_width, 22.5)
         c.showPage()
-           
+
         # Segunda página con QR de reset y QR del maestro si ya existe
         # QR para resetear el nombre
         manual_qr_url = f"{Config.BASE_URL}/attendance/manual"
-        manual_qr = qrcode.QRCode(version=1, box_size=5, border=2)
+        manual_qr     = qrcode.QRCode(version=1, box_size=5, border=2)
         manual_qr.add_data(manual_qr_url)
         manual_qr.make(fit=True)
-        manual_img = manual_qr.make_image(fill_color="black", back_color="white")
+        manual_img         = manual_qr.make_image(fill_color="black", back_color="white")
         manual_qr_filename = os.path.join(OUTPUT_DIR, "manual_attendance.png")
         manual_img.save(manual_qr_filename)
 
@@ -210,8 +207,8 @@ def generate_pdfs():
 
                 # Dibujar el QR del maestro en la página
                 teacher_qr_size = 180
-                teacher_qr_x = (page_width - teacher_qr_size) / 2
-                teacher_qr_y = 90
+                teacher_qr_x    = (page_width - teacher_qr_size) / 2
+                teacher_qr_y    = 90
                 c.drawImage(teacher_qr_image, teacher_qr_x, teacher_qr_y, width=teacher_qr_size, height=teacher_qr_size)
                 c.drawCentredString(page_width / 2, teacher_qr_y + teacher_qr_size, _('Teacher\'s Attendance Class'))  # Mostrar el nombre de la clase del maestro
                 c.setFont("Helvetica-Bold", 14)
@@ -219,7 +216,6 @@ def generate_pdfs():
 
         # Guardar la página PDF
         c.save()
-
     clean_qr_images(OUTPUT_DIR)
     flash(_('QR Codes generated successfully.'), 'success')
     return redirect(url_for('pdf.list_pdfs'))
@@ -245,4 +241,3 @@ def view_pdf(filename):
     except Exception as e:
         print(f"Error: {e}")  # Log the actual error for debugging
         abort(500, description=str(e))
-        

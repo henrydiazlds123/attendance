@@ -90,7 +90,7 @@
     fixedColumnsStart: 1,
     manualColumnResize: true,
     className: 'htRow htRight',
-    height: '503',
+    //height: '503',
     columns: [
       { readOnly: true }, // Primera columna es solo lectura
       ...sundays.map((date, index) => {
@@ -112,7 +112,7 @@
       const fieldNames     = ["Chorister", "Accompanist"];
       const isSpeakerRow   = rowName.includes("Speaker");
       
-      cellProperties.renderer = generalCellRenderer;
+      cellProperties.renderer = generalCellRenderer;  
     
       if (col > 0) {
         if (row % 2 === 0 && isSpeakerRow) {
@@ -198,7 +198,7 @@
 
           console.log(`Columna ${col} seleccionó ${selectedType}`);
 
-          //updateColumnBasedOnSundayType(col, selectedType);
+          updateColumnBasedOnSundayType(col, selectedType);
           localStorage.setItem('sundayTypeSelections', JSON.stringify(sundayTypeSelections));
         });
 
@@ -303,7 +303,7 @@
     const isSpeakerRow = rowName.includes("Speaker") || rowName.includes("Topic");
     const selectedType = sundayTypeSelections[col - 1]; // Recordando que col 0 es encabezado
 
-    if (col > 0) {
+    if (col > 0){
       if (["General Conference", "Stake Conference"].includes(selectedType)) {
         td.style.backgroundColor = '#254ac6';      // Azul
         td.style.color           = 'transparent';
@@ -334,34 +334,37 @@
     // Reset estilos
     selectElement.style.backgroundColor = '';
     selectElement.style.color           = '';
+    selectElement.style.fontWeight      = 'bold';
+    selectElement.className             = 'htCenter';
 
     switch (type) {
       case "High Priest":
-        selectElement.style.backgroundColor = 'red';    // Azul
+        selectElement.style.backgroundColor = 'red';
         selectElement.style.color           = 'white';
+        
         break;
       case "Stake Conference":
-        selectElement.style.backgroundColor = '#28a745';  // Verde
+        selectElement.style.backgroundColor = '#28a745';
         selectElement.style.color           = 'white';
         break;
       case "Ward Conference":
-        selectElement.style.backgroundColor = '#ffc107';  // Amarillo
+        selectElement.style.backgroundColor = '#ffc107';
         selectElement.style.color           = 'black';
         break;
       case "General Conference":
-        selectElement.style.backgroundColor = 'green';   // Rojo
+        selectElement.style.backgroundColor = 'green';
         selectElement.style.color           = 'yellow';
         break;
       case "Primary Presentation":
-        selectElement.style.backgroundColor = '#17a2b8';  // Cyan
+        selectElement.style.backgroundColor = '#17a2b8';
         selectElement.style.color           = 'white';
         break;
       case "Fifth Sunday":
-        selectElement.style.backgroundColor = '#6f42c1';  // Morado
+        selectElement.style.backgroundColor = '#6f42c1';
         selectElement.style.color           = 'white';
         break;
       case "Fast Sunday":
-        selectElement.style.backgroundColor = 'yellow';  // Naranja
+        selectElement.style.backgroundColor = 'yellow'; 
         selectElement.style.color           = 'black';
         break;
       default:
@@ -482,13 +485,6 @@
           !label.includes('chorister') &&
           !label.includes('accompanist');
   });
-
-
-
-
-
-
-
     // Formatear los datos como objeto por fila
   const formattedData = filteredData.map(row => {
     let entry = { label: row[0] };
@@ -497,7 +493,6 @@
     });
     return entry;
   });
-
 
     fetch('/speakers/agenda', {
         method: 'POST',

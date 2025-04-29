@@ -1,20 +1,23 @@
 # app/routes/members.py
-from flask            import Blueprint, redirect, render_template, request, jsonify, url_for, current_app
-from datetime         import date
-from app.forms        import MemberForm, MemberEditForm
-from app.models       import db, Member
-from flask_babel      import gettext as _
-from app.utils        import *
+from flask       import Blueprint, redirect, render_template, request, jsonify, url_for, current_app
+from datetime    import date
+from app.forms   import MemberForm, MemberEditForm
+from app.models  import db, Member
+from flask_babel import gettext as _
+from app.utils   import *
 
 
 bp_members = Blueprint('members', __name__)
-
 
 # =================================================================
 @bp_members.route('/')
 @role_required('Admin', 'Owner')
 def list_members():
-    query= Member.query
+    #query= Member.query
+    query = Member.query.filter(
+        Member.excluded == False,
+        Member.moved_out == False
+    )
 
     # Obtener los valores distintos de family_head
     family_head = query.with_entities(Member.family_head).distinct().order_by(Member.family_head.asc()).all()
@@ -115,13 +118,13 @@ def edit_member(member_id):
 @bp_members.route('/profile/<int:member_id>')
 @role_required('Admin', 'Owner')
 def profile(member_id):
-    member = Member.query.get_or_404(member_id)
+    member              = Member.query.get_or_404(member_id)
     google_maps_api_key = current_app.config.get("GOOGLE_MAPS_API_KEY", "default-google-key")
 
     # Calcular la edad
-    today = datetime.today()
+    today      = datetime.today()
     birth_date = member.birth_date
-    age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+    age        = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
 
     return render_template('members/profile.html', member=member, age=age, google_maps_api_key=google_maps_api_key)
 
@@ -136,7 +139,8 @@ def get_members():
     per_page = request.args.get('per_page', all, type=int)  # Valores predeterminados
     #print(f"🔍 Parámetros recibidos en el servidor -> page: {page}, per_page: {per_page}")
     
-    query = Member.query
+    #query = Member.query
+    query = Member.query.filter(Member.excluded == False, Member.moved_out == False)
     
     # Filtros
     family            = request.args.get('family')
@@ -182,8 +186,7 @@ def get_members():
     # Paginación
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     members    = pagination.items
-    
-    data = [{
+    data       = [{
         'id'               : m.id,
         'short_name'       : m.short_name,
         'preferred_name'   : m.preferred_name,
@@ -199,13 +202,14 @@ def get_members():
     } for m in members]
     
     return jsonify({
-                'members'     : data,
-                'count'       : pagination.total,
-                'page'        : pagination.page,
-                'per_page'    : pagination.per_page,
-                'total_pages' : pagination.pages,
-                'members_count':members_count
-                })
+            'members'     : data,
+            'count'       : pagination.total,
+            'page'        : pagination.page,
+            'per_page'    : pagination.per_page,
+            'total_pages' : pagination.pages,
+            'members_count':members_count
+        })
+
 
 # =================================================================
 @bp_members.route('/api/members/<int:member_id>/active', methods=['PATCH'])
@@ -233,13 +237,12 @@ def pivot_table():
 @bp_members.route('/pivot/api', methods=['GET'])
 @role_required('Admin', 'Owner')
 def pivot_data():
-    members = Member.query.all()
+    members = Member.query.filter(Member.excluded == False, Member.moved_out == False)
     members_data = []
     for member in members:
-        age = get_age(member.birth_date)
+        age           = get_age(member.birth_date)
         years_in_unit = get_years_in_unit(member.arrival_date)
-
-        member_data = {
+        member_data   = {
             _('Name'): member.preferred_name or "-",
             _('Condition'): _('Active') if member.active else _('Inactive'),
             _('Sex'): _('Female') if member.gender == 'F' else _('Male'),

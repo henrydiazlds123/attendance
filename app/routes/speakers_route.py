@@ -1,12 +1,11 @@
 # app/routes/speakers.py
-from datetime import datetime
-from flask import Blueprint, jsonify, render_template, request, redirect, url_for
-from app.forms import SpeakerForm
-from app.models import db, Speaker, Member
+from datetime       import datetime
+from flask          import Blueprint, jsonify, render_template, request, redirect, url_for
+from app.forms      import SpeakerForm
+from app.models     import db, Speaker, Member
 from app.models.meeting_centers_model import MeetingCenter
 from app.utils      import *
-from flask_babel  import gettext as _
-
+from flask_babel    import gettext as _
 
 bp_speakers = Blueprint('speakers', __name__)
 
@@ -21,10 +20,11 @@ def speakers():
 # =============================================================================================
 @bp_speakers.route('/add', methods=['GET', 'POST'])
 def add_speaker():
+    # meeting_center_id = get_meeting_center_id()
     meeting_center_id = 1
-    meeting_centers = MeetingCenter.query.all()
 
-    today = datetime.today()
+    meeting_centers   = MeetingCenter.query.all()
+    today             = datetime.today()
 
     active_members = Member.query.filter(
         Member.active == True,
@@ -32,36 +32,30 @@ def add_speaker():
         Member.birth_date.isnot(None)
     ).order_by(Member.preferred_name)
 
-    youth_cutoff = datetime(today.year - 11, today.month, today.day)
+    youth_cutoff  = datetime(today.year - 11, today.month, today.day)
     senior_cutoff = datetime(today.year - 17, today.month, today.day)
-
-    youth_members = active_members.filter(
-        Member.birth_date.between(senior_cutoff, youth_cutoff)
-    ).all()
-
-    adult_members = active_members.filter(
-        Member.birth_date < senior_cutoff
-    ).all()
+    youth_members = active_members.filter(Member.birth_date.between(senior_cutoff, youth_cutoff)).all()
+    adult_members = active_members.filter(Member.birth_date < senior_cutoff).all()
 
     form = SpeakerForm()
-    form.youth_speaker_id.choices = [(m.id, m.preferred_name) for m in youth_members]
-    form.speaker_1_id.choices = [(m.id, m.preferred_name) for m in adult_members]
-    form.speaker_2_id.choices = [(m.id, m.preferred_name) for m in adult_members]
-    form.speaker_3_id.choices = [(m.id, m.preferred_name) for m in adult_members]
-    form.meeting_center_id.choices = [(c.id, c.short_name) for c in meeting_centers]
+    form.youth_speaker_id.choices  = [(m.id, m.preferred_name) for m in youth_members]
+    form.speaker_1_id.choices      = [(m.id, m.preferred_name) for m in adult_members]
+    form.speaker_2_id.choices      = [(m.id, m.preferred_name) for m in adult_members]
+    form.speaker_3_id.choices      = [(m.id, m.preferred_name) for m in adult_members]
+    form.meeting_center_id.choices = [(c.id, c.short_name)     for c in meeting_centers]
 
     if form.validate_on_submit():
         new_speaker = Speaker(
-            sunday_date=form.sunday_date.data,
-            youth_speaker_id=form.youth_speaker_id.data,
-            youth_topic=form.youth_topic.data,
-            speaker_1_id=form.speaker_1_id.data,
-            topic_1=form.topic_1.data,
-            speaker_2_id=form.speaker_2_id.data,
-            topic_2=form.topic_2.data,
-            speaker_3_id=form.speaker_3_id.data,
-            topic_3=form.topic_3.data,
-            meeting_center_id=form.meeting_center_id.data
+            sunday_date       = form.sunday_date.data,
+            youth_speaker_id  = form.youth_speaker_id.data,
+            youth_topic       = form.youth_topic.data,
+            speaker_1_id      = form.speaker_1_id.data,
+            topic_1           = form.topic_1.data,
+            speaker_2_id      = form.speaker_2_id.data,
+            topic_2           = form.topic_2.data,
+            speaker_3_id      = form.speaker_3_id.data,
+            topic_3           = form.topic_3.data,
+            meeting_center_id = form.meeting_center_id.data
         )
 
         db.session.add(new_speaker)
@@ -69,13 +63,13 @@ def add_speaker():
 
         flash('Speaker added successfully!', 'success')
         return redirect(url_for('speakers.agenda'))  # Redirige a la tabla Excel
-
     return render_template('speakers/add.html', form=form)
 
 
 # =============================================================================================
 @bp_speakers.route('/agenda', methods=['GET', 'POST'])
 def agenda():
+    # meeting_center_id = get_meeting_center_id()
     meeting_center_id = 1  # Asegúrate de asignar el ID del centro de reunión adecuado
 
     today = datetime.today()
@@ -88,14 +82,8 @@ def agenda():
 
     youth_cutoff  = today.replace(year=today.year - 11)
     senior_cutoff = today.replace(year=today.year - 17)
-
-    youth_members = active_members.filter(
-        Member.birth_date.between(senior_cutoff, youth_cutoff)
-    ).all()
-
-    adult_members = active_members.filter(
-        Member.birth_date < senior_cutoff
-    ).all()
+    youth_members = active_members.filter(Member.birth_date.between(senior_cutoff, youth_cutoff)).all()
+    adult_members = active_members.filter(Member.birth_date < senior_cutoff).all()
 
     # Convertir los objetos Member a un formato serializable
     youth_members_serializable = [
@@ -107,10 +95,8 @@ def agenda():
         {"preferred_name": member.preferred_name, "id": member.id}  # Añadir otros campos necesarios
         for member in adult_members
     ]
-
     if request.method == 'POST':
         data = request.json
-        #print(f'data: {data}')
 
         if not data:
             return jsonify({'status': 'error', 'message': 'No data received from frontend'}), 400
@@ -195,7 +181,6 @@ def agenda():
             speaker_entry.topic_2          = roles.get('2nd Topic', None)
             speaker_entry.speaker_3_id     = roles.get('3rd Speaker', None)
             speaker_entry.topic_3          = roles.get('3rd Topic', None)
-
         try:
             db.session.commit()
             print("Database commit successful.")
@@ -214,7 +199,7 @@ def agenda():
     sundays    = get_sundays(start_date, end_date)
 
     saved_speakers = Speaker.query.filter_by(meeting_center_id=meeting_center_id).all()
-    speakers_data = {}
+    speakers_data  = {}
 
     # Recopilar los oradores guardados en la base de datos
     for entry in saved_speakers:
@@ -231,7 +216,7 @@ def agenda():
         }
     
     return render_template('speakers/agenda.html', 
-        youth_members=youth_members_serializable, 
-        adult_members=adult_members_serializable,
-        sundays=sundays, 
-        speakers_data=speakers_data)
+        youth_members = youth_members_serializable,
+        adult_members = adult_members_serializable,
+        sundays       = sundays,
+        speakers_data = speakers_data)

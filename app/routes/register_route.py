@@ -20,7 +20,7 @@ def registrar():
         sunday_code  = request.form.get('sundayCode')
         unit_number  = request.form.get('unitNumber')
         student_name = request.form.get('studentName') 
-               
+
         # Limpiar el nombre recibido
         student_name     = ' '.join(student_name.strip().split()) # Elimina espacios antes y después
         student_name     = student_name.title() # Convertir a título (primera letra en mayúscula) 

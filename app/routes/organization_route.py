@@ -6,6 +6,7 @@ from app.utils                   import *
 
 bp_organization = Blueprint('organization', __name__)
 
+
 # =============================================================================================
 @bp_organization.route('/', methods=['GET'])
 @role_required('Owner')
@@ -64,4 +65,3 @@ def delete_organization(id):
         db.session.rollback()
         flash(_('Error: Could not delete organization.'), 'danger')
     return redirect(url_for('organization.organizations'))
-

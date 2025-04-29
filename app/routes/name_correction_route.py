@@ -5,6 +5,7 @@ from app.utils   import *
 
 bp_correction = Blueprint('correction', __name__)
 
+
 # =============================================================================================
 @bp_correction.route('/delete/<int:id>', methods=['POST'])
 @login_required
@@ -21,19 +22,19 @@ def delete_name_correction(id):
 @login_required
 def revert_name_correction(id):
     # Obtener la corrección de nombre
-    correction = NameCorrections.query.get_or_404(id)
+    correction        = NameCorrections.query.get_or_404(id)
     meeting_center_id = correction.meeting_center_id
 
     # Buscar en la tabla Attendance los registros que coincidan con correct_name y meeting_center_id
     attendances = Attendance.query.filter(
-        Attendance.student_name == correction.correct_name,
+        Attendance.student_name      == correction.correct_name,
         Attendance.meeting_center_id == meeting_center_id
     ).all()
 
     # Revertir los nombres en la tabla Attendance
     for attendance in attendances:
         attendance.student_name = correction.wrong_name
-        attendance.fix_name = False  # Desmarcar la corrección
+        attendance.fix_name     = False  # Desmarcar la corrección
 
     # Eliminar la entrada de NameCorrections
     db.session.delete(correction)

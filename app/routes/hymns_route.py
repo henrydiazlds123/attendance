@@ -29,7 +29,7 @@ def hymns():
 def add_hymn():
     if request.method == 'POST':
         number = request.form['number']
-        title = request.form['title']
+        title  = request.form['title']
         
         new_hymn = Hymns(number=number, title=title)
         db.session.add(new_hymn)

@@ -435,7 +435,6 @@ def allowed_file(filename):
 
 # =================================================================
 # permanently_excluded_fields = ['gender', 'birth_date', 'fixed_address', 'lat', 'lon', 'preferred_name', 'short_name']
-
 def process_import(df, column_mapping, meeting_center_id):
     """
     Procesa la importación de datos de miembros desde un DataFrame.
