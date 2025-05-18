@@ -13,3 +13,4 @@ favicon/*
 !favicon/.gitkeep
 imports/*
 locales/*
+.DS_Store
